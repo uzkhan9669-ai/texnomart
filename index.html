@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>texnomart* — Руководство по собеседованию (Mobile 4:3 Interactive)</title>
+  
+  <!-- Google Fonts & FontAwesome -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    :root {
+      --brand-yellow: #FFC000;
+      --brand-black: #1A1A1A;
+      --brand-white: #FFFFFF;
+      --brand-light-yellow: #FFF1CC;
+      --brand-blue: #2395D3;
+      --brand-gray-bg: #F8F9FA;
+      --brand-red: #E53935;
+      --brand-green: #43A047;
+      --brand-autumn-amber: #E67E22;
+      --font-main: 'Montserrat', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: #111115;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      color: var(--brand-black);
+    }
+
+    /* 4:3 Aspect Ratio Smartphone / Tablet Container */
+    #mobile-frame {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      max-width: 580px;
+      max-height: 780px;
+      aspect-ratio: 4 / 3;
+      background: var(--brand-white);
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @media (min-width: 600px) {
+      #mobile-frame {
+        border: 8px solid #2A2A30;
+        height: min(94vh, 760px);
+      }
+    }
+
+    /* Autumn Animation Canvas Layer */
+    #autumn-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Top App Header */
+    .app-header {
+      position: relative;
+      z-index: 10;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .brand-logo {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--brand-black);
+      letter-spacing: -0.5px;
+      cursor: pointer;
+    }
+    .brand-logo span { color: var(--brand-yellow); }
+
+    .header-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-header-action {
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-main);
+      transition: all 0.2s;
+    }
+    .btn-header-action:hover {
+      background: var(--brand-yellow);
+      color: var(--brand-black);
+    }
+
+    .slides-wrapper {
+      position: relative;
+      flex-grow: 1;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .slide-mobile {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transform: translateY(15px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 16px 20px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 1;
+    }
+
+    .slide-mobile.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: all;
+      z-index: 2;
+    }
+
+    /* Typography & Interactive Card Badges */
+    .title-mobile-lg { font-size: 24px; font-weight: 900; line-height: 1.2; letter-spacing: -0.5px; }
+    .title-mobile-md { font-size: 18px; font-weight: 800; line-height: 1.25; }
+    .title-mobile-sm { font-size: 14px; font-weight: 700; }
+    .text-body { font-size: 12.5px; font-weight: 500; line-height: 1.45; color: #333; }
+    .text-sub { font-size: 11px; font-weight: 600; color: #666; }
+
+    .badge-step {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--brand-black);
+      color: var(--brand-yellow);
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* Clickable Interactive Items / Badges */
+    .clickable-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      color: var(--brand-black);
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 7px 12px;
+      border-radius: 24px;
+      border: 2px dashed var(--brand-black);
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.12);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .clickable-badge:active { transform: scale(0.95); }
+    .clickable-badge.yellow { background: var(--brand-yellow); }
+    .clickable-badge.blue { background: var(--brand-blue); color: white; border-color: var(--brand-blue); }
+
+    .card-mobile {
+      background: var(--brand-gray-bg);
+      border-radius: 14px;
+      padding: 12px 14px;
+      border: 1.5px solid #E5E7EB;
+      margin-bottom: 10px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .card-mobile.interactive-item {
+      cursor: pointer;
+      border-left: 4px solid var(--brand-black);
+    }
+    .card-mobile.interactive-item:hover {
+      background: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      transform: translateY(-1px);
+    }
+    .card-mobile.interactive-item::after {
+      content: "🔍 Детали";
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 9.5px;
+      font-weight: 800;
+      background: rgba(0,0,0,0.06);
+      padding: 2px 6px;
+      border-radius: 10px;
+      color: #555;
+    }
+
+    .card-yellow { background: var(--brand-light-yellow); border-color: rgba(255, 192, 0, 0.4); }
+    .card-dark { background: var(--brand-black); color: white; border-color: var(--brand-black); }
+
+    /* Grid Layouts for 4:3 Aspect Ratio */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Interactive Tab buttons for Mobile */
+    .tab-bar-mobile {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .tab-bar-mobile::-webkit-scrollbar { display: none; }
+
+    .tab-btn-mobile {
+      flex-shrink: 0;
+      padding: 7px 12px;
+      border-radius: 18px;
+      border: 1.5px solid var(--brand-black);
+      background: white;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn-mobile.active {
+      background: var(--brand-yellow);
+      box-shadow: 2px 2px 0px var(--brand-black);
+    }
+
+    /* App Footer & Nav */
+    .app-footer {
+      position: relative;
+      z-index: 10;
+      padding: 10px 18px 14px 18px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .story-progress-bar {
+      display: flex;
+      gap: 4px;
+      width: 100%;
+    }
+    .story-segment {
+      height: 4px;
+      flex-grow: 1;
+      background: #E5E7EB;
+      border-radius: 2px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .story-segment-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--brand-black);
+      transition: width 0.25s ease;
+    }
+    .story-segment.active .story-segment-fill {
+      width: 100%;
+      background: var(--brand-yellow);
+    }
+
+    .nav-controls-mobile {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-nav {
+      flex: 1;
+      padding: 10px;
+      border-radius: 24px;
+      border: 2px dashed var(--brand-black);
+      font-family: var(--font-main);
+      font-weight: 800;
+      font-size: 12px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+      transition: transform 0.15s;
+    }
+    .btn-nav:active { transform: scale(0.96); }
+    .btn-nav:disabled { opacity: 0.3; box-shadow: none; cursor: default; }
+    .btn-prev-m { background: white; color: var(--brand-black); }
+    .btn-next-m { background: var(--brand-yellow); color: var(--brand-black); }
+
+    /* Scorecard Interactive Toggle */
+    .mobile-score-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      border: 1px solid #E2E2E2;
+    }
+    .score-toggle-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1.5px solid #CCC;
+      background: white;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .score-toggle-btn.yes.selected { background: var(--brand-green); color: white; border-color: var(--brand-green); }
+    .score-toggle-btn.no.selected { background: var(--brand-red); color: white; border-color: var(--brand-red); }
+
+    /* Interactive Item Detail Modal (Bottom Sheet / Popup) */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-height: 85%;
+      background: white;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      padding: 20px;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-overlay.open .modal-card {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1.5px solid #F0F0F0;
+      padding-bottom: 10px;
+    }
+
+    .btn-close-modal {
+      background: #F0F0F0;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Stage Quick Menu Grid */
+    .stage-menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .stage-menu-item {
+      background: var(--brand-gray-bg);
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .stage-menu-item:hover, .stage-menu-item.active {
+      background: var(--brand-light-yellow);
+      border-color: var(--brand-yellow);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="mobile-frame">
+    
+    <!-- Canvas for Autumn Falling Leaves -->
+    <canvas id="autumn-canvas"></canvas>
+
+    <!-- App Header -->
+    <div class="app-header">
+      <div class="brand-logo" onclick="goToSlide(0)">texnomart<span>*</span></div>
+      <div class="header-actions">
+        <button class="btn-header-action" onclick="openNavMenu()">
+          <i class="fa-solid fa-list-ul" style="color: var(--brand-black);"></i> Пункты
+        </button>
+        <button class="btn-header-action" onclick="toggleLeaves()" title="Включить/выключить листья">
+          <i class="fa-solid fa-leaf" style="color: var(--brand-autumn-amber);"></i>
+          <span id="leaf-status-text">Осень ON</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="slides-wrapper" id="swipeContainer">
+
+      <!-- ==================== SLIDE 1: COVER ==================== -->
+      <div class="slide-mobile active" style="background: var(--brand-yellow); justify-content: space-between;">
+        <div>
+          <div class="badge-step" style="background: var(--brand-black); color: white;">
+            <i class="fa-solid fa-mobile-screen"></i> Format 4:3 • Guide for Director
+          </div>
+          <h1 class="title-mobile-lg" style="margin-top: 6px; margin-bottom: 8px; color: var(--brand-black);">
+            Интервью кандидата в магазине
+          </h1>
+          <p class="text-body" style="color: #222; font-weight: 600; margin-bottom: 12px;">
+            Пошаговая интерактивная инструкция для Директора магазина Texnomart*.
+          </p>
+        </div>
+
+        <!-- Interactive Quick Jump Bubbles -->
+        <div>
+          <span style="font-size: 11px; font-weight: 800; color: #333; text-transform: uppercase; display: block; margin-bottom: 6px;">
+            👇 Нажмите на любой пункт для быстрого перехода:
+          </span>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+            <div class="clickable-badge" onclick="goToSlide(1)">0. Контекст HR</div>
+            <div class="clickable-badge" onclick="goToSlide(2)">1. Первые 5 мин</div>
+            <div class="clickable-badge blue" onclick="goToSlide(3)">2. Вопросы STAR</div>
+            <div class="clickable-badge yellow" onclick="goToSlide(4)">3. Мини-кейс</div>
+            <div class="clickable-badge" onclick="goToSlide(5)">4. Экскурсия</div>
+            <div class="clickable-badge blue" onclick="goToSlide(6)">5. Команда 360°</div>
+            <div class="clickable-badge yellow" onclick="goToSlide(7)">6. Чек-лист</div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.8); padding: 8px 12px; border-radius: 12px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-hand-pointer" style="font-size: 16px; color: var(--brand-black);"></i>
+            <span class="text-sub" style="color: #111; font-weight: 700;">Кликайте по карточкам и блокам для раскрытия подробностей</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 2: ROLES ==================== -->
+      <div class="slide-mobile">
+        <span class="badge-step"><i class="fa-solid fa-filter"></i> Этап 0 • Контекст</span>
+        <h2 class="title-mobile-md" style="margin-bottom: 10px;">Рекрутер vs Директор</h2>
+
+        <div class="grid-2col">
+          <div class="card-mobile interactive-item" onclick="showItemDetail('recruiter')" style="border-left-color: var(--brand-blue);">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+              <i class="fa-solid fa-user-gear" style="color: var(--brand-blue);"></i>
+              <h3 class="title-mobile-sm">Сделал HR</h3>
+            </div>
+            <ul style="list-style: none;" class="text-sub">
+              <li>✓ Опыт и резюме</li>
+              <li>✓ График и зарплата</li>
+              <li>✓ Вежливость речи</li>
+            </ul>
+          </div>
+
+          <div class="card-mobile card-yellow interactive-item" onclick="showItemDetail('director')" style="border-left-color: var(--brand-black);">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+              <i class="fa-solid fa-shop" style="color: var(--brand-black);"></i>
+              <h3 class="title-mobile-sm">Ваша роль</h3>
+            </div>
+            <ul style="list-style: none;" class="text-sub">
+              <li>★ Искренняя забота</li>
+              <li>★ Драйв и энергия</li>
+              <li>★ Командный фит</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card-mobile card-dark interactive-item" onclick="showItemDetail('final_decision')" style="margin-top: auto;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-crown" style="color: var(--brand-yellow); font-size: 18px;"></i>
+            <div>
+              <strong class="title-mobile-sm" style="color: var(--brand-yellow);">Финал в ваших руках!</strong>
+              <p class="text-sub" style="color: #CCC;">Нажмите, чтобы узнать правила принятия итогового решения.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 3: WELCOME ==================== -->
+      <div class="slide-mobile">
+        <span class="badge-step">ЭТАП 1</span>
+        <h2 class="title-mobile-md" style="margin-bottom: 10px;">Встреча и первые 5 минут</h2>
+
+        <div class="card-mobile interactive-item" onclick="showItemDetail('welcome_punctual')">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="background: var(--brand-yellow); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">1</div>
+            <div>
+              <h3 class="title-mobile-sm">Пунктуальность встречи</h3>
+              <p class="text-sub">Встретить без задержек в течение 3 минут.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-mobile interactive-item" onclick="showItemDetail('welcome_care')">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="background: var(--brand-yellow); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">2</div>
+            <div>
+              <h3 class="title-mobile-sm">Гостеприимство (Вода/Кофе)</h3>
+              <p class="text-sub">Снять стресс, показать где оставить вещи.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-mobile interactive-item" onclick="showItemDetail('welcome_framing')">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="background: var(--brand-yellow); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">3</div>
+            <div>
+              <h3 class="title-mobile-sm">Прозрачный фрейминг</h3>
+              <p class="text-sub">«Беседа 15 мин + кейс + показ магазина».</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 4: VALUES QUESTIONS ==================== -->
+      <div class="slide-mobile">
+        <span class="badge-step">ЭТАП 2</span>
+        <h2 class="title-mobile-md" style="margin-bottom: 8px;">Вопросы по ценностям (STAR)</h2>
+
+        <!-- Mobile Scrollable Tabs -->
+        <div class="tab-bar-mobile">
+          <button class="tab-btn-mobile active" onclick="switchMobileTab(0)">1. Забота</button>
+          <button class="tab-btn-mobile" onclick="switchMobileTab(1)">2. Результат</button>
+          <button class="tab-btn-mobile" onclick="switchMobileTab(2)">3. Команда</button>
+          <button class="tab-btn-mobile" onclick="switchMobileTab(3)">4. Развитие</button>
+        </div>
+
+        <div id="mtab-0" class="mtab-content card-mobile card-yellow interactive-item" onclick="showItemDetail('val_care')" style="display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1;">
+          <div>
+            <span style="font-size: 10px; font-weight: 800; color: #555; text-transform: uppercase;">ЦЕННОСТЬ: ЗАБОТА О КЛИЕНТЕ</span>
+            <p class="title-mobile-sm" style="margin: 6px 0; background: white; padding: 8px; border-radius: 8px; border-left: 3px solid var(--brand-yellow);">
+              «Расскажите о случае, когда вы сделали для клиента чуть больше обычного?»
+            </p>
+          </div>
+          <div style="background: white; padding: 8px; border-radius: 8px;">
+            <p class="text-sub" style="color: #2E7D32;"><strong>✓ Green Flag:</strong> Искреннее желание помочь.</p>
+            <p class="text-sub" style="color: #C62828;"><strong>✕ Red Flag:</strong> Раздражение на покупателей.</p>
+          </div>
+        </div>
+
+        <div id="mtab-1" class="mtab-content card-mobile interactive-item" onclick="showItemDetail('val_result')" style="display: none; flex-direction: column; justify-content: space-between; flex-grow: 1;">
+          <div>
+            <span style="font-size: 10px; font-weight: 800; color: #555; text-transform: uppercase;">ЦЕННОСТЬ: РЕЗУЛЬТАТ И ДИСЦИПЛИНА</span>
+            <p class="title-mobile-sm" style="margin: 6px 0; background: white; padding: 8px; border-radius: 8px; border-left: 3px solid var(--brand-blue);">
+              «Как действуете в дни, когда трафик в магазине низкий?»
+            </p>
+          </div>
+          <div style="background: white; padding: 8px; border-radius: 8px;">
+            <p class="text-sub" style="color: #2E7D32;"><strong>✓ Green Flag:</strong> Активный обзвон, выкладка.</p>
+            <p class="text-sub" style="color: #C62828;"><strong>✕ Red Flag:</strong> Пассивность, сидение в телефоне.</p>
+          </div>
+        </div>
+
+        <div id="mtab-2" class="mtab-content card-mobile interactive-item" onclick="showItemDetail('val_team')" style="display: none; flex-direction: column; justify-content: space-between; flex-grow: 1;">
+          <div>
+            <span style="font-size: 10px; font-weight: 800; color: #555; text-transform: uppercase;">ЦЕННОСТЬ: ЕДИНСТВО И КОМАНДА</span>
+            <p class="title-mobile-sm" style="margin: 6px 0; background: white; padding: 8px; border-radius: 8px; border-left: 3px solid var(--brand-black);">
+              «Опишите ситуацию, когда коллеге нужна была помощь на смене?»
+            </p>
+          </div>
+          <div style="background: white; padding: 8px; border-radius: 8px;">
+            <p class="text-sub" style="color: #2E7D32;"><strong>✓ Green Flag:</strong> Поддержка, передача знаний.</p>
+            <p class="text-sub" style="color: #C62828;"><strong>✕ Red Flag:</strong> Эгоизм «это не моя задача».</p>
+          </div>
+        </div>
+
+        <div id="mtab-3" class="mtab-content card-mobile interactive-item" onclick="showItemDetail('val_growth')" style="display: none; flex-direction: column; justify-content: space-between; flex-grow: 1;">
+          <div>
+            <span style="font-size: 10px; font-weight: 800; color: #555; text-transform: uppercase;">ЦЕННОСТЬ: РАЗВИТИЕ И ТЕХНИКА</span>
+            <p class="title-mobile-sm" style="margin: 6px 0; background: white; padding: 8px; border-radius: 8px; border-left: 3px solid var(--brand-green);">
+              «Какую бытовую технику вы сами изучили в последнее время?»
+            </p>
+          </div>
+          <div style="background: white; padding: 8px; border-radius: 8px;">
+            <p class="text-sub" style="color: #2E7D32;"><strong>✓ Green Flag:</strong> Понимание фишек гаджетов.</p>
+            <p class="text-sub" style="color: #C62828;"><strong>✕ Red Flag:</strong> Равнодушие к бытовой технике.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 5: PRACTICAL CASE ==================== -->
+      <div class="slide-mobile">
+        <span class="badge-step">ЭТАП 3</span>
+        <h2 class="title-mobile-md" style="margin-bottom: 8px;">Мини-ролевой кейс (10 мин)</h2>
+
+        <div class="card-mobile card-dark interactive-item" onclick="showItemDetail('case_scenario')">
+          <span style="color: var(--brand-yellow); font-size: 10px; font-weight: 800;">СЦЕНАРИЙ В ТОРГОВОМ ЗАЛЕ</span>
+          <h3 class="title-mobile-sm" style="color: white; margin: 2px 0;">«Сомневающийся покупатель»</h3>
+          <p class="text-sub" style="color: #CCC;">Нажмите, чтобы открыть полный текст диалога и подсказку Директору.</p>
+        </div>
+
+        <div class="grid-2col" style="margin-top: 6px;">
+          <div class="card-mobile interactive-item" onclick="showItemDetail('case_questions')">
+            <i class="fa-solid fa-ear-listen" style="color: var(--brand-blue); margin-bottom: 4px;"></i>
+            <strong class="title-mobile-sm" style="display: block;">1. Выявление</strong>
+            <p class="text-sub">Задает ли уточняющие вопросы?</p>
+          </div>
+
+          <div class="card-mobile interactive-item" onclick="showItemDetail('case_benefits')">
+            <i class="fa-solid fa-lightbulb" style="color: var(--brand-yellow); margin-bottom: 4px;"></i>
+            <strong class="title-mobile-sm" style="display: block;">2. Выгода</strong>
+            <p class="text-sub">Переводит функции в пользу.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 6: STORE TOUR ==================== -->
+      <div class="slide-mobile">
+        <span class="badge-step">ЭТАП 4</span>
+        <h2 class="title-mobile-md" style="margin-bottom: 10px;">Маршрут экскурсии по магазину</h2>
+
+        <div class="grid-2col">
+          <div class="card-mobile interactive-item" onclick="showItemDetail('tour_hall')">
+            <i class="fa-solid fa-shop" style="color: var(--brand-black);"></i>
+            <h3 class="title-mobile-sm">1. Торговый зал</h3>
+            <p class="text-sub">Зоны и выкладка</p>
+          </div>
+
+          <div class="card-mobile interactive-item" onclick="showItemDetail('tour_cash')">
+            <i class="fa-solid fa-cash-register" style="color: var(--brand-black);"></i>
+            <h3 class="title-mobile-sm">2. Кассовая зона</h3>
+            <p class="text-sub">Рассрочка и сервисы</p>
+          </div>
+
+          <div class="card-mobile interactive-item" onclick="showItemDetail('tour_stock')">
+            <i class="fa-solid fa-boxes-stacked" style="color: var(--brand-black);"></i>
+            <h3 class="title-mobile-sm">3. Склад</h3>
+            <p class="text-sub">Приемка товара</p>
+          </div>
+
+          <div class="card-mobile interactive-item" onclick="showItemDetail('tour_rest')">
+            <i class="fa-solid fa-mug-hot" style="color: var(--brand-black);"></i>
+            <h3 class="title-mobile-sm">4. Зона отдыха</h3>
+            <p class="text-sub">Столовая и шкафчики</p>
+          </div>
+        </div>
+
+        <div class="card-mobile card-yellow interactive-item" onclick="showItemDetail('tour_curiosity')" style="margin-top: auto;">
+          <strong class="title-mobile-sm"><i class="fa-solid fa-eye"></i> На что смотреть в процессе:</strong>
+          <p class="text-sub" style="margin-top: 2px;">Задает ли кандидат вопросы по технике? Выявляем любопытство.</p>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 7: TEAM FIT ==================== -->
+      <div class="slide-mobile">
+        <span class="badge-step">ЭТАП 5</span>
+        <h2 class="title-mobile-md" style="margin-bottom: 10px;">Оценка 360° с командой смены</h2>
+
+        <div class="card-mobile card-yellow interactive-item" onclick="showItemDetail('team_mentor')">
+          <h3 class="title-mobile-sm"><i class="fa-solid fa-user-ninja"></i> 1. Знакомство с Наставником</h3>
+          <p class="text-sub" style="margin-top: 2px;">Представьте ведущего продавца смены.</p>
+        </div>
+
+        <div class="card-mobile interactive-item" onclick="showItemDetail('team_feedback')">
+          <h3 class="title-mobile-sm"><i class="fa-solid fa-comments"></i> 2. Быстрый опрос смены</h3>
+          <p class="text-sub" style="margin-top: 2px;">Узнайте мнение ребят сразу после ухода кандидата.</p>
+        </div>
+
+        <div class="card-mobile card-dark interactive-item" onclick="showItemDetail('team_rule')" style="margin-top: auto; border: 1.5px solid var(--brand-yellow);">
+          <span style="color: var(--brand-yellow); font-size: 10px; font-weight: 800;">ЗОЛОТОЕ ПРАВИЛО TEXNOMART*</span>
+          <p class="text-sub" style="color: #EEE; margin-top: 2px;">Если смена против кандидата — не берем. Атмосфера дороже!</p>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 8: SCORECARD ==================== -->
+      <div class="slide-mobile">
+        <span class="badge-step">ЭТАП 6</span>
+        <h2 class="title-mobile-md" style="margin-bottom: 8px;">Чек-лист оценки кандидата</h2>
+
+        <div>
+          <div class="mobile-score-item">
+            <span class="text-body" style="font-weight: 600;">1. Пунктуальность/Вид</span>
+            <div>
+              <button class="score-toggle-btn yes" onclick="toggleMobileScore(this, 0, true)">✓</button>
+              <button class="score-toggle-btn no" onclick="toggleMobileScore(this, 0, false)">✕</button>
+            </div>
+          </div>
+
+          <div class="mobile-score-item">
+            <span class="text-body" style="font-weight: 600;">2. Забота о клиенте</span>
+            <div>
+              <button class="score-toggle-btn yes" onclick="toggleMobileScore(this, 1, true)">✓</button>
+              <button class="score-toggle-btn no" onclick="toggleMobileScore(this, 1, false)">✕</button>
+            </div>
+          </div>
+
+          <div class="mobile-score-item">
+            <span class="text-body" style="font-weight: 600;">3. Энергия и учеба</span>
+            <div>
+              <button class="score-toggle-btn yes" onclick="toggleMobileScore(this, 2, true)">✓</button>
+              <button class="score-toggle-btn no" onclick="toggleMobileScore(this, 2, false)">✕</button>
+            </div>
+          </div>
+
+          <div class="mobile-score-item">
+            <span class="text-body" style="font-weight: 600;">4. Ролевой кейс</span>
+            <div>
+              <button class="score-toggle-btn yes" onclick="toggleMobileScore(this, 3, true)">✓</button>
+              <button class="score-toggle-btn no" onclick="toggleMobileScore(this, 3, false)">✕</button>
+            </div>
+          </div>
+
+          <div class="mobile-score-item">
+            <span class="text-body" style="font-weight: 600;">5. Выбор команды</span>
+            <div>
+              <button class="score-toggle-btn yes" onclick="toggleMobileScore(this, 4, true)">✓</button>
+              <button class="score-toggle-btn no" onclick="toggleMobileScore(this, 4, false)">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Verdict Banner -->
+        <div class="card-mobile card-dark" style="text-align: center; margin-top: auto; padding: 10px;">
+          <span style="font-size: 10px; color: #AAA; text-transform: uppercase; font-weight: 800;">ВЕРДИКТ ДИРЕКТОРА:</span>
+          <div id="m-verdict-score" class="title-mobile-lg" style="color: var(--brand-yellow); margin: 2px 0;">0 / 5</div>
+          <div id="m-verdict-text" class="clickable-badge yellow" style="font-size: 11px; padding: 4px 10px;">
+            Отметьте пункты выше
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- App Footer / Navigation -->
+    <div class="app-footer">
+      <div class="story-progress-bar" id="storyBar"></div>
+
+      <div class="nav-controls-mobile">
+        <button class="btn-nav btn-prev-m" id="mBtnPrev" onclick="prevSlideMobile()">
+          <i class="fa-solid fa-chevron-left"></i> Назад
+        </button>
+        <button class="btn-nav btn-next-m" id="mBtnNext" onclick="nextSlideMobile()">
+          Далее <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Detail Popup Modal Bottom Sheet -->
+    <div class="modal-overlay" id="itemDetailModal" onclick="closeModalOnOverlay(event)">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <span id="modalCategoryBadge" class="badge-step">ДЕТАЛИ ПУНКТА</span>
+            <h2 id="modalTitle" class="title-mobile-md">Заголовок</h2>
+          </div>
+          <button class="btn-close-modal" onclick="closeItemDetail()">✕</button>
+        </div>
+        <div id="modalBody" class="text-body">
+          <!-- Dynamic Content Insertion -->
+        </div>
+        <button class="btn-nav btn-next-m" onclick="closeItemDetail()" style="margin-top: 10px;"> Понятно, закрыть</button>
+      </div>
+    </div>
+
+    <!-- Stage Navigation Menu Drawer -->
+    <div class="modal-overlay" id="navMenuModal" onclick="closeModalOnOverlay(event)">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <span class="badge-step">НАВИГАЦИЯ</span>
+            <h2 class="title-mobile-md">Все этапы руководства</h2>
+          </div>
+          <button class="btn-close-modal" onclick="closeNavMenu()">✕</button>
+        </div>
+        
+        <div class="stage-menu-grid">
+          <div class="stage-menu-item" onclick="goToSlide(0); closeNavMenu();">
+            <strong class="title-mobile-sm">0. Обложка</strong>
+            <p class="text-sub">Главный экран</p>
+          </div>
+          <div class="stage-menu-item" onclick="goToSlide(1); closeNavMenu();">
+            <strong class="title-mobile-sm">1. HR vs Директор</strong>
+            <p class="text-sub">Контекст и зоны</p>
+          </div>
+          <div class="stage-menu-item" onclick="goToSlide(2); closeNavMenu();">
+            <strong class="title-mobile-sm">2. Первые 5 минут</strong>
+            <p class="text-sub">Встреча и настрой</p>
+          </div>
+          <div class="stage-menu-item" onclick="goToSlide(3); closeNavMenu();">
+            <strong class="title-mobile-sm">3. Вопросы STAR</strong>
+            <p class="text-sub">Ценности бренда</p>
+          </div>
+          <div class="stage-menu-item" onclick="goToSlide(4); closeNavMenu();">
+            <strong class="title-mobile-sm">4. Ролевой кейс</strong>
+            <p class="text-sub">Диалог в зале</p>
+          </div>
+          <div class="stage-menu-item" onclick="goToSlide(5); closeNavMenu();">
+            <strong class="title-mobile-sm">5. Экскурсия</strong>
+            <p class="text-sub">Маршрут 4 зон</p>
+          </div>
+          <div class="stage-menu-item" onclick="goToSlide(6); closeNavMenu();">
+            <strong class="title-mobile-sm">6. Оценка 360°</strong>
+            <p class="text-sub">Голос команды</p>
+          </div>
+          <div class="stage-menu-item" onclick="goToSlide(7); closeNavMenu();">
+            <strong class="title-mobile-sm">7. Чек-лист</strong>
+            <p class="text-sub">Финал и Вердикт</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ====================================================
+       1. AUTUMN FALLING LEAVES CANVAS ANIMATION
+       ==================================================== */
+    const canvas = document.getElementById('autumn-canvas');
+    const ctx = canvas.getContext('2d');
+    let leavesActive = true;
+
+    function resizeCanvas() {
+      const frame = document.getElementById('mobile-frame');
+      canvas.width = frame.clientWidth;
+      canvas.height = frame.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Leaf Particles Data
+    const leafColors = ['#FFC000', '#E67E22', '#D35400', '#F39C12', '#B8860B'];
+    const leaves = [];
+    const leafCount = 16;
+
+    for (let i = 0; i < leafCount; i++) {
+      leaves.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        size: Math.random() * 8 + 8,
+        speedY: Math.random() * 1.2 + 0.6,
+        speedX: Math.random() * 0.8 - 0.4,
+        rotation: Math.random() * 360,
+        rotSpeed: Math.random() * 2 - 1,
+        color: leafColors[Math.floor(Math.random() * leafColors.length)],
+        swing: Math.random() * 0.03
+      });
+    }
+
+    function drawLeaf(x, y, size, rotation, color) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.75;
+      
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.quadraticCurveTo(size / 1.5, -size / 3, size / 2, size / 2);
+      ctx.quadraticCurveTo(0, size, 0, size);
+      ctx.quadraticCurveTo(0, size, -size / 2, size / 2);
+      ctx.quadraticCurveTo(-size / 1.5, -size / 3, 0, -size);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.lineTo(0, size);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function animateLeaves() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (leavesActive) {
+        leaves.forEach((l) => {
+          l.y += l.speedY;
+          l.x += l.speedX + Math.sin(l.y * l.swing) * 0.5;
+          l.rotation += l.rotSpeed;
+
+          if (l.y > canvas.height + 20) {
+            l.y = -20;
+            l.x = Math.random() * canvas.width;
+          }
+
+          drawLeaf(l.x, l.y, l.size, l.rotation, l.color);
+        });
+      }
+
+      requestAnimationFrame(animateLeaves);
+    }
+
+    function toggleLeaves() {
+      leavesActive = !leavesActive;
+      document.getElementById('leaf-status-text').textContent = leavesActive ? 'Осень ON' : 'Осень OFF';
+    }
+
+    /* ====================================================
+       2. NAVIGATION & DECK LOGIC
+       ==================================================== */
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide-mobile');
+    const mBtnPrev = document.getElementById('mBtnPrev');
+    const mBtnNext = document.getElementById('mBtnNext');
+    const storyBar = document.getElementById('storyBar');
+
+    function initStoryBar() {
+      storyBar.innerHTML = '';
+      slides.forEach((_, idx) => {
+        const seg = document.createElement('div');
+        seg.className = 'story-segment' + (idx === 0 ? ' active' : '');
+        seg.onclick = () => goToSlide(idx);
+        const fill = document.createElement('div');
+        fill.className = 'story-segment-fill';
+        seg.appendChild(fill);
+        storyBar.appendChild(seg);
+      });
+    }
+
+    function updateDeckUI() {
+      slides.forEach((slide, idx) => {
+        if (idx === currentSlide) slide.classList.add('active');
+        else slide.classList.remove('active');
+      });
+
+      const segments = document.querySelectorAll('.story-segment');
+      segments.forEach((seg, idx) => {
+        if (idx <= currentSlide) seg.classList.add('active');
+        else seg.classList.remove('active');
+      });
+
+      mBtnPrev.disabled = currentSlide === 0;
+      mBtnNext.disabled = currentSlide === slides.length - 1;
+    }
+
+    function goToSlide(slideIndex) {
+      if (slideIndex >= 0 && slideIndex < slides.length) {
+        currentSlide = slideIndex;
+        updateDeckUI();
+      }
+    }
+
+    function nextSlideMobile() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        updateDeckUI();
+      }
+    }
+
+    function prevSlideMobile() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateDeckUI();
+      }
+    }
+
+    /* Swipe Gesture */
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const swipeContainer = document.getElementById('swipeContainer');
+
+    swipeContainer.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    swipeContainer.addEventListener('touchend', (e) => {
+      const touchEndX = e.changedTouches[0].screenX;
+      const touchEndY = e.changedTouches[0].screenY;
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
+        if (diffX < 0) nextSlideMobile();
+        else prevSlideMobile();
+      }
+    }, { passive: true });
+
+    /* Tabs Switcher */
+    function switchMobileTab(tabIndex) {
+      const btns = document.querySelectorAll('.tab-btn-mobile');
+      btns.forEach((btn, idx) => {
+        if (idx === tabIndex) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+
+      for (let i = 0; i < 4; i++) {
+        const content = document.getElementById(`mtab-${i}`);
+        if (content) {
+          content.style.display = (i === tabIndex) ? 'flex' : 'none';
+        }
+      }
+    }
+
+    /* Scorecard Logic */
+    const mobileScores = [false, false, false, false, false];
+
+    function toggleMobileScore(btn, index, isYes) {
+      const parent = btn.closest('.mobile-score-item');
+      const yesBtn = parent.querySelector('.yes');
+      const noBtn = parent.querySelector('.no');
+
+      if (isYes) {
+        yesBtn.classList.add('selected');
+        noBtn.classList.remove('selected');
+        mobileScores[index] = true;
+      } else {
+        noBtn.classList.add('selected');
+        yesBtn.classList.remove('selected');
+        mobileScores[index] = false;
+      }
+
+      calcMobileScore();
+    }
+
+    function calcMobileScore() {
+      const total = mobileScores.filter(Boolean).length;
+      const scoreEl = document.getElementById('m-verdict-score');
+      const textEl = document.getElementById('m-verdict-text');
+
+      scoreEl.textContent = `${total} / 5`;
+
+      if (total >= 4) {
+        textEl.textContent = 'РЕКОМЕНДОВАН К НАЙМУ!';
+        textEl.style.background = 'var(--brand-yellow)';
+        textEl.style.color = 'var(--brand-black)';
+      } else if (total === 3) {
+        textEl.textContent = 'ЕСТЬ СОМНЕНИЯ (ОБСУДИТЬ)';
+        textEl.style.background = 'var(--brand-blue)';
+        textEl.style.color = 'white';
+      } else {
+        textEl.textContent = 'ОТКАЗ (НЕ ПОДХОДИТ)';
+        textEl.style.background = '#FFEBEE';
+        textEl.style.color = 'var(--brand-red)';
+      }
+    }
+
+    /* Interactive Items Data Source */
+    const itemDetailsData = {
+      recruiter: {
+        badge: "ЭТАП 0 • ПРОВЕРЕНО HR",
+        title: "Что уже оценил рекрутер",
+        body: `
+          <p><strong>Рекрутер до вас проверил:</strong></p>
+          <ul style="margin-left: 18px; margin-top: 6px; line-height: 1.6;">
+            <li>Базовое соответствие резюме и опыта работы.</li>
+            <li>Готовность к посменному графику и локации магазина.</li>
+            <li>Отсутствие критических стоп-факторов по коммуникации.</li>
+          </ul>
+          <div style="background: #EBF8FF; padding: 10px; border-radius: 8px; margin-top: 10px; border-left: 3px solid #3182CE;">
+            <strong>💡 Совет Директору:</strong> Не переспрашивайте повторно биографию из резюме. Фокусируйтесь только на живой работе в зале!
+          </div>
+        `
+      },
+      director: {
+        badge: "ЭТАП 0 • ВАША ЗАДАЧА",
+        title: "Что оценивает Директор магазина",
+        body: `
+          <p><strong>Главные фокусы проверки в филиале:</strong></p>
+          <ul style="margin-left: 18px; margin-top: 6px; line-height: 1.6;">
+            <li><strong>Искренняя эмпатия:</strong> Умеет ли кандидат общаться с теплотой, а не по скрипту?</li>
+            <li><strong>Выносливость:</strong> Готов ли работать активную смену на ногах?</li>
+            <li><strong>Совместимость:</strong> Примет ли его действующая смена продавцов?</li>
+          </ul>
+        `
+      },
+      final_decision: {
+        badge: "ПРАВИЛО TEXNOMART*",
+        title: "Принятие окончательного решения",
+        body: `
+          <p style="line-height: 1.5;">Директор филиала лично отвечает за результат и атмосферу в своем магазине. Если кандидат подходит идеальным образом по резюме, но у вас или вашей команды есть сомнения по ценностям — <strong>лучше отказаться от найма</strong>.</p>
+        `
+      },
+      welcome_punctual: {
+        badge: "ЭТАП 1 • ПУНКТУАЛЬНОСТЬ",
+        title: "Встреча без задержек",
+        body: `
+          <p>Первые минуты формируют впечатление о Texnomart* как о работодателе.</p>
+          <ul style="margin-left: 18px; margin-top: 6px; line-height: 1.6;">
+            <li>Если директор занят, назначьте старшего продавца встретить кандидата.</li>
+            <li>Максимальное время ожидания — не более 3 минут.</li>
+          </ul>
+        `
+      },
+      welcome_care: {
+        badge: "ЭТАП 1 • ЗАБОТА",
+        title: "Гостеприимство с первых секунд",
+        body: `
+          <p>Предложите соискателю стакан воды, чай или кофе. Покажите безопасное место, где можно оставить верхнюю одежду и личные вещи.</p>
+          <p style="margin-top: 6px; color: #555;">Это помогает человеку расслабиться и показать свои настоящие человеческие качества.</p>
+        `
+      },
+      welcome_framing: {
+        badge: "ЭТАП 1 • СТРУКТУРА",
+        title: "Озвучивание плана встречи",
+        body: `
+          <p><strong>Пример фразы директора:</strong></p>
+          <blockquote style="background: #FFF9DB; padding: 10px; border-radius: 8px; font-style: italic; margin-top: 6px;">
+            «Привет! Наша беседа займет около 20 минут. Мы пообщаемся о твоем опыте, сделаем легкий мини-кейс в зале, я покажу магазин и отвечу на любые твои вопросы. Договорились?»
+          </blockquote>
+        `
+      },
+      val_care: {
+        badge: "ЦЕННОСТЬ 1 • ЗАБОТА",
+        title: "Вопрос по ценности «Забота»",
+        body: `
+          <p><strong>Вопрос:</strong> «Вспомните случай, когда вы сделали для клиента чуть больше, чем требовалось по правилам?»</p>
+          <div style="margin-top: 8px; background: #E8F5E9; padding: 8px; border-radius: 6px;">
+            <strong style="color: #2E7D32;">✓ Green Flag:</strong> Искренняя радость от помощи человеку, желание найти решение.
+          </div>
+          <div style="margin-top: 6px; background: #FFEBEE; padding: 8px; border-radius: 6px;">
+            <strong style="color: #C62828;">✕ Red Flag:</strong> «Я делаю только то, за что мне платят».
+          </div>
+        `
+      },
+      val_result: {
+        badge: "ЦЕННОСТЬ 2 • РЕЗУЛЬТАТ",
+        title: "Вопрос по дисциплине и результату",
+        body: `
+          <p><strong>Вопрос:</strong> «Что вы делаете в магазине, когда людей нет, а плановые показатели нужно выполнять?»</p>
+          <div style="margin-top: 8px; background: #E8F5E9; padding: 8px; border-radius: 6px;">
+            <strong style="color: #2E7D32;">✓ Green Flag:</strong> Звонки постоянным клиентам, протирка техники, учит ценники и новинки.
+          </div>
+          <div style="margin-top: 6px; background: #FFEBEE; padding: 8px; border-radius: 6px;">
+            <strong style="color: #C62828;">✕ Red Flag:</strong> Сидит в соцсетях, винит маркетинг или погоду.
+          </div>
+        `
+      },
+      val_team: {
+        badge: "ЦЕННОСТЬ 3 • КОМАНДА",
+        title: "Вопрос по командной работе",
+        body: `
+          <p><strong>Вопрос:</strong> «Как вы поступаете, если видите, что коллега на кассе или в зале не успевает?»</p>
+          <div style="margin-top: 8px; background: #E8F5E9; padding: 8px; border-radius: 6px;">
+            <strong style="color: #2E7D32;">✓ Green Flag:</strong> Подстраховывает, подхватывает клиента, помогает с упаковкой.
+          </div>
+        `
+      },
+      val_growth: {
+        badge: "ЦЕННОСТЬ 4 • РАЗВИТИЕ",
+        title: "Вопрос по обучаемости и технике",
+        body: `
+          <p><strong>Вопрос:</strong> «О каком гаджете или функции смартфона/пылесоса вы недавно узнали и были удивлены?»</p>
+          <p style="margin-top: 6px; color: #444;">Показывает живой интерес кандидата к электронике и бытовой технике.</p>
+        `
+      },
+      case_scenario: {
+        badge: "ЭТАП 3 • СЦЕНАРИЙ",
+        title: "Кейс «Сомневающийся покупатель»",
+        body: `
+          <p><strong>Роль Директора:</strong> Покупатель, выбирающий робот-пылесос в подарок семье, но сомневающийся из-за высокой цены.</p>
+          <p style="margin-top: 6px;"><strong>Задача кандидата:</strong> Расположить к себе, задать 2-3 уточняющих вопроса и простыми словами объяснить пользу товара.</p>
+        `
+      },
+      case_questions: {
+        badge: "ОЦЕНКА КЕЙСА",
+        title: "Критерий 1: Потребности",
+        body: `<p>Оцените, сразу ли кандидат начинает «впаривать» дорогую модель или сначала спрашивает о площади квартиры и типах покрытий.</p>`
+      },
+      case_benefits: {
+        badge: "ОЦЕНКА КЕЙСА",
+        title: "Критерий 2: Язык выгоды",
+        body: `<p>Говорит ли кандидат сухими техническими цифрами («Паскали и Миллиамперы») или языком пользы («Экономит вам 1 час каждый день»)?</p>`
+      },
+      tour_hall: {
+        badge: "ЭТАП 4 • ЭКСКУРСИЯ",
+        title: "1. Торговый зал",
+        body: `<p>Покажите ключевые зоны: смартфоны, крупная бытовая техника, зона аксессуаров. Обратите внимание, с какими эмоциями кандидат смотрит на товар.</p>`
+      },
+      tour_cash: {
+        badge: "ЭТАП 4 • ЭКСКУРСИЯ",
+        title: "2. Кассовая зона",
+        body: `<p>Расскажите про важность кассового сервиса, оформления гарантий и работы с рассрочками.</p>`
+      },
+      tour_stock: {
+        badge: "ЭТАП 4 • ЭКСКУРСИЯ",
+        title: "3. Склад и порядок",
+        body: `<p>Покажите организацию складского хранения. В Texnomart* порядок на складе — залог высокой скорости выдачи товара клиенту.</p>`
+      },
+      tour_rest: {
+        badge: "ЭТАП 4 • ЭКСКУРСИЯ",
+        title: "4. Зона отдыха",
+        body: `<p>Покажите кухню, шкафчики и зоны отдыха команды. Чистота и комфорт сотрудников — наше проявление заботы.</p>`
+      },
+      tour_curiosity: {
+        badge: "ЭТАП 4 • ЛЮБОПЫТСТВО",
+        title: "Наблюдение за интересом кандидата",
+        body: `<p>Здоровый сигнал: кандидат задает вопросы («А какая модель самая популярная?», «Как устроен график?»). Пассивность или равнодушие — тревожный знак.</p>`
+      },
+      team_mentor: {
+        badge: "ЭТАП 5 • 360 ГРАДУСОВ",
+        title: "Представление Наставнику",
+        body: `<p>Подведите кандидата к лучшему продавцу смены. Попросите наставника рассказать за 2 минуты о том, за что он любит работу в Texnomart*.</p>`
+      },
+      team_feedback: {
+        badge: "ЭТАП 5 • 360 ГРАДУСОВ",
+        title: "Обратная связь от команды",
+        body: `<p>После того как кандидат попрощается, спросите у смены: «Ребята, как вам человек? Хотите видеть его в нашей команде?»</p>`
+      },
+      team_rule: {
+        badge: "ЭТАП 5 • ЗОЛОТОЕ ПРАВИЛО",
+        title: "Атмосфера в коллективе превыше всего",
+        body: `<p>Если у опытных продавцов возникает аргументированное отторжение к кандидату — не нанимайте его. Один токсичный сотрудник может разрушить продажи всей смены.</p>`
+      }
+    };
+
+    function showItemDetail(key) {
+      const data = itemDetailsData[key];
+      if (!data) return;
+
+      document.getElementById('modalCategoryBadge').textContent = data.badge;
+      document.getElementById('modalTitle').textContent = data.title;
+      document.getElementById('modalBody').innerHTML = data.body;
+
+      document.getElementById('itemDetailModal').classList.add('open');
+    }
+
+    function closeItemDetail() {
+      document.getElementById('itemDetailModal').classList.remove('open');
+    }
+
+    function openNavMenu() {
+      document.getElementById('navMenuModal').classList.add('open');
+    }
+
+    function closeNavMenu() {
+      document.getElementById('navMenuModal').classList.remove('open');
+    }
+
+    function closeModalOnOverlay(event) {
+      if (event.target.classList.contains('modal-overlay')) {
+        event.target.classList.remove('open');
+      }
+    }
+
+    // Keyboard Arrow Keys Support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') nextSlideMobile();
+      else if (e.key === 'ArrowLeft') prevSlideMobile();
+      else if (e.key === 'Escape') {
+        closeItemDetail();
+        closeNavMenu();
+      }
+    });
+
+    // Start Particle Engine & Deck UI on load
+    window.onload = function() {
+      initStoryBar();
+      updateDeckUI();
+      animateLeaves();
+    };
+  </script>
+</body>
+</html>
