@@ -1,4 +1,4 @@
-"""Telegram-bot: nomzodlarni kompetensiyalar bo'yicha Mini App orqali qabul qilish (Texnomart)."""
+"""Telegram-bot: nomzodlarni kompetensiyalar bo'yicha Mini App orqali qabul qilish (Technomart)."""
 import asyncio
 import json
 import logging
@@ -7,7 +7,7 @@ import re
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler, ContextTypes,
-                          MessageHandler, PicklePersistence, filters)
+                         MessageHandler, PicklePersistence, filters)
 
 import sheets
 import store
@@ -22,8 +22,8 @@ RECRUITERS = {int(x) for x in re.split(r"[\s,;]+", os.environ.get("RECRUITER_IDS
 EMOJI = {"QABUL": "🟢", "ZAXIRA": "🟡", "RAD": "🔴"}
 VERDICT_ARGS = {"qabul": "QABUL", "zaxira": "ZAXIRA", "rad": "RAD"}
 
-# Ссылка на ваше развернутое Mini App (например, GitHub Pages или ваш хостинг)
-MINI_APP_URL = os.environ.get("MINI_APP_URL", "https://your-mini-app-url.com")
+# Mini App havolasi (Railway yoki GitHub Pages muhit o'zgaruvchisidan olinadi)
+MINI_APP_URL = os.environ.get("MINI_APP_URL", "https://uzkhan9669-ai.github.io/texnomart/")
 
 GREETING = (
     "Assalomu alaykum! Bu %s kompaniyasidagi «%s» vakansiyasi uchun anketa.\n\n"
@@ -155,9 +155,9 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         
         # Подтверждение кандидату
-        await message.reply_text("✅ Рахмат! Анкета юборилди. Рекрутер сиз кўрсатган рақам орқали боғланади.")
+        await message.reply_text("✅ Rahmat! Anketa yuborildi. Rekruter siz ko'rsatgan raqam orqali bog'lanadi.")
 
-        # Карточка для рекрутеров
+        # Карточка для рекрутеров с оценкой
         card = (
             "🆕 Yangi nomzod #%d (Mini App)\n%s, %s yosh, %s\n%s %d%%  %s\n🔴 %d   🟡 %d\n/n_%d - to'liq profil"
             % (cid, data.get("fio", data.get("name", "-")), data.get("age", "-"), data.get("phone", "-"),
@@ -166,7 +166,7 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         for rid in RECRUITERS:
             try:
-                await context.bot.send_message(rid, card, reply_markup=status_markup(cid, with_profile=True))
+                await context.bot.send_message(rid, card, parse_mode="HTML", reply_markup=status_markup(cid, with_profile=True))
             except Exception:
                 log.exception("Rekruterga yuborib bo'lmadi: %s", rid)
                 
@@ -259,7 +259,7 @@ async def nomzod(update, context):
     if not context.args or not context.args[0].isdigit():
         await update.effective_message.reply_text("Masalan: /nomzod 12")
         return
-    await send_profile(context.bot, update.effective_chat.id, int(context.args[0]))
+    await send_profile(context.bot, cq.message.chat_id if 'cq' in locals() else update.effective_chat.id, int(context.args[0]))
 
 
 @only_rec
@@ -280,8 +280,8 @@ async def holat(update, context):
         await sync_sheet(int(context.args[0]))
 
 
-async def on_error(update, context):
-    log.error("Xatolik", exc_info=context.error)
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    log.error("Telegram xatolik yuz berdi:", exc_info=context.error)
 
 
 def main():
@@ -289,7 +289,9 @@ def main():
         raise SystemExit("BOT_TOKEN o'rnatilmagan.")
     if not RECRUITERS:
         log.warning("RECRUITER_IDS bo'sh: nomzod kartalari hech kimga yuborilmaydi!")
+    
     store.init()
+    
     persistence = PicklePersistence(filepath=os.environ.get("STATE_PATH", "state.pkl"))
     app = Application.builder().token(TOKEN).persistence(persistence).build()
     
@@ -302,13 +304,14 @@ def main():
     app.add_handler(CommandHandler("nomzod", nomzod))
     app.add_handler(CommandHandler("holat", holat))
     
-    # Обработка данных, прилетающих из Mini App через tg.sendData()
+    # Mini App dan ma'lumot qabul qilish filtri
     app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
     
     app.add_handler(MessageHandler(filters.Regex(r"^/n_\d+"), open_profile))
     app.add_handler(CallbackQueryHandler(on_button))
-    app.add_error_handler(on_error)
+    app.add_error_handler(error_handler)
     
+    log.info("Bot ishga tushdi va xabarlarni kutmoqda...")
     app.run_polling()
 
 
