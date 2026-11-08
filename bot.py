@@ -1,28 +1,17 @@
-"""Telegram-bot: nomzodlarni kompetensiyalar bo'yicha so'rovdan o'tkazish va baholash (Texnomart, sotuvchi-konsultant).
-
-Ishga tushirish:
-    pip install -r requirements.txt
-    export BOT_TOKEN="@BotFather bergan token"
-    export RECRUITER_IDS="123456789,987654321"     # rekruterlarning Telegram ID lari (@userinfobot dan bilib oling)
-    python bot.py
-
-Nomzod anketani to'ldiradi va hech qanday baho ko'rmaydi. Rekruterga qisqa karta keladi (ball, tavsiya, flaglar)
-va tugmalar: to'liq profil, chaqirish, zaxira, rad. Hamma nomzodlar candidates.db bazasida saqlanadi.
-Rekruter buyruqlari: /reyting, /songgi, /stat, /csv, /nomzod, /holat (/start yozsangiz ro'yxat chiqadi).
-"""
+"""Telegram-bot: nomzodlarni kompetensiyalar bo'yicha Mini App orqali qabul qilish (Texnomart)."""
 import asyncio
 import json
 import logging
 import os
 import re
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler, ContextTypes,
                           MessageHandler, PicklePersistence, filters)
 
 import sheets
 import store
-from scoring import JOB, QUESTIONS, build_profile, evaluate, verdict_code
+from scoring import JOB, build_profile, evaluate, verdict_code
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("texnomart-bot")
@@ -33,6 +22,9 @@ RECRUITERS = {int(x) for x in re.split(r"[\s,;]+", os.environ.get("RECRUITER_IDS
 EMOJI = {"QABUL": "🟢", "ZAXIRA": "🟡", "RAD": "🔴"}
 VERDICT_ARGS = {"qabul": "QABUL", "zaxira": "ZAXIRA", "rad": "RAD"}
 
+# Ссылка на ваше развернутое Mini App (например, GitHub Pages или ваш хостинг)
+MINI_APP_URL = os.environ.get("MINI_APP_URL", "https://your-mini-app-url.com")
+
 GREETING = (
     "Assalomu alaykum! Bu %s kompaniyasidagi «%s» vakansiyasi uchun anketa.\n\n"
     "Shartlar:\n"
@@ -40,10 +32,7 @@ GREETING = (
     "- Grafik: %s\n"
     "- Daromad: %s\n"
     "- Tajriba shart emas, ustoz bilan o'rgatamiz.\n\n"
-    "Anketa taxminan 15 daqiqa oladi. Iltimos, rost va o'z so'zlaringiz bilan javob bering. "
-    "Oldingi savolga qaytish uchun /orqaga ni yozing.\n\n"
-    "Boshlash tugmasini bosib, ism, telefon va javoblaringiz ishga qabul qilish maqsadida "
-    "qayta ishlanishiga rozilik bildirasiz."
+    "Iltimos, quyidagi tugmani bosib Mini App orqali anketani to'ldiring."
 ) % (JOB["company"], JOB["position"], JOB["training"], JOB["schedule"], JOB["income"])
 
 HELP = (
@@ -54,7 +43,7 @@ HELP = (
     "/csv - barcha nomzodlar jadvali (Excel uchun)\n"
     "/nomzod 12 yoki /n_12 - to'liq profil\n"
     "/holat 12 chaqirildi - holatni o'zgartirish (%s)\n"
-    "/anketa - anketani o'zingiz sinab ko'rish"
+    "/anketa - anketani ochish tugmasini chiqarish"
 ) % ", ".join(store.STATUSES)
 
 
@@ -77,10 +66,9 @@ def only_rec(fn):
 
 
 def split_text(text, limit=4000):
-    """Telegram limiti 4096 belgi: matnni qator chegarasida bo'laklarga ajratadi."""
     parts, cur = [], ""
     for line in text.split("\n"):
-        while len(line) > limit:  # juda uzun bitta qator
+        while len(line) > limit:
             if cur:
                 parts.append(cur)
                 cur = ""
@@ -102,7 +90,6 @@ async def send_long(bot, chat_id, text, markup=None):
 
 
 async def sync_sheet(cid):
-    """Nomzod yozuvini Google Tablitsaga yuboradi (agar SHEETS_URL berilgan bo'lsa). Botni to'xtatmaydi."""
     if not sheets.enabled():
         return
     row = store.get(cid)
@@ -120,77 +107,74 @@ def status_markup(cid, with_profile=False):
     return InlineKeyboardMarkup(rows)
 
 
-# ---------------------------------------------------------------- nomzod tomoni
-async def send_question(chat_id, context):
-    st = context.user_data
-    q = QUESTIONS[st["i"]]
-    if q.get("block"):
-        await context.bot.send_message(chat_id, "— %s —" % q["block"])
-    text = "(%d/%d) %s" % (st["i"] + 1, len(QUESTIONS), q["text"])
-    markup = None
-    if q["type"] == "choice":
-        markup = InlineKeyboardMarkup([[InlineKeyboardButton(o, callback_data="a:%d:%d" % (st["i"], n))]
-                                       for n, o in enumerate(q["options"])])
-    await context.bot.send_message(chat_id, text, reply_markup=markup)
-
-
-async def begin(update, context):
-    context.user_data.clear()
-    context.user_data.update({"i": -1, "answers": {}})
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton("Roziman, anketani boshlash", callback_data="go")]])
-    await update.effective_message.reply_text(GREETING, reply_markup=markup)
+# ---------------------------------------------------------------- Nomzod tomoni (Mini App orqali)
+async def send_anketa_button(update_or_message):
+    markup = InlineKeyboardMarkup([[
+        InlineKeyboardButton("📋 ANKETA", web_app=WebAppInfo(url=MINI_APP_URL))
+    ]])
+    await update_or_message.reply_text(GREETING, reply_markup=markup)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_rec(update):
         await update.effective_message.reply_text(HELP)
         return
-    await begin(update, context)
+    await send_anketa_button(update.effective_message)
 
 
 async def anketa(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await begin(update, context)
-
-
-async def back(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    st = context.user_data
-    if "i" not in st or st["i"] <= 0:
-        await update.effective_message.reply_text("Orqaga qaytib bo'lmaydi.")
+    if is_rec(update):
         return
-    st["i"] -= 1
-    await send_question(update.effective_chat.id, context)
+    await send_anketa_button(update.effective_message)
 
 
-async def advance(chat_id, context, user):
-    st = context.user_data
-    st["i"] += 1
-    if st["i"] >= len(QUESTIONS):
-        await finish(chat_id, context, user)
-    else:
-        await send_question(chat_id, context)
+async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Mini App ichidan yuborilgan ma'lumotlarni qabul qilish"""
+    message = update.effective_message
+    if not message or not message.web_app_data:
+        return
 
+    try:
+        data = json.loads(message.web_app_data.data)
+        user = update.effective_user
+        
+        # Оцениваем ответы через встроенную логику scoring.py
+        ev = evaluate(data)
+        code = verdict_code(ev["verdict"])
+        red = sum(1 for f in ev["flags"] if f[0] == "🔴")
+        yellow = sum(1 for f in ev["flags"] if f[0] == "🟡")
+        flags = " | ".join(f[1] for f in ev["flags"])
+        
+        # Сохраняем в базу SQLite (store.py)
+        cid = store.save(
+            user.id, user.username or "", 
+            json.dumps(data, ensure_ascii=False), 
+            data.get("fio", data.get("name", "-")),
+            data.get("phone", "-"), 
+            ev["pct"], code, red, yellow, flags
+        )
+        
+        # Подтверждение кандидату
+        await message.reply_text("✅ Рахмат! Анкета юборилди. Рекрутер сиз кўрсатган рақам орқали боғланади.")
 
-async def finish(chat_id, context, user):
-    a = dict(context.user_data["answers"])
-    ev = evaluate(a)
-    code = verdict_code(ev["verdict"])
-    red = sum(1 for f in ev["flags"] if f[0] == "🔴")
-    yellow = sum(1 for f in ev["flags"] if f[0] == "🟡")
-    flags = " | ".join(f[1] for f in ev["flags"])
-    cid = store.save(user.id, user.username or "", json.dumps(a, ensure_ascii=False), a.get("fio", ""),
-                     a.get("phone", ""), ev["pct"], code, red, yellow, flags)
-    context.user_data.clear()
-    await context.bot.send_message(chat_id, "Rahmat! Anketa yuborildi. Rekruter siz ko'rsatgan raqam orqali bog'lanadi.")
+        # Карточка для рекрутеров
+        card = (
+            "🆕 Yangi nomzod #%d (Mini App)\n%s, %s yosh, %s\n%s %d%%  %s\n🔴 %d   🟡 %d\n/n_%d - to'liq profil"
+            % (cid, data.get("fio", data.get("name", "-")), data.get("age", "-"), data.get("phone", "-"),
+               EMOJI[code], ev["pct"], code, red, yellow, cid)
+        )
+        
+        for rid in RECRUITERS:
+            try:
+                await context.bot.send_message(rid, card, reply_markup=status_markup(cid, with_profile=True))
+            except Exception:
+                log.exception("Rekruterga yuborib bo'lmadi: %s", rid)
+                
+        await sync_sheet(cid)
 
-    card = ("🆕 Yangi nomzod #%d\n%s, %s yosh, %s\n%s %d%%  %s\n🔴 %d   🟡 %d\n/n_%d - to'liq profil"
-            % (cid, a.get("fio", "-"), a.get("age", "-"), a.get("phone", "-"),
-               EMOJI[code], ev["pct"], code, red, yellow, cid))
-    for rid in RECRUITERS:
-        try:
-            await context.bot.send_message(rid, card, reply_markup=status_markup(cid, with_profile=True))
-        except Exception:  # rekruter botni bloklagan bo'lishi mumkin
-            log.exception("Rekruterga yuborib bo'lmadi: %s", rid)
-    await sync_sheet(cid)
+    except Exception as e:
+        log.error("Web app data parsing error: %s", e)
+        await message.reply_text("⚠️ Xatolik yuz berdi. Iltimos, anketani qaytadan to'ldirib ko'ring.")
 
 
 async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -200,55 +184,9 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await rec_button(update, context)
         return
     await cq.answer()
-    st = context.user_data
-    if "i" not in st:
-        await cq.message.reply_text("Anketani boshlash uchun /start ni bosing.")
-        return
-    if data == "go":
-        if st["i"] == -1:
-            st["i"] = 0
-            await send_question(cq.message.chat_id, context)
-        return
-    m = re.fullmatch(r"a:(\d+):(\d+)", data)
-    if not m:
-        return
-    qi, n = int(m.group(1)), int(m.group(2))
-    if qi != st["i"] or not 0 <= qi < len(QUESTIONS):  # eski tugma bosildi
-        return
-    q = QUESTIONS[qi]
-    if q["type"] != "choice" or n >= len(q["options"]):
-        return
-    st["answers"][q["key"]] = q["options"][n]
-    st["answers"][q["key"] + "_i"] = n
-    await advance(cq.message.chat_id, context, cq.from_user)
 
 
-async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    st = context.user_data
-    msg = update.effective_message
-    if "i" not in st or st["i"] < 0:
-        await msg.reply_text("Anketani boshlash uchun /start ni bosing.")
-        return
-    q = QUESTIONS[st["i"]]
-    if q["type"] == "choice":
-        await msg.reply_text("Iltimos, savol ostidagi tugma orqali variantni tanlang.")
-        return
-    text = (msg.text or "").strip()
-    digits = re.sub(r"\D", "", text)
-    if q["type"] == "number" and not digits:
-        await msg.reply_text("Iltimos, raqam kiriting.")
-        return
-    if q["key"] == "phone" and not 9 <= len(digits) <= 12:
-        await msg.reply_text("Raqam noto'g'ri. Masalan: +998 90 123 45 67")
-        return
-    if q["key"] == "age" and not 14 <= int(digits[:3]) <= 80:
-        await msg.reply_text("Yoshni to'g'ri kiriting.")
-        return
-    st["answers"][q["key"]] = text[:1500]
-    await advance(update.effective_chat.id, context, update.effective_user)
-
-
-# ---------------------------------------------------------------- rekruter tomoni
+# ---------------------------------------------------------------- Rekruter tomoni
 async def send_profile(bot, chat_id, cid):
     row = store.get(cid)
     if not row:
@@ -354,19 +292,23 @@ def main():
     store.init()
     persistence = PicklePersistence(filepath=os.environ.get("STATE_PATH", "state.pkl"))
     app = Application.builder().token(TOKEN).persistence(persistence).build()
+    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("anketa", anketa))
-    app.add_handler(CommandHandler("orqaga", back))
     app.add_handler(CommandHandler("reyting", reyting))
     app.add_handler(CommandHandler("songgi", songgi))
     app.add_handler(CommandHandler("stat", stat))
     app.add_handler(CommandHandler("csv", csv_export))
     app.add_handler(CommandHandler("nomzod", nomzod))
     app.add_handler(CommandHandler("holat", holat))
+    
+    # Обработка данных, прилетающих из Mini App через tg.sendData()
+    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_web_app_data))
+    
     app.add_handler(MessageHandler(filters.Regex(r"^/n_\d+"), open_profile))
     app.add_handler(CallbackQueryHandler(on_button))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
     app.add_error_handler(on_error)
+    
     app.run_polling()
 
 
