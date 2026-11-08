@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffc800">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Texnomart - Sotuvchi-maslahatchi anketasi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ==================== STYLES & TEXNOMART THEME ==================== */
+:root {
+  --brand-yellow: #ffc800;
+  --brand-yellow-hover: #e6b400;
+  --dark-ink: #1c1c1e;
+  --dark-soft: #2c2c2e;
+  --paper: #ffffff;
+  --surface: #f7f7f9;
+  --surface-border: #e2e2e8;
+  --text-primary: #1c1c1e;
+  --text-secondary: #55555c;
+  --text-muted: #8e8e93;
+  --danger: #e53935;
+  --font-body: 'Montserrat', system-ui, -apple-system, sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--paper);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.app {
+  max-width: 440px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==================== HEADER ==================== */
+header.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 12px;
+}
+
+.logo {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: -0.04em;
+  color: var(--dark-ink);
+  background: var(--brand-yellow);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+.logo span.asterisk {
+  color: var(--dark-ink);
+  margin-left: 1px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.step-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--surface);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--surface-border);
+}
+
+.bar {
+  height: 5px;
+  background: var(--surface);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--brand-yellow);
+  border-radius: 10px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== MAIN CONTENT ==================== */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+section.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+h1 {
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--dark-ink);
+}
+
+h2 {
+  font-weight: 800;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--dark-ink);
+}
+
+p { margin: 0; }
+.lead { color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+
+.hero {
+  background: var(--brand-yellow);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero h1 { margin-top: 0; color: var(--dark-ink); }
+.hero p { margin-top: 6px; font-weight: 600; font-size: 14px; color: rgba(28, 28, 30, 0.85); }
+
+.block-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  margin-bottom: -4px;
+}
+
+label {
+  font-weight: 700;
+  font-size: 13px;
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+input[type=text], input[type=tel], input[type=number], textarea {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 16px;
+  border: 2px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  color: var(--dark-ink);
+  transition: all 0.2s ease;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--dark-ink);
+  box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.3);
+}
+
+.field { display: flex; flex-direction: column; gap: 4px; }
+.err { color: var(--danger); font-size: 12.5px; font-weight: 600; min-height: 18px; }
+
+.chips { display: grid; gap: 8px; }
+.chip {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--surface-border);
+  background: var(--paper);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip:active { transform: scale(0.98); }
+.chip[aria-pressed=true] {
+  border-color: var(--dark-ink);
+  background: var(--brand-yellow);
+  color: var(--dark-ink);
+}
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 15px;
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--dark-ink);
+  color: var(--paper);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:active { transform: scale(0.98); }
+.btn.yellow { background: var(--brand-yellow); color: var(--dark-ink); }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.actions { margin-top: auto; padding-top: 12px; display: grid; gap: 10px; }
+
+.done { text-align: center; align-items: center; justify-content: center; gap: 16px; margin: auto 0; }
+.badge {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--brand-yellow);
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+}
+.badge svg { width: 40px; height: 40px; }
+
+.summary {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.summary b { font-weight: 800; color: var(--dark-ink); }
+.summary span { color: var(--text-secondary); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+@media (prefers-reduced-motion: reduce) {
+  section.screen { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="logo">texnomart<span class="asterisk">*</span></div>
+    <div class="step-label" id="stepLabel"></div>
+  </header>
+  <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ==================== CONFIG & QUESTIONS (из scoring.py) ==================== */
+var CONFIG = {
+  endpoint: "https://script.google.com/macros/s/AKfycbxi_IqP7-ENv2zxPtdjLJpumJEcDOSMWhbGgefKAmrrZGNjlZaDoKUiNufYy5gJJaa3Mw/exec",
+  job: "Sotuvchi-konsultant",
+  company: "Texnomart"
+};
+
+var QUESTIONS = [
+  // Блок 1
+  { key: "fio", block: "1/5 · Tanishuv va ish shartlari", type: "text", text: "Ismingiz va familiyangiz? (F.I.Sh.)", placeholder: "Jasur Rahimov" },
+  { key: "age", type: "number", text: "Yoshingiz nechada?", placeholder: "22" },
+  { key: "phone", type: "tel", text: "Bog'lanish uchun telefon raqamingiz", placeholder: "+998 90 123 45 67" },
+  { key: "district", type: "text", text: "Qaysi tuman yoki shaharda yashaysiz? Mo'ljalni ham yozing.", placeholder: "Toshkent sh., Chilonzor" },
+  { key: "commute", type: "choice", text: "Do'konga yetib borish uchun qancha vaqt ketadi?", options: ["30 daqiqagacha", "30-60 daqiqa", "60 daqiqadan ko'p"] },
+  { key: "lang", type: "choice", text: "O'zbek va rus tillarini qanday bilasiz?", options: ["Ikkala tilni erkin bilaman", "Bittasini erkin, ikkinchisini suhbat darajasida", "Faqat bitta tilni erkin bilaman"] },
+  { key: "schedule", type: "choice", text: "Ish tartibi: haftada 6 kun ish, 1 kun dam. Smenalar suzuvchi: 1-smena 09:00-18:00, 2-smena 13:00-22:00. Dam olish va bayram kunlari ham grafik bo'yicha ishlanadi. Sizga mos keladimi?", options: ["Ha, mos keladi", "Mos, lekin barcha dam olish kunlari emas", "Boshqa grafik kerak (2/2, 5/2, yarim kun)"] },
+  { key: "evening", type: "choice", text: "2-smena soat 22:00 gacha davom etadi. Kechqurun uyga qaytish sizga muammo bo'lmaydimi?", options: ["Muammo emas", "Qiyin, lekin hal qilsam bo'ladi", "Kechki smenada ishlay olmayman"] },
+  { key: "training", type: "choice", text: "Ishni boshlashdan oldin 14 kunlik o'qish bor (kompaniya hisobidan, ustoz bilan). Unda to'liq qatnasha olasizmi?", options: ["Ha, to'liq qatnashaman", "Ba'zi kunlari kela olmayman", "Yo'q, o'qishga vaqtim yo'q"] },
+  { key: "start", type: "choice", text: "Qachon ishga chiqa olasiz?", options: ["Darhol", "1-2 hafta ichida", "2 haftadan keyin"] },
+  { key: "income", type: "choice", text: "Oylik daromad bo'yicha kutganingiz qancha?", options: ["3 mln so'mgacha", "3-5 mln so'm", "5-8 mln so'm", "8 mln so'mdan yuqori"] },
+  { key: "kpi", type: "choice", text: "Daromadning bir qismi KPI (sotuv rejasi) bo'yicha bonusga bog'liq. Bu sizga qanday?", options: ["Yoqadi, ko'proq sotsam, ko'proq topaman", "Maqbul, lekin qat'iy oylik ham muhim", "Faqat qat'iy oylik istayman"] },
+  { key: "workload", type: "choice", text: "Ish hajmi katta: mijozlarga xizmat, tovarni joylashtirish, kassa, inventarizatsiya, tozalik. Shunday hajm sizga to'g'ri keladimi?", options: ["Ha, ko'p ishlashga tayyorman", "Tayyorman, lekin sharoit va yordam muhim", "Menga qiyin bo'ladi"] },
+  { key: "change", type: "choice", text: "Do'konda o'zgarishlar tez-tez bo'ladi: yangi aksiyalar, tovarlar, jarayonlar, smenalar. Siz bunga qanday qaraysiz?", options: ["Tez moslashaman, yangilikni yoqtiraman", "Moslashaman, lekin vaqt kerak", "O'zgarishlar menga yoqmaydi"] },
+
+  // Блок 2
+  { key: "exp", block: "2/5 · Tajriba va ketish sabablari", type: "choice", text: "Savdo sohasidagi tajribangiz?", options: ["Tajriba yo'q", "1 yilgacha", "1-3 yil", "3 yildan ortiq"] },
+  { key: "tech_exp", type: "choice", text: "Maishiy texnika yoki elektronika sotish tajribangiz bo'lganmi?", options: ["Ha", "Yo'q"] },
+  { key: "jobs_year", type: "choice", text: "So'nggi 1 yilda nechta ish joyida ishlagansiz?", options: ["0-1", "2", "3 va undan ko'p"] },
+  { key: "last_job", type: "text", text: "So'nggi ish joyingiz haqida yozing: kompaniya, lavozim, qancha ishlagansiz, nima bilan shug'ullangansiz. Ishlamagan bo'lsangiz, «ishlamaganman» deb yozing.", placeholder: "Masalan: Texnomart, sotuvchi, 1 yil..." },
+  { key: "reason", type: "choice", text: "So'nggi ish joyidan ketishingizning (yoki ketmoqchi bo'lishingizning) asosiy sababi?", options: ["O'sish, boshqa ish formati", "Ko'chish, o'qish, oila", "Grafik mos kelmadi", "Kam to'lashdi, kechiktirishdi", "Rahbar yoki jamoa bilan nizo", "Jarimalar, bosim", "Qisqartirishdi, do'kon yopildi", "Bu birinchi ish joyim", "Boshqa"] },
+  { key: "reason_text", type: "text", text: "Bir-ikki gap bilan yozing: aynan nima bo'lgan va o'sha joyda nimani o'zgartirgan bo'lardingiz?", placeholder: "Izoh yozing..." },
+  { key: "reference", type: "choice", text: "Sobiq rahbaringizga tavsiya uchun qo'ng'iroq qilsak bo'ladimi?", options: ["Ha, kontakt beraman", "Yo'q", "Tegishli emas, tajriba yo'q"] },
+
+  // Блок 3
+  { key: "calc_change", block: "3/5 · Hisob va sotuv ko'nikmalari", type: "number", text: "1-masala. Xarid 3 740 000 so'm, mijoz 5 000 000 so'm berdi. Qaytim qancha (so'mda)?", placeholder: "Masalan: 1260000" },
+  { key: "calc_discount", type: "number", text: "2-masala. Televizor 4 800 000 so'm turadi, chegirma 10%. Mijoz qancha to'laydi (so'mda)?", placeholder: "Masalan: 4320000" },
+  { key: "needs", type: "text", text: "Mijoz oilasi uchun muzlatgich tanlayapti. Eng to'g'ri modelni topish uchun unga qanday savollar berasiz? Kamida 3 ta savol yozing.", placeholder: "Savollaringizni yozing..." },
+  { key: "objection", type: "text", text: "Mijoz muzlatgich oldida: «Qimmat ekan, o'ylab ko'raman» dedi. Siz nima deb javob berasiz? Mijozga aytadigan gapingizni yozing.", placeholder: "Javobingizni yozing..." },
+
+  // Блок 4
+  { key: "conflict", block: "4/5 · Vaziyatli savollar", type: "text", text: "Mijoz sotib olgan texnikasi bilan qaytib keldi va norozi: «U nosoz, siz meni aldadingiz!» Qadamma-qadam nima qilasiz?", placeholder: "Harakatlaringizni yozing..." },
+  { key: "sjt_customer", type: "choice", text: "Vaziyat: mijoz arzon telefon so'rayapti. Sizda bonusi yuqori bo'lgan qimmatroq model ham bor. Nima qilasiz?", options: ["Eng qimmat modelni tavsiya qilaman: bonusim ko'proq bo'ladi", "Mijoz byudjetiga mos modelni ko'rsataman va ustunliklarini tushuntiraman", "Ikkala variantni ko'rsataman, tanlovni mijozga qoldiraman", "Mijoz nima so'rasa, shuni beraman, ortiqcha gapirmayman"] },
+  { key: "sjt_team", type: "choice", text: "Vaziyat: kassada navbat uzayib ketdi, hamkasbingiz yolg'iz qoldi, sizda esa hozir mijoz yo'q. Nima qilasiz?", options: ["Mijozim yo'q, demak bu mening ishim emas", "Darhol yordamga boraman: kassaga o'taman yoki mijozlarni boshqa kassaga yo'naltiraman", "Faqat so'rashsa yordam beraman", "Rahbarga xabar beraman va o'z joyimda qolaman"] },
+  { key: "sjt_learn", type: "choice", text: "Vaziyat: do'konga yangi model keldi, siz uning xususiyatlarini bilmaysiz, mijoz esa so'rayapti. Nima qilasiz?", options: ["Taxminan o'zim o'ylab javob beraman", "Ko'rsatma va ustozdan o'rganaman, smenadan oldin modelni ko'rib chiqaman", "Hamkasbdan so'rayman, keyin o'zim ham o'qib chiqaman", "Mijozga «bilmayman» deb, boshqa xodimga yo'naltiraman"] },
+  { key: "sjt_stress", type: "choice", text: "Vaziyat: soat 19:00, do'konda mijozlar ko'p, kassa ishlamay qoldi, rahbar hozir yo'q. Nima qilasiz?", options: ["Hech narsa qilmayman, rahbar kelishini kutaman", "Mijozlarni ogohlantiraman, rahbar yoki texnik xodimni chaqiraman, mijozlarni boshqa kassaga yo'naltiraman", "Xotirjam turaman va mijozlardan biroz kutishni so'rayman", "Mijozlarga «kassa buzilgan, men aybdor emasman» deyman"] },
+  { key: "late", type: "choice", text: "Smenaga kechikayotganingizni tushundingiz. Qanday harakat qilasiz?", options: ["Oldindan rahbarga xabar beraman va imkon qadar tez yetib boraman", "Qachon yetsam, o'shanda kelaman, hamkasblarga yozaman", "Joyida tushuntiraman", "Bu qo'rqinchli emas, do'konga zarar yo'q"] },
+
+  // Блок 5
+  { key: "motive", block: "5/5 · Motivatsiya", type: "choice", text: "Ishda siz uchun eng muhimi nima?", options: ["Daromad va sotuvdan foiz", "O'qish va karyera o'sishi", "Barqarorlik va rasmiy ish haqi", "Qulay grafik", "Hozircha boshqa ish qidiryapman, bu vaqtinchalik"] }
+];
+
+/* ==================== STATE ==================== */
+var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+
+var state = { index: 0, answers: {} };
+var main = document.getElementById("main");
+
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+
+function updateProgress() {
+  var total = QUESTIONS.length;
+  var current = state.index + 1;
+  var pct = Math.round((state.index / total) * 100);
+  document.getElementById("barFill").style.width = pct + "%";
+  document.getElementById("stepLabel").textContent = current + " / " + total;
+}
+
+function renderQuestion() {
+  main.innerHTML = "";
+  if (state.index >= QUESTIONS.length) {
+    renderDoneScreen();
+    return;
+  }
+
+  updateProgress();
+  var q = QUESTIONS[state.index];
+  var s = document.createElement("section");
+  s.className = "screen";
+
+  var html = "";
+  if (q.block) {
+    html += '<div class="block-title">' + esc(q.block) + '</div>';
+  }
+  html += '<h2>' + esc(q.text) + '</h2>';
+
+  if (q.type === "choice") {
+    html += '<div class="chips" id="opts"></div>';
+    html += '<div class="err" id="err"></div>';
+    html += '<div class="actions"><button class="btn yellow" id="next" disabled>Keyingisi</button></div>';
+  } else {
+    var inputType = q.type === "number" ? "number" : (q.type === "tel" ? "tel" : "text");
+    var val = state.answers[q.key] || "";
+    if (q.type === "text" && q.key !== "fio" && q.key !== "district" && q.key !== "phone") {
+      html += '<div class="field"><textarea id="f-val" placeholder="' + esc(q.placeholder || "") + '">' + esc(val) + '</textarea><div class="err" id="err"></div></div>';
+    } else {
+      html += '<div class="field"><input id="f-val" type="' + inputType + '" placeholder="' + esc(q.placeholder || "") + '" value="' + esc(val) + '"><div class="err" id="err"></div></div>';
+    }
+    html += '<div class="actions"><button class="btn yellow" id="next">Keyingisi</button></div>';
+  }
+
+  s.innerHTML = html;
+  main.appendChild(s);
+
+  if (q.type === "choice") {
+    var optsBox = s.querySelector("#opts");
+    var nextBtn = s.querySelector("#next");
+    var selectedOpt = state.answers[q.key];
+
+    q.options.forEach(function (optText, idx) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "chip";
+      btn.textContent = optText;
+      var isPressed = (selectedOpt === optText);
+      btn.setAttribute("aria-pressed", String(isPressed));
+      if (isPressed) nextBtn.disabled = false;
+
+      btn.onclick = function () {
+        optsBox.querySelectorAll(".chip").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+        state.answers[q.key] = optText;
+        state.answers[q.key + "_i"] = idx;
+        nextBtn.disabled = false;
+        s.querySelector("#err").textContent = "";
+      };
+      optsBox.appendChild(btn);
+    });
+
+    nextBtn.onclick = function () {
+      if (!state.answers[q.key]) {
+        s.querySelector("#err").textContent = "Iltimos, javobni tanlang.";
+        return;
+      }
+      state.index++;
+      renderQuestion();
+    };
+  } else {
+    var nextBtn = s.querySelector("#next");
+    var inputEl = s.querySelector("#f-val");
+    if (inputEl) inputEl.focus();
+
+    nextBtn.onclick = function () {
+      var val = inputEl.value.trim();
+      var errEl = s.querySelector("#err");
+      errEl.textContent = "";
+
+      if (!val && q.key !== "last_job") {
+        errEl.textContent = "Iltimos, maydonni to'ldiring.";
+        return;
+      }
+      if (q.key === "phone" && val.replace(/\D/g, "").length < 9) {
+        errEl.textContent = "Telefon raqami noto'g'ri.";
+        return;
+      }
+
+      state.answers[q.key] = val;
+      state.index++;
+      renderQuestion();
+    };
+  }
+  window.scrollTo(0, 0);
+}
+
+function renderWelcome() {
+  document.getElementById("barFill").style.width = "0%";
+  document.getElementById("stepLabel").textContent = "Kirish";
+  var s = document.createElement("section");
+  s.className = "screen";
+  s.innerHTML = 
+    '<div class="hero"><h1>Texnomart jamoasiga xush kelibsiz!</h1><p>Sotuvchi-maslahatchi lavozimi uchun anketa.</p></div>' +
+    '<p class="lead">Ushbu anketa orqali siz o\'z ko\'nikmalaringizni namoyish etasiz. Savollarga diqqat bilan va to\'g\'ri javob bering.</p>' +
+    '<div class="actions"><button class="btn yellow" id="startBtn">Anketani boshlash</button></div>';
+  main.innerHTML = "";
+  main.appendChild(s);
+  s.querySelector("#startBtn").onclick = function () {
+    state.index = 0;
+    renderQuestion();
+  };
+}
+
+function payload() {
+  if (!state.id) state.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return {
+    id: state.id,
+    job: CONFIG.job,
+    name: state.answers["fio"] || "",
+    age: state.answers["age"] || "",
+    city: state.answers["district"] || "",
+    phone: state.answers["phone"] || "",
+    answers: state.answers
+  };
+}
+
+function submitData() {
+  var data = payload();
+  if (CONFIG.endpoint) {
+    var body = JSON.stringify(data);
+    var headers = { "Content-Type": "text/plain;charset=utf-8" };
+    return fetch(CONFIG.endpoint, { method: "POST", headers: headers, body: body })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { return !!(j && j.ok); })
+      .catch(function () {
+        return fetch(CONFIG.endpoint, { method: "POST", mode: "no-cors", headers: headers, body: body })
+          .then(function () { return true; }, function () { return false; });
+      });
+  }
+  if (tg && typeof tg.sendData === "function") {
+    try { tg.sendData(JSON.stringify(data)); } catch (e) {}
+  }
+  return Promise.resolve(true);
+}
+
+function renderDoneScreen() {
+  document.getElementById("barFill").style.width = "100%";
+  document.getElementById("stepLabel").textContent = "";
+  
+  var firstName = (state.answers["fio"] || "Nomzod").split(" ")[0];
+  var s = document.createElement("section");
+  s.className = "screen";
+  s.innerHTML = 
+    '<div class="done">' +
+    '<div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>' +
+    '<h2>Rahmat, ' + esc(firstName) + '!</h2>' +
+    '<p class="lead">Anketangiz muvaffaqiyatli qabul qilindi. Tez orada HR-mutaxassisimiz siz bilan bog\'lanadi.</p>' +
+    '<div class="summary">' +
+      '<span>Lavozim</span><b>Sotuvchi-maslahatchi</b>' +
+      '<span style="margin-top:6px">F.I.Sh.</span><b>' + esc(state.answers["fio"] || "—") + '</b>' +
+      '<span style="margin-top:6px">Telefon</span><b>' + esc(state.answers["phone"] || "—") + '</b>' +
+    '</div>' +
+    '</div>';
+  main.innerHTML = "";
+  main.appendChild(s);
+
+  submitData();
+}
+
+renderWelcome();
+</script>
+</body>
+</html>
