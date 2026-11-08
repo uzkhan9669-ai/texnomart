@@ -1,0 +1,6 @@
+   .env
+   *.env
+   *.db
+   *.pkl
+   *.csv
+   __pycache__/
