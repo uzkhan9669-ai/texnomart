@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffc800">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Texnomart Ish - Mini App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ==================== STYLES & TEXNOMART THEME ==================== */
+:root {
+  --brand-yellow: #ffc800;
+  --brand-yellow-hover: #e6b400;
+  --dark-ink: #1c1c1e;
+  --dark-soft: #2c2c2e;
+  --paper: #ffffff;
+  --surface: #f7f7f9;
+  --surface-border: #e2e2e8;
+  --text-primary: #1c1c1e;
+  --text-secondary: #55555c;
+  --text-muted: #8e8e93;
+  --danger: #e53935;
+  --font-body: 'Montserrat', system-ui, -apple-system, sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--paper);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.app {
+  max-width: 440px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==================== HEADER ==================== */
+header.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 12px;
+}
+
+.logo {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: -0.04em;
+  color: var(--dark-ink);
+  background: var(--brand-yellow);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+.logo span.asterisk {
+  color: var(--dark-ink);
+  margin-left: 1px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.step-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--surface);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--surface-border);
+}
+
+.bar {
+  height: 5px;
+  background: var(--surface);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--brand-yellow);
+  border-radius: 10px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== MAIN CONTENT ==================== */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+section.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+h1 {
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--dark-ink);
+}
+
+h2 {
+  font-weight: 800;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--dark-ink);
+}
+
+p { margin: 0; }
+.lead { color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+
+.hero {
+  background: var(--brand-yellow);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero h1 { margin-top: 0; color: var(--dark-ink); }
+.hero p { margin-top: 6px; font-weight: 600; font-size: 14px; color: rgba(28, 28, 30, 0.85); }
+
+.video-box {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+
+.video-box video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 12px 6px;
+  text-align: center;
+}
+.stat b {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--dark-ink);
+}
+.stat span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.points { display: grid; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.points li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--surface);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.points li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-yellow);
+  box-shadow: 0 0 0 3px var(--dark-ink);
+  flex-shrink: 0;
+}
+
+label {
+  font-weight: 700;
+  font-size: 12.5px;
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+input[type=text], input[type=tel], input[type=number], select {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 16px;
+  border: 2px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  color: var(--dark-ink);
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--dark-ink);
+  box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.3);
+}
+
+.field { display: block; }
+[hidden] { display: none !important; }
+.err { color: var(--danger); font-size: 12.5px; font-weight: 600; min-height: 18px; margin-top: 4px; }
+
+.chips { display: grid; gap: 8px; }
+.chip, .opt, .slot {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--surface-border);
+  background: var(--paper);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip:active, .opt:active, .slot:active {
+  transform: scale(0.98);
+}
+
+.chip[aria-pressed=true], .slot[aria-pressed=true], .opt.picked {
+  border-color: var(--dark-ink);
+  background: var(--brand-yellow);
+  color: var(--dark-ink);
+}
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 15px;
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--dark-ink);
+  color: var(--paper);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:active { transform: scale(0.98); }
+.btn.yellow { background: var(--brand-yellow); color: var(--dark-ink); }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.actions { margin-top: auto; padding-top: 12px; display: grid; gap: 10px; }
+.note { font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.4; }
+
+.timer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.timer .t {
+  font-weight: 800;
+  font-size: 16px;
+  background: var(--dark-ink);
+  color: var(--paper);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+}
+.timer .t.low { background: var(--danger); }
+
+.qtext { font-size: 16.5px; font-weight: 700; line-height: 1.35; color: var(--dark-ink); }
+.qimg { width: 100%; border-radius: var(--radius-md); overflow: hidden; background: #fff; border: 1px solid var(--surface-border); margin: 6px 0 10px; display: flex; justify-content: center; align-items: center; padding: 10px; }
+.qimg svg { max-width: 100%; height: auto; max-height: 220px; }
+.opts { display: grid; gap: 8px; }
+
+.done { text-align: center; align-items: center; justify-content: center; gap: 16px; margin: auto 0; }
+.badge {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--brand-yellow);
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+}
+.badge svg { width: 40px; height: 40px; }
+
+.summary {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.summary b { font-weight: 800; color: var(--dark-ink); }
+.summary span { color: var(--text-secondary); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+/* MISSION & VALUES */
+.mission-box {
+  background: rgba(255, 200, 0, 0.15);
+  border-left: 4px solid var(--brand-yellow);
+  padding: 12px 14px;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+.mission-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.mission-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--dark-ink);
+  line-height: 1.35;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.value-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.value-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand-yellow);
+  color: var(--dark-ink);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  font-weight: 800;
+}
+.value-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--dark-ink);
+  line-height: 1.25;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  section.screen { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="logo">texnomart<span class="asterisk">*</span></div>
+    <div class="step-label" id="stepLabel"></div>
+  </header>
+  <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ==================== CONFIG ==================== */
+var CONFIG = {
+  testMinutes: 20,
+  endpoint: "https://script.google.com/macros/s/AKfycbxi_IqP7-ENv2zxPtdjLJpumJEcDOSMWhbGgefKAmrrZGNjlZaDoKUiNufYy5gJJaa3Mw/exec",
+  company: { year: "2008", stores: "40+", staff: "1000+" },
+  youtubeId: "38avT0aFCs8",
+  jobs: [
+    "Sotuvchi-maslahatchi",
+    "Kassir",
+    "Haydovchi-ekspeditor",
+    "Yukchi (Грузчик)",
+    "Farrosh (Уборщица)"
+  ],
+  timeSlots: ["10:00 - 12:00", "14:00 - 17:00"]
+};
+
+/* ==================== TEST QUESTIONS ==================== */
+var QUESTIONS_SELLER = [
+  ["Tasavvur qiling, savdo zaliga mijoz kirdi. Harakatlaringiz?", ["Unga e'tibor bermaganday ko'rsataman", "Salomlashaman va yordam taklif qilaman", "Uning o'zi murojaat qilishini kutaman"], 1],
+  ["Olma belgisi bor brend qanday nomlanadi?", ["Xiaomi", "Samsung", "Apple", "HONOR"], 2],
+  ["Bir metrda necha santimetr bor?", ["10 sm", "100 sm", "1000 sm"], 1],
+  ["Mijoz mahsulot haqida so'radi, lekin siz uning xususiyatlarini bilmaysiz. Nima qilasiz?", ["O'ylab topaman", "«Bilmayman» deyman", "«Biroz kutib turing, ma'lumotni aniqlab beraman» deyman"], 2],
+  ["Ortiqcha so'zni toping:", ["Noutbuk", "Mikroto'lqinli pech", "Muzlatgich", "Kir yuvish mashinasi"], 0],
+  ["To'g'ri ketma-ketlikni toping:\n3 – 6 – 12 – 24 – ?", ["28", "30", "48", "36"], 2],
+  ["1 900 000 so'mdan 10% chegirma qilganda qancha qoladi?", ["320 000 so'm", "1 710 000 so'm", "2 090 000 so'm", "3 200 000 so'm"], 1],
+  ["Qaysi biri mahsulot tavsifiga mos kelmaydi?\nTavsif: Televizor 55 dyuym, kafolat 2 yil, rangi qora, Smart-TV bor, HDMI — 3 ta port", ["Kafolat 2 yil", "HDMI — 2 ta port", "Rangi qora", "Smart-TV bor"], 1],
+  ["Qaysi so'z ortiqcha:", ["Mashina", "Velosiped", "Samokat", "Karavot"], 3],
+  ["Mijoz: «Sizlarda qimmat!» deydi. Qanday javob berasiz?", ["«Unda boshqa do'konga boring»", "«Biz eng yaxshi narx va sifat munosabatini taklif qilamiz»", "«Ha, qimmat»"], 1]
+];
+
+var QUESTIONS_CASHIER = [
+  [
+    "Agar 5 ta mushuk 5 daqiqada 5 ta sichqonni tutsa, 1 ta mushuk 1 ta sichqonni tutishi uchun qancha vaqt ketadi?",
+    ["1 daqiqa", "2 daqiqa", "3 daqiqa", "5 daqiqa"],
+    3,
+    '<svg viewBox="0 0 300 160" width="100%" height="160" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="160" rx="16" fill="#A3D900"/><path d="M40 30 Q150 10 260 30 Q280 80 260 130 Q150 150 40 130 Q20 80 40 30 Z" fill="#FFF" opacity="0.9"/><text x="150" y="50" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e" text-anchor="middle">Masala</text><text x="150" y="72" font-family="Montserrat" font-size="10" fill="#333" text-anchor="middle">Agar 5 ta mushuk 5 daqiqada 5 ta sichqonni tutsa,</text><text x="150" y="86" font-family="Montserrat" font-size="10" fill="#333" text-anchor="middle">1 ta mushuk 1 ta sichqonni tutishga</text><text x="150" y="100" font-family="Montserrat" font-size="10" fill="#333" text-anchor="middle">qancha vaqt sarflaydi?</text><path d="M130 130 C130 115 140 110 150 110 C160 110 170 115 170 130 Z" fill="#D2B48C"/><polygon points="150,110 165,120 155,130 140,128" fill="#FFC800"/><circle cx="160" cy="116" r="1.5" fill="#C79200"/><circle cx="150" cy="122" r="1.5" fill="#C79200"/><ellipse cx="120" cy="125" rx="12" ry="8" fill="#A0A0A0"/><circle cx="112" cy="120" r="5" fill="#A0A0A0"/><ellipse cx="110" cy="118" rx="2" ry="3" fill="#FFB6C1"/><path d="M130 127 C138 128 142 135 145 135" stroke="#A0A0A0" stroke-width="2" fill="none"/></svg>'
+  ],
+  [
+    "Matndan nusxa olish (копировать) uchun qaysi klaviatura tugmalaridan foydalaniladi?",
+    ["Ctrl + V", "Ctrl + C"],
+    1
+  ],
+  [
+    "Bitta sumka 300 000 so'm edi. Ikki kundan keyin u 20% ga qimmatlashdi, bir haftadan keyin esa 10% ga arzonlashdi. Hozir sumka qancha turadi?",
+    ["324 000 so'm", "270 000 so'm", "330 000 so'm"],
+    0
+  ],
+  [
+    "Barcha matnni ikki tugma yordamida qanday belgilash (выделить) mumkin?",
+    ["Bu mumkin emas", "Ctrl + A tugmalari orqali", "Alt + chap/o'ng strelka tugmalari orqali"],
+    1
+  ],
+  [
+    "Ochiq oynalar o'rtasida tezkor o'tish uchun qanday klaviatura tugmalaridan foydalaniladi?",
+    ["Alt + F4", "Shift + Alt", "Alt + Tab"],
+    2
+  ],
+  [
+    "Do'konda aksiya o'tkazilmoqda: har uchinchi mahsulot bepul. Mijoz jami 9 ta bir xil mahsulot oladi (sovg'alar ham shuning ichida). 1 dona mahsulot narxi 150 000 so'm. Mijoz qancha to'laydi?",
+    ["1 350 000 so'm", "900 000 so'm", "750 000 so'm", "1 050 000 so'm"],
+    1
+  ],
+  [
+    "Xaridor do'kondan 700 000 so'mlik va 300 000 so'mlik 2 ta tovar oladi. Xaridor bir tovarga chegirma so'radi, menejer esa umumiy summa 800 500 so'm bo'lishi uchun bitta tovarga chegirma berishni aytdi. Qanday chegirma foizini qo'llaysiz?",
+    ["700 000 so'mlik tovarga 27,8% chegirma beraman", "300 000 so'mlik tovarga 64,8% chegirma beraman", "700 000 so'mlik tovarga 28,5% chegirma beraman"],
+    2
+  ],
+  [
+    "So'roq belgisi (?) o'rnida qaysi raqam bo'lishi kerak?",
+    ["6", "4", "2"],
+    0,
+    '<svg viewBox="0 0 280 230" width="100%" height="210" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="80" r="40" stroke="#00A0E9" stroke-width="4" fill="none"/><circle cx="140" cy="80" r="40" stroke="#E6007E" stroke-width="4" fill="none"/><circle cx="180" cy="80" r="40" stroke="#FFC800" stroke-width="4" fill="none"/><circle cx="100" cy="130" r="40" stroke="#8DC63F" stroke-width="4" fill="none"/><circle cx="140" cy="140" r="40" stroke="#00A0E9" stroke-width="4" fill="none"/><circle cx="180" cy="130" r="40" stroke="#E6007E" stroke-width="4" fill="none"/><circle cx="140" cy="100" r="40" stroke="#8DC63F" stroke-width="4" fill="none"/><text x="80" y="75" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e">7</text><text x="110" y="75" font-family="Montserrat" font-weight="800" font-size="15" fill="#1c1c1e">10</text><text x="150" y="75" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e">6</text><text x="195" y="75" font-family="Montserrat" font-weight="800" font-size="20" fill="#E6007E">?</text><text x="90" y="105" font-family="Montserrat" font-weight="800" font-size="15" fill="#1c1c1e">4</text><text x="117" y="100" font-family="Montserrat" font-weight="800" font-size="13" fill="#1c1c1e">1</text><text x="140" y="93" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">3</text><text x="160" y="100" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">6</text><text x="172" y="107" font-family="Montserrat" font-weight="800" font-size="15" fill="#1c1c1e">4</text><text x="190" y="105" font-family="Montserrat" font-weight="800" font-size="15" fill="#1c1c1e">7</text><text x="70" y="125" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e">12</text><text x="100" y="130" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">6</text><text x="122" y="125" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">2</text><text x="138" y="115" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">2</text><text x="152" y="125" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">3</text><text x="168" y="130" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">5</text><text x="210" y="125" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e">6</text><text x="100" y="160" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e">6</text><text x="130" y="142" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">3</text><text x="150" y="142" font-family="Montserrat" font-weight="800" font-size="14" fill="#1c1c1e">1</text><text x="126" y="160" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e">8</text><text x="145" y="160" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e">13</text><text x="175" y="160" font-family="Montserrat" font-weight="800" font-size="16" fill="#1c1c1e">3</text></svg>'
+  ],
+  [
+    "Misha kecha 17 yoshda edi, kelasi yili u 20 yoshga to'ladi. Bu mantiqan mumkinmi?",
+    ["Yo'q", "Ha"],
+    1,
+    '<svg viewBox="0 0 260 160" width="100%" height="150" xmlns="http://www.w3.org/2000/svg"><rect width="260" height="160" rx="14" fill="#A3D900"/><path d="M30 40 Q70 20 110 40 Q120 70 100 80 Q50 90 30 40 Z" fill="#FFF"/><ellipse cx="150" cy="60" rx="16" ry="20" fill="#F3A17E"/><path d="M130 50 C140 30 170 30 175 55 Z" fill="#E53935"/><circle cx="178" cy="58" r="4" fill="#E53935"/><path d="M140 80 L160 80 L165 120 L135 120 Z" fill="#FF7043"/><path d="M135 120 L145 120 L145 145 L130 145 Z" fill="#5C6BC0"/><path d="M155 120 L165 120 L170 145 L155 145 Z" fill="#5C6BC0"/><ellipse cx="150" cy="147" rx="30" ry="5" fill="#1c1c1e"/><circle cx="130" cy="151" r="3" fill="#BBB"/><circle cx="170" cy="151" r="3" fill="#BBB"/></svg>'
+  ],
+  [
+    "Bu rasmda kim sartarosh emas?",
+    ["Malla sochli yigit", "Qora sochli yigit"],
+    0,
+    '<svg viewBox="0 0 280 130" width="100%" height="130" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="130" rx="12" fill="#00B4D8"/><text x="140" y="20" font-family="Montserrat" font-weight="800" font-size="13" fill="#FFF" text-anchor="middle">Bu yerda kim sartarosh emas?</text><rect x="10" y="28" width="125" height="95" rx="8" fill="#FFF" opacity="0.2"/><rect x="145" y="28" width="125" height="95" rx="8" fill="#FFF" opacity="0.2"/><circle cx="50" cy="55" r="12" fill="#FFD166"/><path d="M40 70 L60 70 L60 110 L40 110 Z" fill="#EF476F"/><circle cx="85" cy="70" r="10" fill="#E76F51"/><path d="M45 50 Q55 35 65 50" stroke="#FFD166" stroke-width="4" fill="none"/><circle cx="215" cy="55" r="12" fill="#264653"/><path d="M205 70 L225 70 L225 110 L205 110 Z" fill="#EF476F"/><circle cx="175" cy="70" r="10" fill="#E76F51"/></svg>'
+  ],
+  [
+    "Tirik qolish uchun qaysi eshikni tanlash kerak?\n1-eshik ortida qotil bor.\n2-eshik ortida 1 yildan beri ovqat yemagan arslon bor.\n3-eshik ortida yong'in bor.",
+    ["3-eshik", "2-eshik", "1-eshik"],
+    1,
+    '<svg viewBox="0 0 270 140" width="100%" height="130" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="10" width="75" height="120" rx="6" fill="#48CAE4"/><rect x="20" y="45" width="55" height="25" fill="#FFC800"/><text x="47" y="62" font-family="Montserrat" font-weight="800" font-size="10" fill="#1c1c1e" text-anchor="middle">Qotil</text><text x="47" y="100" font-family="Montserrat" font-weight="800" font-size="22" fill="#FFF" text-anchor="middle">1</text><rect x="97" y="10" width="75" height="120" rx="6" fill="#0077B6"/><rect x="107" y="45" width="55" height="25" fill="#FFC800"/><text x="134" y="62" font-family="Montserrat" font-weight="800" font-size="9" fill="#1c1c1e" text-anchor="middle">Sher, 1 yil</text><text x="134" y="100" font-family="Montserrat" font-weight="800" font-size="22" fill="#FFF" text-anchor="middle">2</text><rect x="185" y="10" width="75" height="120" rx="6" fill="#E63946"/><rect x="195" y="45" width="55" height="25" fill="#FFC800"/><text x="222" y="62" font-family="Montserrat" font-weight="800" font-size="10" fill="#1c1c1e" text-anchor="middle">Yong&#39;in</text><text x="222" y="100" font-family="Montserrat" font-weight="800" font-size="22" fill="#FFF" text-anchor="middle">3</text></svg>'
+  ],
+  [
+    "2 + 2 * 2 = ? Natija qancha bo'ladi?",
+    ["8", "6"],
+    1
+  ],
+  [
+    "20 + 20 / 5 = ? Natija qancha bo'ladi?",
+    ["24", "8"],
+    0
+  ],
+  [
+    "30 - 16 / 2 = ? Natija qancha bo'ladi?",
+    ["22", "7"],
+    0
+  ]
+];
+
+/* ==================== STATE ==================== */
+var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+
+var STEPS = ["welcome", "about", "job", "form", "test-intro", "test", "slot", "done"];
+var state = { step: 0, job: "", name: "", age: "", city: "", phone: "", exp: "", expPlace: "", q: 0, score: 0, deadline: 0, slot: "", timerId: null };
+var activeQuestions = [];
+var main = document.getElementById("main");
+
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+function val(v) { return v ? esc(v) : "—"; }
+
+// +998XXXXXXXXX ko'rinishiga keltiradi; noto'g'ri bo'lsa "" qaytaradi
+function normPhone(raw) {
+  var d = String(raw).replace(/\D/g, "");
+  if (d.length === 10 && d.charAt(0) === "0") d = d.slice(1);
+  if (d.length === 9) d = "998" + d;
+  return /^998\d{9}$/.test(d) ? "+" + d : "";
+}
+
+function go(name) {
+  state.step = STEPS.indexOf(name);
+  var screens = { welcome: renderWelcome, about: renderAbout, job: renderJobSelect, form: renderForm, "test-intro": renderTestIntro, test: renderTest, slot: renderSlot, done: renderDone };
+  main.innerHTML = "";
+  screens[name]();
+  var pct = Math.round(state.step / (STEPS.length - 1) * 100);
+  document.getElementById("barFill").style.width = pct + "%";
+  document.getElementById("stepLabel").textContent = name === "done" ? "" : (state.step + 1) + " / " + STEPS.length;
+  window.scrollTo(0, 0);
+}
+function screen(html) { var s = document.createElement("section"); s.className = "screen"; s.innerHTML = html; main.appendChild(s); return s; }
+
+/* ==================== SCREENS ==================== */
+function renderWelcome() {
+  // Встраиваем Vimeo с автозапуском
+  var videoHtml = '<div class="video-box" style="aspect-ratio:16/9; position:relative; overflow:hidden;">' +
+      '<iframe src="https://player.vimeo.com/video/1242479452?autoplay=1&muted=1&loop=1&autopause=0&controls=1" ' +
+      'style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" ' +
+      'allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>' +
+    '</div>';
+
+  var s = screen(
+    '<div class="hero"><h1>Texnomart jamoasiga xush kelibsiz!</h1><p>Bo\'sh ish o\'rinlari uchun qisqa anketa va test.</p></div>' +
+    videoHtml +
+    '<p class="lead">Kompaniyamiz bilan tanishing, anketani to\'ldiring va suhbat uchun qulay vaqtni tanlang.</p>' +
+    '<div class="actions"><button class="btn yellow" id="next">Boshlash</button></div>');
+
+  s.querySelector("#next").onclick = function () { go("about"); };
+}
+
+function renderAbout() {
+  var c = CONFIG.company;
+  var s = screen(
+    '<h2>Texnomart haqida</h2>' +
+    '<div class="stats">' +
+      '<div class="stat"><b>' + val(c.year) + '</b><span>tashkil topgan</span></div>' +
+      '<div class="stat"><b>' + val(c.stores) + '</b><span>filiallar</span></div>' +
+      '<div class="stat"><b>' + val(c.staff) + '</b><span>xodimlar</span></div>' +
+    '</div>' +
+    '<div class="mission-box">' +
+      '<div class="mission-title">Bizning missiyamiz</div>' +
+      '<div class="mission-text">Texnologiyalarni ommalashtirib, hamma uchun qulaylik taqdim etamiz.</div>' +
+    '</div>' +
+    '<div><label>Bizning qadriyatlarimiz</label>' +
+    '<div class="values-grid">' +
+      '<div class="value-card"><div class="value-icon">♥</div><div class="value-title">Samimiy g\'amxo\'rlik</div></div>' +
+      '<div class="value-card"><div class="value-icon">🎯</div><div class="value-title">Intizom va natija</div></div>' +
+      '<div class="value-card"><div class="value-icon">🛡</div><div class="value-title">Halollik va axloq</div></div>' +
+      '<div class="value-card"><div class="value-icon">👥</div><div class="value-title">Jamoaviylik</div></div>' +
+      '<div class="value-card"><div class="value-icon">⚖</div><div class="value-title">Adolatli qoidalar</div></div>' +
+      '<div class="value-card"><div class="value-icon">📈</div><div class="value-title">Rivojlanish</div></div>' +
+    '</div></div>' +
+    '<div class="actions"><button class="btn" id="next">Davom etish</button></div>');
+  s.querySelector("#next").onclick = function () { go("job"); };
+}
+
+function renderJobSelect() {
+  var s = screen(
+    '<h2>Vakansiyani tanlang</h2>' +
+    '<p class="lead">Qaysi lavozimda ishlamoqchisiz?</p>' +
+    '<div class="chips" id="jobBox"></div>' +
+    '<div class="err" id="e-job"></div>' +
+    '<div class="actions"><button class="btn yellow" id="next" disabled>Davom etish</button></div>');
+
+  var box = s.querySelector("#jobBox"), next = s.querySelector("#next");
+  CONFIG.jobs.forEach(function (j) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = j;
+    b.setAttribute("aria-pressed", String(state.job === j));
+    b.onclick = function () {
+      state.job = j;
+      box.querySelectorAll(".chip").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      next.disabled = false;
+      s.querySelector("#e-job").textContent = "";
+    };
+    box.appendChild(b);
+  });
+
+  if (state.job) next.disabled = false;
+
+  next.onclick = function () {
+    if (!state.job) { s.querySelector("#e-job").textContent = "Iltimos, vakansiyani tanlang."; return; }
+    go("form");
+  };
+}
+
+function renderForm() {
+  var s = screen(
+    '<h2>Shaxsiy ma\'lumotlar</h2>' +
+    '<div class="field"><label for="f-name">Ism va familiya</label><input id="f-name" type="text" placeholder="Jasur Rahimov" value="' + esc(state.name) + '"><div class="err" id="e-name"></div></div>' +
+    '<div class="field"><label for="f-age">Yoshingiz</label><input id="f-age" type="number" inputmode="numeric" placeholder="22" min="16" max="70" value="' + esc(state.age) + '"><div class="err" id="e-age"></div></div>' +
+    '<div class="field"><label for="f-city">Yashash shahri / tuman</label><input id="f-city" type="text" placeholder="Toshkent sh." value="' + esc(state.city) + '"><div class="err" id="e-city"></div></div>' +
+    '<div class="field"><label for="f-phone">Telefon raqami</label><input id="f-phone" type="tel" inputmode="tel" placeholder="+998 90 123 45 67" value="' + esc(state.phone) + '"><div class="err" id="e-phone"></div></div>' +
+    '<div class="field"><label>Sotuvda ish tajribangiz bormi?</label><div class="chips">' +
+      '<button type="button" class="chip" data-exp="Ha" aria-pressed="' + (state.exp === "Ha") + '">Ha</button>' +
+      '<button type="button" class="chip" data-exp="Yo\'q" aria-pressed="' + (state.exp === "Yo'q") + '">Yo\'q, birinchi tajribam</button></div><div class="err" id="e-exp"></div></div>' +
+    '<div class="field" id="place-wrap" ' + (state.exp === "Ha" ? "" : "hidden") + '><label for="f-place">Qayerda va qancha ishlagansiz?</label><input id="f-place" type="text" value="' + esc(state.expPlace) + '"></div>' +
+    '<div class="actions"><button class="btn" id="next">Davom etish</button></div>');
+
+  var chips = s.querySelectorAll(".chip");
+  chips.forEach(function (ch) {
+    ch.onclick = function () {
+      state.exp = ch.getAttribute("data-exp");
+      chips.forEach(function (x) { x.setAttribute("aria-pressed", String(x === ch)); });
+      s.querySelector("#place-wrap").hidden = state.exp !== "Ha";
+      s.querySelector("#e-exp").textContent = "";
+    };
+  });
+
+  s.querySelector("#next").onclick = function () {
+    var ok = true;
+    function bad(id, msg) { s.querySelector("#" + id).textContent = msg; ok = false; }
+    ["e-name", "e-age", "e-city", "e-phone", "e-exp"].forEach(function (id) { s.querySelector("#" + id).textContent = ""; });
+    var name = s.querySelector("#f-name").value.trim();
+    var age = parseInt(s.querySelector("#f-age").value, 10);
+    var city = s.querySelector("#f-city").value.trim();
+    var phone = s.querySelector("#f-phone").value.trim();
+    var phoneNorm = normPhone(phone);
+
+    if (name.length < 3) bad("e-name", "Ism va familiyani kiriting.");
+    if (!(age >= 16 && age <= 70)) bad("e-age", "To'g'ri yoshni kiriting (16-70).");
+    if (city.length < 2) bad("e-city", "Shaharni kiriting.");
+    if (!phoneNorm) bad("e-phone", "Raqam noto'g'ri. Masalan: +998 90 123 45 67");
+    if (!state.exp) bad("e-exp", "Tanlang.");
+    if (!ok) return;
+
+    state.name = name; state.age = age; state.city = city;
+    state.phone = phoneNorm;
+    state.expPlace = state.exp === "Ha" ? s.querySelector("#f-place").value.trim() : "";
+
+    if (state.job === "Sotuvchi-maslahatchi") {
+      activeQuestions = QUESTIONS_SELLER;
+      go("test-intro");
+    } else if (state.job === "Kassir") {
+      activeQuestions = QUESTIONS_CASHIER;
+      go("test-intro");
+    } else {
+      state.score = "Test topshirilmadi";
+      go("slot");
+    }
+  };
+}
+
+function renderTestIntro() {
+  var s = screen(
+    '<h2>Mantiqiy test</h2>' +
+    '<div class="stats" style="grid-template-columns:1fr 1fr">' +
+      '<div class="stat"><b>' + activeQuestions.length + '</b><span>savollar</span></div>' +
+      '<div class="stat"><b>' + CONFIG.testMinutes + ' daq</b><span>vaqt</span></div>' +
+    '</div>' +
+    '<p>Lavozim: <b>' + esc(state.job) + '</b>. Har bir savolga to\'g\'ri javobni tanlang. Tayyor bo\'lsangiz, tugmani bosing.</p>' +
+    '<div class="actions"><button class="btn yellow" id="next">Testni boshlash</button></div>');
+  s.querySelector("#next").onclick = function () {
+    state.q = 0; state.score = 0;
+    state.deadline = Date.now() + CONFIG.testMinutes * 60000;
+    go("test");
+  };
+}
+
+function fmt(ms) {
+  var t = Math.max(0, Math.ceil(ms / 1000));
+  return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0");
+}
+function stopTimer() { if (state.timerId) { clearInterval(state.timerId); state.timerId = null; } }
+
+function renderTest() {
+  main.innerHTML = "";
+  var q = activeQuestions[state.q];
+  var imgHtml = q[3] ? '<div class="qimg">' + q[3] + '</div>' : '';
+  var s = screen(
+    '<div class="timer"><span class="step-label">Savol ' + (state.q + 1) + ' / ' + activeQuestions.length + '</span><span class="t" id="clock">' + fmt(state.deadline - Date.now()) + '</span></div>' +
+    '<div class="qtext">' + esc(q[0]) + '</div>' +
+    imgHtml +
+    '<div class="opts" id="opts"></div>');
+  var box = s.querySelector("#opts");
+  q[1].forEach(function (text, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "opt"; b.textContent = text;
+    b.onclick = function () {
+      b.classList.add("picked");
+      box.querySelectorAll(".opt").forEach(function (x) { x.disabled = true; });
+      if (i === q[2]) state.score++;
+      setTimeout(function () {
+        if (STEPS[state.step] !== "test") return; // vaqt tugagan, slot ekraniga o'tilgan
+        state.q++;
+        if (state.q >= activeQuestions.length) { stopTimer(); go("slot"); } else { renderTest(); }
+      }, 200);
+    };
+    box.appendChild(b);
+  });
+  stopTimer();
+  var clock = s.querySelector("#clock");
+  state.timerId = setInterval(function () {
+    var left = state.deadline - Date.now();
+    clock.textContent = fmt(left);
+    clock.classList.toggle("low", left < 60000);
+    if (left <= 0) { stopTimer(); go("slot"); }
+  }, 500);
+}
+
+function renderSlot() {
+  var s = screen(
+    '<h2>Suhbat vaqtini tanlang</h2>' +
+    '<p class="lead">Sizga suhbat uchun qaysi vaqt oralig\'i qulay?</p>' +
+    '<div class="chips" id="slots"></div>' +
+    '<div class="err" id="e-send"></div>' +
+    '<div class="actions"><button class="btn yellow" id="next" disabled>Tasdiqlash</button></div>');
+  
+  var box = s.querySelector("#slots"), next = s.querySelector("#next");
+  CONFIG.timeSlots.forEach(function (slot) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "slot"; b.textContent = slot; b.setAttribute("aria-pressed", "false");
+    b.onclick = function () {
+      state.slot = slot;
+      box.querySelectorAll(".slot").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      next.disabled = false;
+    };
+    box.appendChild(b);
+  });
+
+  next.onclick = function () {
+    next.disabled = true; next.textContent = "Yuborilmoqda...";
+    s.querySelector("#e-send").textContent = "";
+    submit().then(function (ok) {
+      if (ok) { go("done"); return; }
+      next.disabled = false; next.textContent = "Qaytadan yuborish";
+      s.querySelector("#e-send").textContent = "Xatolik yuz berdi. Qaytadan urinib ko'ring.";
+    });
+  };
+}
+
+function payload() {
+  if (!state.id) state.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  var formattedScore = (typeof state.score === 'number') ? (state.score + "/" + activeQuestions.length) : state.score;
+  return {
+    id: state.id,
+    job: state.job,
+    name: state.name,
+    age: state.age,
+    city: state.city,
+    phone: state.phone,
+    exp: state.exp === "Ha" ? ("Ha: " + state.expPlace) : "Yo'q",
+    score: formattedScore,
+    slot: state.slot
+  };
+}
+
+function submit() {
+  var data = payload();
+  if (CONFIG.endpoint) {
+    var body = JSON.stringify(data);
+    var headers = { "Content-Type": "text/plain;charset=utf-8" };
+    return fetch(CONFIG.endpoint, { method: "POST", headers: headers, body: body })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { return !!(j && j.ok); })
+      .catch(function () {
+        return fetch(CONFIG.endpoint, { method: "POST", mode: "no-cors", headers: headers, body: body })
+          .then(function () { return true; }, function () { return false; });
+      });
+  }
+  if (tg && typeof tg.sendData === "function") {
+    try { tg.sendData(JSON.stringify(data)); } catch (e) {}
+  }
+  return Promise.resolve(true);
+}
+
+function renderDone() {
+  var s = screen(
+    '<div class="done">' +
+    '<div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>' +
+    '<h2>Rahmat, ' + esc(state.name.split(" ")[0]) + '!</h2>' +
+    '<p class="lead">Anketangiz qabul qilindi. Tez orada siz bilan bog\'lanamiz!</p>' +
+    '<div class="summary">' +
+      '<span>Lavozim</span><b>' + esc(state.job) + '</b>' +
+      '<span style="margin-top:6px">Suhbat vaqti</span><b>' + esc(state.slot) + '</b>' +
+      '<span style="margin-top:6px">Telefon</span><b>' + esc(state.phone) + '</b>' +
+    '</div>' +
+    '</div>');
+}
+
+go("welcome");
+</script>
+</body>
+</html>
