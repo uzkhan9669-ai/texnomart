@@ -1,1 +1,3 @@
-python-telegram-bot>=20
+aiogram>=3.0
+aiohttp
+requests
