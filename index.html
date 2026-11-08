@@ -485,14 +485,33 @@ function payload() {
 
 function submitData() {
   var data = payload();
+
+  // НАДЕЖНАЯ ОТПРАВКА ЧЕРЕЗ СКРЫТУЮ ФОРМУ И IFRAME (ОБХОД CORS В TELEGRAM)
   if (CONFIG.endpoint) {
-    fetch(CONFIG.endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    }).catch(function(err) {
-      console.error("Fetch error:", err);
-    });
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = CONFIG.endpoint;
+    form.target = 'hidden_iframe';
+    form.style.display = 'none';
+
+    var iframe = document.getElementById('hidden_iframe');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.name = 'hidden_iframe';
+      iframe.id = 'hidden_iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = JSON.stringify(data);
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   }
 }
 
