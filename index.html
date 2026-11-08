@@ -234,6 +234,24 @@ input:focus, textarea:focus {
   color: var(--dark-ink);
 }
 
+.file-box {
+  border: 2px dashed var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.file-preview {
+  max-width: 140px;
+  max-height: 140px;
+  border-radius: var(--radius-md);
+  margin: 10px auto 0;
+  display: block;
+  border: 3px solid var(--brand-yellow);
+}
+
 .btn {
   font-family: var(--font-body);
   font-weight: 800;
@@ -300,7 +318,7 @@ input:focus, textarea:focus {
 </div>
 
 <script>
-/* ==================== CONFIG & QUESTIONS (из scoring.py) ==================== */
+/* ==================== CONFIG & QUESTIONS ==================== */
 var CONFIG = {
   endpoint: "https://script.google.com/macros/s/AKfycbxi_IqP7-ENv2zxPtdjLJpumJEcDOSMWhbGgefKAmrrZGNjlZaDoKUiNufYy5gJJaa3Mw/exec",
   job: "Sotuvchi-konsultant",
@@ -311,6 +329,8 @@ var QUESTIONS = [
   // Блок 1
   { key: "fio", block: "1/5 · Tanishuv va ish shartlari", type: "text", text: "Ismingiz va familiyangiz? (F.I.Sh.)", placeholder: "Jasur Rahimov" },
   { key: "age", type: "number", text: "Yoshingiz nechada?", placeholder: "22" },
+  { key: "marital_status", type: "choice", text: "Oilaviy ahvolingiz?", options: ["Uylangan / Turmushga chiqqan", "Bo'ydoq / Turmush qurmagan"] },
+  { key: "photo", type: "photo", text: "Rasmga tushib (Selfi) yuklang" },
   { key: "phone", type: "tel", text: "Bog'lanish uchun telefon raqamingiz", placeholder: "+998 90 123 45 67" },
   { key: "district", type: "text", text: "Qaysi tuman yoki shaharda yashaysiz? Mo'ljalni ham yozing.", placeholder: "Toshkent sh., Chilonzor" },
   { key: "commute", type: "choice", text: "Do'konga yetib borish uchun qancha vaqt ketadi?", options: ["30 daqiqagacha", "30-60 daqiqa", "60 daqiqadan ko'p"] },
@@ -390,6 +410,15 @@ function renderQuestion() {
     html += '<div class="chips" id="opts"></div>';
     html += '<div class="err" id="err"></div>';
     html += '<div class="actions"><button class="btn yellow" id="next" disabled>Keyingisi</button></div>';
+  } else if (q.type === "photo") {
+    var hasPhoto = !!state.answers[q.key];
+    html += '<div class="file-box" onclick="document.getElementById(\'photoInput\').click()">';
+    html += '📷 <b>Selfi olish uchun bosing</b><br><span style="font-size:12px;color:var(--text-secondary)">Frontal kameradan rasmga tushing</span>';
+    html += '<input type="file" id="photoInput" accept="image/*" capture="user" style="display:none">';
+    html += '<img id="previewImg" class="file-preview" src="' + (state.answers[q.key] || '') + '" style="display:' + (hasPhoto ? 'block' : 'none') + '">';
+    html += '</div>';
+    html += '<div class="err" id="err"></div>';
+    html += '<div class="actions"><button class="btn yellow" id="next" ' + (hasPhoto ? '' : 'disabled') + '>Keyingisi</button></div>';
   } else {
     var inputType = q.type === "number" ? "number" : (q.type === "tel" ? "tel" : "text");
     var val = state.answers[q.key] || "";
@@ -432,6 +461,34 @@ function renderQuestion() {
     nextBtn.onclick = function () {
       if (!state.answers[q.key]) {
         s.querySelector("#err").textContent = "Iltimos, javobni tanlang.";
+        return;
+      }
+      state.index++;
+      renderQuestion();
+    };
+  } else if (q.type === "photo") {
+    var photoInput = s.querySelector("#photoInput");
+    var previewImg = s.querySelector("#previewImg");
+    var nextBtn = s.querySelector("#next");
+
+    photoInput.onchange = function (e) {
+      var file = e.target.files[0];
+      if (file) {
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          state.answers[q.key] = ev.target.result;
+          previewImg.src = ev.target.result;
+          previewImg.style.display = "block";
+          nextBtn.disabled = false;
+          s.querySelector("#err").textContent = "";
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    nextBtn.onclick = function () {
+      if (!state.answers[q.key]) {
+        s.querySelector("#err").textContent = "Iltimos, rasmga tushing yoki yuklang.";
         return;
       }
       state.index++;
@@ -487,7 +544,10 @@ function payload() {
     id: state.id,
     job: CONFIG.job,
     name: state.answers["fio"] || "",
+    fio: state.answers["fio"] || "",
     age: state.answers["age"] || "",
+    marital_status: state.answers["marital_status"] || "",
+    photo: state.answers["photo"] || "",
     city: state.answers["district"] || "",
     phone: state.answers["phone"] || "",
     answers: state.answers
@@ -496,21 +556,25 @@ function payload() {
 
 function submitData() {
   var data = payload();
+  
+  // 1. Отправляем в Telegram Bot через WebApp API (если открыто в Telegram)
+  if (tg && typeof tg.sendData === "function") {
+    try {
+      tg.sendData(JSON.stringify(data));
+    } catch (e) {
+      console.error("tg.sendData error:", e);
+    }
+  }
+
+  // 2. Отправляем в Google Таблицу через Apps Script
   if (CONFIG.endpoint) {
     var body = JSON.stringify(data);
     var headers = { "Content-Type": "text/plain;charset=utf-8" };
-    return fetch(CONFIG.endpoint, { method: "POST", headers: headers, body: body })
-      .then(function (r) { return r.json(); })
-      .then(function (j) { return !!(j && j.ok); })
+    fetch(CONFIG.endpoint, { method: "POST", headers: headers, body: body })
       .catch(function () {
-        return fetch(CONFIG.endpoint, { method: "POST", mode: "no-cors", headers: headers, body: body })
-          .then(function () { return true; }, function () { return false; });
+        fetch(CONFIG.endpoint, { method: "POST", mode: "no-cors", headers: headers, body: body });
       });
   }
-  if (tg && typeof tg.sendData === "function") {
-    try { tg.sendData(JSON.stringify(data)); } catch (e) {}
-  }
-  return Promise.resolve(true);
 }
 
 function renderDoneScreen() {
@@ -529,6 +593,7 @@ function renderDoneScreen() {
       '<span>Lavozim</span><b>Sotuvchi-maslahatchi</b>' +
       '<span style="margin-top:6px">F.I.Sh.</span><b>' + esc(state.answers["fio"] || "—") + '</b>' +
       '<span style="margin-top:6px">Telefon</span><b>' + esc(state.answers["phone"] || "—") + '</b>' +
+      '<span style="margin-top:6px">Oilaviy ahvoli</span><b>' + esc(state.answers["marital_status"] || "—") + '</b>' +
     '</div>' +
     '</div>';
   main.innerHTML = "";
