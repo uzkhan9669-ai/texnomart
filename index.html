@@ -252,16 +252,14 @@ input:focus, textarea:focus { outline: none; border-color: var(--dark-ink); box-
 </div>
 
 <script>
-/* ==================== CONFIG & QUESTIONS ==================== */
 var CONFIG = {
-  endpoint: "https://script.google.com/macros/s/AKfycbwWVllw2ORcJd-F0RwsM1Haq-S1Njhgn2GMFlO3iE-4nS8nBIq9K5_ZzO_UuA1u5M6VyA/exec",
+  endpoint: "https://texnomart-production.up.railway.app/", 
   secret: "texnomart2026",
   job: "Sotuvchi-konsultant",
   company: "Texnomart"
 };
 
 var QUESTIONS = [
-  // Блок 1
   { key: "fio", block: "1/5 · Tanishuv va ish shartlari", type: "text", text: "Ismingiz va familiyangiz? (F.I.Sh.)", placeholder: "Jasur Rahimov" },
   { key: "age", type: "number", text: "Yoshingiz nechada?", placeholder: "22" },
   { key: "marital_status", type: "choice", text: "Oilaviy ahvolingiz?", options: ["Uylangan / Turmushga chiqqan", "Bo'ydoq / Turmush qurmagan"] },
@@ -279,7 +277,6 @@ var QUESTIONS = [
   { key: "workload", type: "choice", text: "Ish hajmi katta: mijozlarga xizmat, tovarni joylashtirish, kassa, inventarizatsiya, tozalik. Shunday hajm sizga to'g'ri keladimi?", options: ["Ha, ko'p ishlashga tayyorman", "Tayyorman, lekin sharoit va yordam muhim", "Menga qiyin bo'ladi"] },
   { key: "change", type: "choice", text: "Do'konda o'zgarishlar tez-tez bo'ladi: yangi aksiyalar, tovarlar, jarayonlar, smenalar. Siz bunga qanday qaraysiz?", options: ["Tez moslashaman, yangilikni yoqtiraman", "Moslashaman, lekin vaqt kerak", "O'zgarishlar menga yoqmaydi"] },
 
-  // Блок 2
   { key: "exp", block: "2/5 · Tajriba va ketish sabablari", type: "choice", text: "Savdo sohasidagi tajribangiz?", options: ["Tajriba yo'q", "1 yilgacha", "1-3 yil", "3 yildan ortiq"] },
   { key: "tech_exp", type: "choice", text: "Maishiy texnika yoki elektronika sotish tajribangiz bo'lganmi?", options: ["Ha", "Yo'q"] },
   { key: "jobs_year", type: "choice", text: "So'nggi 1 yilda nechta ish joyida ishlagansiz?", options: ["0-1", "2", "3 va undan ko'p"] },
@@ -288,13 +285,11 @@ var QUESTIONS = [
   { key: "reason_text", type: "text", text: "Bir-ikki gap bilan yozing: aynan nima bo'lgan?", placeholder: "Izoh yozing..." },
   { key: "reference", type: "choice", text: "Sobiq rahbaringizga tavsiya uchun qo'ng'iroq qilsak bo'ladimi?", options: ["Ha, kontakt beraman", "Yo'q", "Tegishli emas, tajriba yo'q"] },
 
-  // Блок 3
   { key: "calc_change", block: "3/5 · Hisob va sotuv ko'nikmalari", type: "number", text: "1-masala. Xarid 3 740 000 so'm, mijoz 5 000 000 so'm berdi. Qaytim qancha?", placeholder: "1260000" },
   { key: "calc_discount", type: "number", text: "2-masala. Televizor 4 800 000 so'm, chegirma 10%. Mijoz qancha to'laydi?", placeholder: "4320000" },
   { key: "needs", type: "text", text: "Mijoz muzlatgich tanlayapti. Unga qanday savollar berasiz? (3 ta savol)", placeholder: "Savollaringizni yozing..." },
   { key: "objection", type: "text", text: "Mijoz: «Qimmat ekan, o'ylab ko'raman» dedi. Siz nima deb javob berasiz?", placeholder: "Javobingizni yozing..." },
 
-  // Блок 4
   { key: "conflict", block: "4/5 · Vaziyatli savollar", type: "text", text: "Mijoz sotib olgan texnikasi bilan qaytib keldi: «U nosoz, siz meni aldadingiz!» Nima qilasiz?", placeholder: "Harakatlaringizni yozing..." },
   { key: "sjt_customer", type: "choice", text: "Mijoz arzon telefon so'rayapti. Sizda bonusi yuqori qimmatroq model ham bor. Nima qilasiz?", options: ["Eng qimmat modelni tavsiya qilaman", "Mijoz byudjetiga mos modelni ko'rsataman", "Ikkala variantni ko'rsataman", "Faqat so'raganini beraman"] },
   { key: "sjt_team", type: "choice", text: "Kassada navbat uzaydi, hamkasbingiz yolg'iz, sizda mijoz yo'q. Nima qilasiz?", options: ["Mening ishim emas", "Darhol yordamga boraman", "So'rashsa yordam beraman", "Rahbarga xabar beraman"] },
@@ -302,7 +297,6 @@ var QUESTIONS = [
   { key: "sjt_stress", type: "choice", text: "Soat 19:00, mijozlar ko'p, kassa buzildi, rahbar yo'q. Nima qilasiz?", options: ["Rahbar kelishini kutaman", "Mijozlarni ogohlantiraman, texnik xodimni chaqiraman", "Xotirjam kutaman", "Mijozga e'tiroz bildiraman"] },
   { key: "late", type: "choice", text: "Smenaga kechikayotganingizni tushundingiz. Nima qilasiz?", options: ["Oldindan rahbarga xabar beraman va tez yetib boraman", "Qachon yetsam, o'shanda kelaman", "Joyida tushuntiraman", "Muammo emas"] },
 
-  // Блок 5
   { key: "motive", block: "5/5 · Motivatsiya", type: "choice", text: "Ishda siz uchun eng muhimi nima?", options: ["Daromad va sotuvdan foiz", "O'qish va karyera o'sishi", "Barqarorlik va rasmiy ish haqi", "Qulay grafik", "Vaqtinchalik ish"] }
 ];
 
@@ -491,42 +485,14 @@ function payload() {
 
 function submitData() {
   var data = payload();
-
-  // 1. Отправляем в Telegram Bot через WebApp API (если поддерживается)
-  if (tg && typeof tg.sendData === "function") {
-    try {
-      tg.sendData(JSON.stringify(data));
-    } catch (e) {
-      console.error("tg.sendData error:", e);
-    }
-  }
-
-  // 2. Надежная отправка в Google Таблицу через скрытую форму (обход CORS)
   if (CONFIG.endpoint) {
-    var form = document.createElement('form');
-    form.method = 'POST';
-    form.action = CONFIG.endpoint;
-    form.target = 'hidden_iframe';
-    form.style.display = 'none';
-
-    var iframe = document.getElementById('hidden_iframe');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.name = 'hidden_iframe';
-      iframe.id = 'hidden_iframe';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-
-    var input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'data';
-    input.value = JSON.stringify(data);
-    form.appendChild(input);
-
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+    fetch(CONFIG.endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    }).catch(function(err) {
+      console.error("Fetch error:", err);
+    });
   }
 }
 
