@@ -10,24 +10,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* ==================== STYLES & TEXNOMART THEME ==================== */
 :root {
   --brand-yellow: #ffc800;
   --brand-yellow-hover: #e6b400;
   --dark-ink: #1c1c1e;
-  --dark-soft: #2c2c2e;
   --paper: #ffffff;
   --surface: #f7f7f9;
   --surface-border: #e2e2e8;
   --text-primary: #1c1c1e;
   --text-secondary: #55555c;
-  --text-muted: #8e8e93;
   --danger: #e53935;
   --font-body: 'Montserrat', system-ui, -apple-system, sans-serif;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -59,7 +55,6 @@ body {
   flex-direction: column;
 }
 
-/* ==================== HEADER ==================== */
 header.top {
   display: flex;
   align-items: center;
@@ -69,10 +64,8 @@ header.top {
 }
 
 .logo {
-  font-family: var(--font-body);
   font-weight: 800;
   font-size: 21px;
-  letter-spacing: -0.04em;
   color: var(--dark-ink);
   background: var(--brand-yellow);
   padding: 5px 12px;
@@ -81,12 +74,7 @@ header.top {
   align-items: center;
   user-select: none;
 }
-.logo span.asterisk {
-  color: var(--dark-ink);
-  margin-left: 1px;
-  font-size: 22px;
-  line-height: 1;
-}
+.logo span.asterisk { color: var(--dark-ink); margin-left: 1px; font-size: 22px; }
 
 .step-label {
   font-size: 12px;
@@ -112,22 +100,17 @@ header.top {
   width: 0;
   background: var(--brand-yellow);
   border-radius: 10px;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.35s ease;
 }
 
-/* ==================== MAIN CONTENT ==================== */
-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
+main { flex: 1; display: flex; flex-direction: column; }
 
 section.screen {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  animation: fadeInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInRight 0.3s ease forwards;
 }
 
 @keyframes fadeInRight {
@@ -135,23 +118,13 @@ section.screen {
   to { opacity: 1; transform: translateX(0); }
 }
 
-h1 {
+h1, h2 {
   font-weight: 800;
-  font-size: 22px;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
   margin: 0;
   color: var(--dark-ink);
 }
-
-h2 {
-  font-weight: 800;
-  font-size: 19px;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-  margin: 0;
-  color: var(--dark-ink);
-}
+h1 { font-size: 22px; }
+h2 { font-size: 19px; }
 
 p { margin: 0; }
 .lead { color: var(--text-secondary); font-size: 14px; font-weight: 500; }
@@ -160,11 +133,8 @@ p { margin: 0; }
   background: var(--brand-yellow);
   border-radius: var(--radius-lg);
   padding: 20px 18px;
-  position: relative;
-  overflow: hidden;
 }
-
-.hero h1 { margin-top: 0; color: var(--dark-ink); }
+.hero h1 { color: var(--dark-ink); }
 .hero p { margin-top: 6px; font-weight: 600; font-size: 14px; color: rgba(28, 28, 30, 0.85); }
 
 .block-title {
@@ -174,15 +144,6 @@ p { margin: 0; }
   color: var(--text-secondary);
   letter-spacing: 0.05em;
   margin-bottom: -4px;
-}
-
-label {
-  font-weight: 700;
-  font-size: 13px;
-  display: block;
-  margin-bottom: 6px;
-  color: var(--text-primary);
-  line-height: 1.4;
 }
 
 input[type=text], input[type=tel], input[type=number], textarea {
@@ -195,19 +156,9 @@ input[type=text], input[type=tel], input[type=number], textarea {
   border-radius: var(--radius-md);
   background: var(--paper);
   color: var(--dark-ink);
-  transition: all 0.2s ease;
 }
-
-textarea {
-  resize: vertical;
-  min-height: 90px;
-}
-
-input:focus, textarea:focus {
-  outline: none;
-  border-color: var(--dark-ink);
-  box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.3);
-}
+textarea { resize: vertical; min-height: 90px; }
+input:focus, textarea:focus { outline: none; border-color: var(--dark-ink); box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.3); }
 
 .field { display: flex; flex-direction: column; gap: 4px; }
 .err { color: var(--danger); font-size: 12.5px; font-weight: 600; min-height: 18px; }
@@ -224,15 +175,8 @@ input:focus, textarea:focus {
   background: var(--paper);
   color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.15s ease;
 }
-
-.chip:active { transform: scale(0.98); }
-.chip[aria-pressed=true] {
-  border-color: var(--dark-ink);
-  background: var(--brand-yellow);
-  color: var(--dark-ink);
-}
+.chip[aria-pressed=true] { border-color: var(--dark-ink); background: var(--brand-yellow); color: var(--dark-ink); }
 
 .file-box {
   border: 2px dashed var(--surface-border);
@@ -242,7 +186,6 @@ input:focus, textarea:focus {
   background: var(--surface);
   cursor: pointer;
 }
-
 .file-preview {
   max-width: 140px;
   max-height: 140px;
@@ -250,6 +193,7 @@ input:focus, textarea:focus {
   margin: 10px auto 0;
   display: block;
   border: 3px solid var(--brand-yellow);
+  object-fit: cover;
 }
 
 .btn {
@@ -263,27 +207,22 @@ input:focus, textarea:focus {
   background: var(--dark-ink);
   color: var(--paper);
   cursor: pointer;
-  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
-
-.btn:active { transform: scale(0.98); }
 .btn.yellow { background: var(--brand-yellow); color: var(--dark-ink); }
-.btn[disabled] { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
 
 .actions { margin-top: auto; padding-top: 12px; display: grid; gap: 10px; }
 
 .done { text-align: center; align-items: center; justify-content: center; gap: 16px; margin: auto 0; }
 .badge {
-  width: 80px;
-  height: 80px;
+  width: 80px; height: 80px;
   border-radius: 50%;
   background: var(--brand-yellow);
-  display: grid;
-  place-items: center;
+  display: grid; place-items: center;
   margin: 0 auto;
 }
 .badge svg { width: 40px; height: 40px; }
@@ -295,16 +234,11 @@ input:focus, textarea:focus {
   padding: 14px 16px;
   width: 100%;
   text-align: left;
-  display: grid;
-  gap: 6px;
+  display: grid; gap: 6px;
   font-size: 14px;
 }
 .summary b { font-weight: 800; color: var(--dark-ink); }
 .summary span { color: var(--text-secondary); font-size: 11px; font-weight: 700; text-transform: uppercase; }
-
-@media (prefers-reduced-motion: reduce) {
-  section.screen { animation: none; }
-}
 </style>
 </head>
 <body>
@@ -320,7 +254,8 @@ input:focus, textarea:focus {
 <script>
 /* ==================== CONFIG & QUESTIONS ==================== */
 var CONFIG = {
-  endpoint: "https://script.google.com/macros/s/AKfycbxi_IqP7-ENv2zxPtdjLJpumJEcDOSMWhbGgefKAmrrZGNjlZaDoKUiNufYy5gJJaa3Mw/exec",
+  endpoint: "https://script.google.com/macros/s/AKfycbwWVllw2ORcJd-F0RwsM1Haq-S1Njhgn2GMFlO3iE-4nS8nBIq9K5_ZzO_UuA1u5M6VyA/exec",
+  secret: "texnomart2026",
   job: "Sotuvchi-konsultant",
   company: "Texnomart"
 };
@@ -348,30 +283,29 @@ var QUESTIONS = [
   { key: "exp", block: "2/5 · Tajriba va ketish sabablari", type: "choice", text: "Savdo sohasidagi tajribangiz?", options: ["Tajriba yo'q", "1 yilgacha", "1-3 yil", "3 yildan ortiq"] },
   { key: "tech_exp", type: "choice", text: "Maishiy texnika yoki elektronika sotish tajribangiz bo'lganmi?", options: ["Ha", "Yo'q"] },
   { key: "jobs_year", type: "choice", text: "So'nggi 1 yilda nechta ish joyida ishlagansiz?", options: ["0-1", "2", "3 va undan ko'p"] },
-  { key: "last_job", type: "text", text: "So'nggi ish joyingiz haqida yozing: kompaniya, lavozim, qancha ishlagansiz, nima bilan shug'ullangansiz. Ishlamagan bo'lsangiz, «ishlamaganman» deb yozing.", placeholder: "Masalan: Texnomart, sotuvchi, 1 yil..." },
-  { key: "reason", type: "choice", text: "So'nggi ish joyidan ketishingizning (yoki ketmoqchi bo'lishingizning) asosiy sababi?", options: ["O'sish, boshqa ish formati", "Ko'chish, o'qish, oila", "Grafik mos kelmadi", "Kam to'lashdi, kechiktirishdi", "Rahbar yoki jamoa bilan nizo", "Jarimalar, bosim", "Qisqartirishdi, do'kon yopildi", "Bu birinchi ish joyim", "Boshqa"] },
-  { key: "reason_text", type: "text", text: "Bir-ikki gap bilan yozing: aynan nima bo'lgan va o'sha joyda nimani o'zgartirgan bo'lardingiz?", placeholder: "Izoh yozing..." },
+  { key: "last_job", type: "text", text: "So'nggi ish joyingiz haqida yozing: kompaniya, lavozim, qancha ishlagansiz, nima bilan shug'ullangansiz.", placeholder: "Masalan: Texnomart, sotuvchi, 1 yil..." },
+  { key: "reason", type: "choice", text: "So'nggi ish joyidan ketishingizning asosiy sababi?", options: ["O'sish, boshqa ish formati", "Ko'chish, o'qish, oila", "Grafik mos kelmadi", "Kam to'lashdi, kechiktirishdi", "Rahbar yoki jamoa bilan nizo", "Jarimalar, bosim", "Qisqartirishdi, do'kon yopildi", "Bu birinchi ish joyim", "Boshqa"] },
+  { key: "reason_text", type: "text", text: "Bir-ikki gap bilan yozing: aynan nima bo'lgan?", placeholder: "Izoh yozing..." },
   { key: "reference", type: "choice", text: "Sobiq rahbaringizga tavsiya uchun qo'ng'iroq qilsak bo'ladimi?", options: ["Ha, kontakt beraman", "Yo'q", "Tegishli emas, tajriba yo'q"] },
 
   // Блок 3
-  { key: "calc_change", block: "3/5 · Hisob va sotuv ko'nikmalari", type: "number", text: "1-masala. Xarid 3 740 000 so'm, mijoz 5 000 000 so'm berdi. Qaytim qancha (so'mda)?", placeholder: "Masalan: 1260000" },
-  { key: "calc_discount", type: "number", text: "2-masala. Televizor 4 800 000 so'm turadi, chegirma 10%. Mijoz qancha to'laydi (so'mda)?", placeholder: "Masalan: 4320000" },
-  { key: "needs", type: "text", text: "Mijoz oilasi uchun muzlatgich tanlayapti. Eng to'g'ri modelni topish uchun unga qanday savollar berasiz? Kamida 3 ta savol yozing.", placeholder: "Savollaringizni yozing..." },
-  { key: "objection", type: "text", text: "Mijoz muzlatgich oldida: «Qimmat ekan, o'ylab ko'raman» dedi. Siz nima deb javob berasiz? Mijozga aytadigan gapingizni yozing.", placeholder: "Javobingizni yozing..." },
+  { key: "calc_change", block: "3/5 · Hisob va sotuv ko'nikmalari", type: "number", text: "1-masala. Xarid 3 740 000 so'm, mijoz 5 000 000 so'm berdi. Qaytim qancha?", placeholder: "1260000" },
+  { key: "calc_discount", type: "number", text: "2-masala. Televizor 4 800 000 so'm, chegirma 10%. Mijoz qancha to'laydi?", placeholder: "4320000" },
+  { key: "needs", type: "text", text: "Mijoz muzlatgich tanlayapti. Unga qanday savollar berasiz? (3 ta savol)", placeholder: "Savollaringizni yozing..." },
+  { key: "objection", type: "text", text: "Mijoz: «Qimmat ekan, o'ylab ko'raman» dedi. Siz nima deb javob berasiz?", placeholder: "Javobingizni yozing..." },
 
   // Блок 4
-  { key: "conflict", block: "4/5 · Vaziyatli savollar", type: "text", text: "Mijoz sotib olgan texnikasi bilan qaytib keldi va norozi: «U nosoz, siz meni aldadingiz!» Qadamma-qadam nima qilasiz?", placeholder: "Harakatlaringizni yozing..." },
-  { key: "sjt_customer", type: "choice", text: "Vaziyat: mijoz arzon telefon so'rayapti. Sizda bonusi yuqori bo'lgan qimmatroq model ham bor. Nima qilasiz?", options: ["Eng qimmat modelni tavsiya qilaman: bonusim ko'proq bo'ladi", "Mijoz byudjetiga mos modelni ko'rsataman va ustunliklarini tushuntiraman", "Ikkala variantni ko'rsataman, tanlovni mijozga qoldiraman", "Mijoz nima so'rasa, shuni beraman, ortiqcha gapirmayman"] },
-  { key: "sjt_team", type: "choice", text: "Vaziyat: kassada navbat uzayib ketdi, hamkasbingiz yolg'iz qoldi, sizda esa hozir mijoz yo'q. Nima qilasiz?", options: ["Mijozim yo'q, demak bu mening ishim emas", "Darhol yordamga boraman: kassaga o'taman yoki mijozlarni boshqa kassaga yo'naltiraman", "Faqat so'rashsa yordam beraman", "Rahbarga xabar beraman va o'z joyimda qolaman"] },
-  { key: "sjt_learn", type: "choice", text: "Vaziyat: do'konga yangi model keldi, siz uning xususiyatlarini bilmaysiz, mijoz esa so'rayapti. Nima qilasiz?", options: ["Taxminan o'zim o'ylab javob beraman", "Ko'rsatma va ustozdan o'rganaman, smenadan oldin modelni ko'rib chiqaman", "Hamkasbdan so'rayman, keyin o'zim ham o'qib chiqaman", "Mijozga «bilmayman» deb, boshqa xodimga yo'naltiraman"] },
-  { key: "sjt_stress", type: "choice", text: "Vaziyat: soat 19:00, do'konda mijozlar ko'p, kassa ishlamay qoldi, rahbar hozir yo'q. Nima qilasiz?", options: ["Hech narsa qilmayman, rahbar kelishini kutaman", "Mijozlarni ogohlantiraman, rahbar yoki texnik xodimni chaqiraman, mijozlarni boshqa kassaga yo'naltiraman", "Xotirjam turaman va mijozlardan biroz kutishni so'rayman", "Mijozlarga «kassa buzilgan, men aybdor emasman» deyman"] },
-  { key: "late", type: "choice", text: "Smenaga kechikayotganingizni tushundingiz. Qanday harakat qilasiz?", options: ["Oldindan rahbarga xabar beraman va imkon qadar tez yetib boraman", "Qachon yetsam, o'shanda kelaman, hamkasblarga yozaman", "Joyida tushuntiraman", "Bu qo'rqinchli emas, do'konga zarar yo'q"] },
+  { key: "conflict", block: "4/5 · Vaziyatli savollar", type: "text", text: "Mijoz sotib olgan texnikasi bilan qaytib keldi: «U nosoz, siz meni aldadingiz!» Nima qilasiz?", placeholder: "Harakatlaringizni yozing..." },
+  { key: "sjt_customer", type: "choice", text: "Mijoz arzon telefon so'rayapti. Sizda bonusi yuqori qimmatroq model ham bor. Nima qilasiz?", options: ["Eng qimmat modelni tavsiya qilaman", "Mijoz byudjetiga mos modelni ko'rsataman", "Ikkala variantni ko'rsataman", "Faqat so'raganini beraman"] },
+  { key: "sjt_team", type: "choice", text: "Kassada navbat uzaydi, hamkasbingiz yolg'iz, sizda mijoz yo'q. Nima qilasiz?", options: ["Mening ishim emas", "Darhol yordamga boraman", "So'rashsa yordam beraman", "Rahbarga xabar beraman"] },
+  { key: "sjt_learn", type: "choice", text: "Yangi model keldi, xususiyatlarini bilmaysiz, mijoz so'rayapti. Nima qilasiz?", options: ["Taxminan javob beraman", "Ko'rsatmadan o'rganaman, o'qib chiqaman", "Hamkasbdan so'rayman", "Boshqa xodimga yo'naltiraman"] },
+  { key: "sjt_stress", type: "choice", text: "Soat 19:00, mijozlar ko'p, kassa buzildi, rahbar yo'q. Nima qilasiz?", options: ["Rahbar kelishini kutaman", "Mijozlarni ogohlantiraman, texnik xodimni chaqiraman", "Xotirjam kutaman", "Mijozga e'tiroz bildiraman"] },
+  { key: "late", type: "choice", text: "Smenaga kechikayotganingizni tushundingiz. Nima qilasiz?", options: ["Oldindan rahbarga xabar beraman va tez yetib boraman", "Qachon yetsam, o'shanda kelaman", "Joyida tushuntiraman", "Muammo emas"] },
 
   // Блок 5
-  { key: "motive", block: "5/5 · Motivatsiya", type: "choice", text: "Ishda siz uchun eng muhimi nima?", options: ["Daromad va sotuvdan foiz", "O'qish va karyera o'sishi", "Barqarorlik va rasmiy ish haqi", "Qulay grafik", "Hozircha boshqa ish qidiryapman, bu vaqtinchalik"] }
+  { key: "motive", block: "5/5 · Motivatsiya", type: "choice", text: "Ishda siz uchun eng muhimi nima?", options: ["Daromad va sotuvdan foiz", "O'qish va karyera o'sishi", "Barqarorlik va rasmiy ish haqi", "Qulay grafik", "Vaqtinchalik ish"] }
 ];
 
-/* ==================== STATE ==================== */
 var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
@@ -413,7 +347,7 @@ function renderQuestion() {
   } else if (q.type === "photo") {
     var hasPhoto = !!state.answers[q.key];
     html += '<div class="file-box" onclick="document.getElementById(\'photoInput\').click()">';
-    html += '📷 <b>Selfi olish uchun bosing</b><br><span style="font-size:12px;color:var(--text-secondary)">Frontal kameradan rasmga tushing</span>';
+    html += '📷 <b>Selfi olish uchun bosing</b><br><span style="font-size:12px;color:var(--text-secondary)">Kameradan rasmga tushing</span>';
     html += '<input type="file" id="photoInput" accept="image/*" capture="user" style="display:none">';
     html += '<img id="previewImg" class="file-preview" src="' + (state.answers[q.key] || '') + '" style="display:' + (hasPhoto ? 'block' : 'none') + '">';
     html += '</div>';
@@ -488,7 +422,7 @@ function renderQuestion() {
 
     nextBtn.onclick = function () {
       if (!state.answers[q.key]) {
-        s.querySelector("#err").textContent = "Iltimos, rasmga tushing yoki yuklang.";
+        s.querySelector("#err").textContent = "Iltimos, rasmga tushing.";
         return;
       }
       state.index++;
@@ -528,7 +462,7 @@ function renderWelcome() {
   s.className = "screen";
   s.innerHTML = 
     '<div class="hero"><h1>Texnomart jamoasiga xush kelibsiz!</h1><p>Sotuvchi-maslahatchi lavozimi uchun anketa.</p></div>' +
-    '<p class="lead">Ushbu anketa orqali siz o\'z ko\'nikmalaringizni namoyish etasiz. Savollarga diqqat bilan va to\'g\'ri javob bering.</p>' +
+    '<p class="lead">Ushbu anketa orqali siz o\'z ko\'nikmalaringizni namoyish etasiz. Savollarga diqqat bilan javob bering.</p>' +
     '<div class="actions"><button class="btn yellow" id="startBtn">Anketani boshlash</button></div>';
   main.innerHTML = "";
   main.appendChild(s);
@@ -541,6 +475,7 @@ function renderWelcome() {
 function payload() {
   if (!state.id) state.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   return {
+    secret: CONFIG.secret,
     id: state.id,
     job: CONFIG.job,
     name: state.answers["fio"] || "",
@@ -557,7 +492,7 @@ function payload() {
 function submitData() {
   var data = payload();
   
-  // 1. Отправляем в Telegram Bot через WebApp API (если открыто в Telegram)
+  // 1. Отправляем в Telegram Bot через WebApp API
   if (tg && typeof tg.sendData === "function") {
     try {
       tg.sendData(JSON.stringify(data));
