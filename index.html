@@ -491,8 +491,8 @@ function payload() {
 
 function submitData() {
   var data = payload();
-  
-  // 1. Отправляем в Telegram Bot через WebApp API
+
+  // 1. Отправляем в Telegram Bot через WebApp API (если поддерживается)
   if (tg && typeof tg.sendData === "function") {
     try {
       tg.sendData(JSON.stringify(data));
@@ -501,14 +501,32 @@ function submitData() {
     }
   }
 
-  // 2. Отправляем в Google Таблицу через Apps Script
+  // 2. Надежная отправка в Google Таблицу через скрытую форму (обход CORS)
   if (CONFIG.endpoint) {
-    var body = JSON.stringify(data);
-    var headers = { "Content-Type": "text/plain;charset=utf-8" };
-    fetch(CONFIG.endpoint, { method: "POST", headers: headers, body: body })
-      .catch(function () {
-        fetch(CONFIG.endpoint, { method: "POST", mode: "no-cors", headers: headers, body: body });
-      });
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = CONFIG.endpoint;
+    form.target = 'hidden_iframe';
+    form.style.display = 'none';
+
+    var iframe = document.getElementById('hidden_iframe');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.name = 'hidden_iframe';
+      iframe.id = 'hidden_iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = JSON.stringify(data);
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   }
 }
 
