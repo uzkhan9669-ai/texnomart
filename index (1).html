@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Texnomart — Sotuvchi-konsultant anketasi</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--brand-yellow:#ffc800;--brand-yellow-hover:#e6b400;--dark-ink:#1c1c1e;--dark-soft:#2c2c2e;--paper:#fff;--surface:#f7f7f9;--surface-border:#e2e2e8;--text-primary:#1c1c1e;--text-secondary:#55555c;--text-muted:#8e8e93;--danger:#e53935;--ok:#2e7d32;--font-body:'Montserrat',system-ui,-apple-system,sans-serif;--radius-sm:8px;--radius-md:14px;--radius-lg:20px;--shadow-sm:0 2px 8px rgba(0,0,0,.06)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--text-primary);font-family:var(--font-body);font-size:15px;line-height:1.45}
+.app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--dark-ink);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+header .logo{background:var(--brand-yellow);color:var(--dark-ink);font-weight:900;padding:4px 10px;border-radius:var(--radius-sm);letter-spacing:.5px}
+header .ttl{font-weight:600;font-size:13px;opacity:.9}
+main{flex:1;padding:18px 16px 110px}
+.hero{background:var(--brand-yellow);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+.hero h1{margin:0 0 6px;font-size:22px;font-weight:800}
+.hero p{margin:0;font-weight:500}
+.stats{display:flex;gap:8px;margin:0 0 16px}
+.stat{flex:1;background:var(--surface);border:1px solid var(--surface-border);border-radius:var(--radius-md);padding:10px;text-align:center}
+.stat b{display:block;font-size:18px;font-weight:800}.stat span{font-size:11px;color:var(--text-muted)}
+.card{background:var(--surface);border:1px solid var(--surface-border);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:14px;font-weight:700}
+.card ul{margin:0;padding-left:18px;color:var(--text-secondary);font-size:14px}
+.card li{margin:4px 0}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-secondary);margin:14px 0}
+.consent input{width:22px;height:22px;margin-top:1px;accent-color:var(--dark-ink);flex:none}
+.warn{background:#fff4e5;border:1px solid #ffc27a;color:#7a4a00;border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;font-size:13px}
+.progress{height:6px;background:var(--surface-border);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.progress>i{display:block;height:100%;width:0;background:var(--brand-yellow);transition:width .25s}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:14px}
+.block{font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.q{font-size:18px;font-weight:700;margin:0 0 16px}
+.opt{display:block;width:100%;text-align:left;background:var(--paper);border:2px solid var(--surface-border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;font:inherit;font-weight:500;color:var(--text-primary);cursor:pointer}
+.opt.sel{border-color:var(--brand-yellow);background:#fffbe6;font-weight:700}
+input[type=text],input[type=tel],input[type=number],textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:2px solid var(--surface-border);border-radius:var(--radius-md);background:var(--paper);color:var(--text-primary)}
+textarea{min-height:150px;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--brand-yellow)}
+.hint{font-size:12px;color:var(--text-muted);margin-top:6px}
+.err{color:var(--danger);font-size:13px;font-weight:600;margin-top:8px;min-height:18px}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--surface-border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;gap:10px;max-width:560px;margin:0 auto}
+.btn{flex:1;border:0;border-radius:var(--radius-md);padding:15px;font:inherit;font-weight:800;font-size:15px;cursor:pointer;background:var(--brand-yellow);color:var(--dark-ink)}
+.btn:active{background:var(--brand-yellow-hover)}
+.btn.sec{flex:0 0 36%;background:var(--surface);border:1px solid var(--surface-border);font-weight:600}
+.btn[disabled]{opacity:.5}
+.cam{background:var(--dark-ink);border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;position:relative}
+.cam video,.cam img{width:100%;height:100%;object-fit:cover}
+.cam video{transform:scaleX(-1)}
+.cam .ph{color:#aaa;text-align:center;padding:20px;font-size:14px}
+.row{display:flex;gap:10px;margin-top:12px}
+.row .btn{padding:12px;font-size:14px}
+.done{text-align:center;padding-top:40px}.done .tick{font-size:56px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+<header><span class="logo">TEXNOMART</span><span class="ttl">Sotuvchi-konsultant anketasi</span></header>
+<main id="main"></main>
+<div class="nav hidden" id="nav"><button class="btn sec" id="back">Orqaga</button><button class="btn" id="next">Davom etish</button></div>
+</div>
+<script>
+(function () {
+"use strict";
+var JOB = {"company": "Texnomart", "position": "Sotuvchi-konsultant", "training": "14 kunlik o'qish (kompaniya hisobidan)", "schedule": "6/1, suzuvchi smenalar: 1-smena 09:00-18:00, 2-smena 13:00-22:00", "income": "2 000 000 - 8 000 000 so'm (oylik + KPI bonus), oyiga 2 marta to'lanadi"};
+var QUESTIONS = [{"key": "fio", "block": "1/5 · Tanishuv va ish shartlari", "type": "text", "text": "Ismingiz va familiyangiz? (F.I.Sh.)"}, {"key": "age", "type": "number", "text": "Yoshingiz nechada?"}, {"key": "marital_status", "type": "choice", "text": "Oilaviy ahvolingiz?", "options": ["Uylangan / Turmushga chiqqan", "Bo'ydoq / Turmush qurmagan"]}, {"key": "phone", "type": "text", "text": "Bog'lanish uchun telefon raqamingiz (masalan, +998 90 123 45 67)"}, {"key": "district", "type": "text", "text": "Qaysi tuman yoki shaharda yashaysiz? Mo'ljalni ham yozing."}, {"key": "commute", "type": "choice", "text": "Do'konga yetib borish uchun qancha vaqt ketadi?", "options": ["30 daqiqagacha", "30-60 daqiqa", "60 daqiqadan ko'p"]}, {"key": "lang", "type": "choice", "text": "O'zbek va rus tillarini qanday bilasiz?", "options": ["Ikkala tilni erkin bilaman", "Bittasini erkin, ikkinchisini suhbat darajasida", "Faqat bitta tilni erkin bilaman"]}, {"key": "schedule", "type": "choice", "text": "Ish tartibi: haftada 6 kun ish, 1 kun dam. Smenalar suzuvchi: 1-smena 09:00-18:00, 2-smena 13:00-22:00. Dam olish va bayram kunlari ham grafik bo'yicha ishlanadi. Sizga mos keladimi?", "options": ["Ha, mos keladi", "Mos, lekin barcha dam olish kunlari emas", "Boshqa grafik kerak (2/2, 5/2, yarim kun)"]}, {"key": "evening", "type": "choice", "text": "2-smena soat 22:00 gacha davom etadi. Kechqurun uyga qaytish sizga muammo bo'lmaydimi?", "options": ["Muammo emas", "Qiyin, lekin hal qilsam bo'ladi", "Kechki smenada ishlay olmayman"]}, {"key": "training", "type": "choice", "text": "Ishni boshlashdan oldin 14 kunlik o'qish bor (kompaniya hisobidan, ustoz bilan). Unda to'liq qatnasha olasizmi?", "options": ["Ha, to'liq qatnashaman", "Ba'zi kunlari kela olmayman", "Yo'q, o'qishga vaqtim yo'q"]}, {"key": "start", "type": "choice", "text": "Qachon ishga chiqa olasiz?", "options": ["Darhol", "1-2 hafta ichida", "2 haftadan keyin"]}, {"key": "income", "type": "choice", "text": "Oylik daromad bo'yicha kutganingiz qancha?", "options": ["3 mln so'mgacha", "3-5 mln so'm", "5-8 mln so'm", "8 mln so'mdan yuqori"]}, {"key": "kpi", "type": "choice", "text": "Daromadning bir qismi KPI (sotuv rejasi) bo'yicha bonusga bog'liq. Bu sizga qanday?", "options": ["Yoqadi, ko'proq sotsam, ko'proq topaman", "Maqbul, lekin qat'iy oylik ham muhim", "Faqat qat'iy oylik istayman"]}, {"key": "workload", "type": "choice", "text": "Ish hajmi katta: mijozlarga xizmat, tovarni joylashtirish, kassa, inventarizatsiya, tozalik. Shunday hajm sizga to'g'ri keladimi?", "options": ["Ha, ko'p ishlashga tayyorman", "Tayyorman, lekin sharoit va yordam muhim", "Menga qiyin bo'ladi"]}, {"key": "change", "type": "choice", "text": "Do'konda o'zgarishlar tez-tez bo'ladi: yangi aksiyalar, tovarlar, jarayonlar, smenalar. Siz bunga qanday qaraysiz?", "options": ["Tez moslashaman, yangilikni yoqtiraman", "Moslashaman, lekin vaqt kerak", "O'zgarishlar menga yoqmaydi"]}, {"key": "exp", "block": "2/5 · Tajriba va ketish sabablari", "type": "choice", "text": "Savdo sohasidagi tajribangiz?", "options": ["Tajriba yo'q", "1 yilgacha", "1-3 yil", "3 yildan ortiq"]}, {"key": "tech_exp", "type": "choice", "text": "Maishiy texnika yoki elektronika sotish tajribangiz bo'lganmi?", "options": ["Ha", "Yo'q"]}, {"key": "jobs_year", "type": "choice", "text": "So'nggi 1 yilda nechta ish joyida ishlagansiz?", "options": ["0-1", "2", "3 va undan ko'p"]}, {"key": "last_job", "type": "text", "text": "So'nggi ish joyingiz haqida yozing: kompaniya, lavozim, qancha ishlagansiz, nima bilan shug'ullangansiz. Ishlamagan bo'lsangiz, «ishlamaganman» deb yozing."}, {"key": "reason", "type": "choice", "text": "So'nggi ish joyidan ketishingizning (yoki ketmoqchi bo'lishingizning) asosiy sababi?", "options": ["O'sish, boshqa ish formati", "Ko'chish, o'qish, oila", "Grafik mos kelmadi", "Kam to'lashdi, kechiktirishdi", "Rahbar yoki jamoa bilan nizo", "Jarimalar, bosim", "Qisqartirishdi, do'kon yopildi", "Bu birinchi ish joyim", "Boshqa"]}, {"key": "reason_text", "type": "text", "text": "Bir-ikki gap bilan yozing: aynan nima bo'lgan va o'sha joyda nimani o'zgartirgan bo'lardingiz?"}, {"key": "reference", "type": "choice", "text": "Sobiq rahbaringizga tavsiya uchun qo'ng'iroq qilsak bo'ladimi?", "options": ["Ha, kontakt beraman", "Yo'q", "Tegishli emas, tajriba yo'q"]}, {"key": "calc_change", "block": "3/5 · Hisob va sotuv ko'nikmalari", "type": "number", "text": "1-masala. Xarid 3 740 000 so'm, mijoz 5 000 000 so'm berdi. Qaytim qancha (so'mda)?"}, {"key": "calc_discount", "type": "number", "text": "2-masala. Televizor 4 800 000 so'm turadi, chegirma 10%. Mijoz qancha to'laydi (so'mda)?"}, {"key": "needs", "type": "text", "text": "Mijoz oilasi uchun muzlatgich tanlayapti. Eng to'g'ri modelni topish uchun unga qanday savollar berasiz? Kamida 3 ta savol yozing."}, {"key": "objection", "type": "text", "text": "Mijoz muzlatgich oldida: «Qimmat ekan, o'ylab ko'raman» dedi. Siz nima deb javob berasiz? Mijozga aytadigan gapingizni yozing."}, {"key": "conflict", "block": "4/5 · Vaziyatli savollar: mijoz, jamoa, bosim", "type": "text", "text": "Mijoz sotib olgan texnikasi bilan qaytib keldi va norozi: «U nosoz, siz meni aldadingiz!» Qadamma-qadam nima qilasiz?"}, {"key": "sjt_customer", "type": "choice", "text": "Vaziyat: mijoz arzon telefon so'rayapti. Sizda bonusi yuqori bo'lgan qimmatroq model ham bor. Nima qilasiz?", "options": ["Eng qimmat modelni tavsiya qilaman: bonusim ko'proq bo'ladi", "Mijoz byudjetiga mos modelni ko'rsataman va ustunliklarini tushuntiraman", "Ikkala variantni ko'rsataman, tanlovni mijozga qoldiraman", "Mijoz nima so'rasa, shuni beraman, ortiqcha gapirmayman"]}, {"key": "sjt_team", "type": "choice", "text": "Vaziyat: kassada navbat uzayib ketdi, hamkasbingiz yolg'iz qoldi, sizda esa hozir mijoz yo'q. Nima qilasiz?", "options": ["Mijozim yo'q, demak bu mening ishim emas", "Darhol yordamga boraman: kassaga o'taman yoki mijozlarni boshqa kassaga yo'naltiraman", "Faqat so'rashsa yordam beraman", "Rahbarga xabar beraman va o'z joyimda qolaman"]}, {"key": "sjt_learn", "type": "choice", "text": "Vaziyat: do'konga yangi model keldi, siz uning xususiyatlarini bilmaysiz, mijoz esa so'rayapti. Nima qilasiz?", "options": ["Taxminan o'zim o'ylab javob beraman", "Ko'rsatma va ustozdan o'rganaman, smenadan oldin modelni ko'rib chiqaman", "Hamkasbdan so'rayman, keyin o'zim ham o'qib chiqaman", "Mijozga «bilmayman» deb, boshqa xodimga yo'naltiraman"]}, {"key": "sjt_stress", "type": "choice", "text": "Vaziyat: soat 19:00, do'konda mijozlar ko'p, kassa ishlamay qoldi, rahbar hozir yo'q. Nima qilasiz?", "options": ["Hech narsa qilmayman, rahbar kelishini kutaman", "Mijozlarni ogohlantiraman, rahbar yoki texnik xodimni chaqiraman, mijozlarni boshqa kassaga yo'naltiraman", "Xotirjam turaman va mijozlardan biroz kutishni so'rayman", "Mijozlarga «kassa buzilgan, men aybdor emasman» deyman"]}, {"key": "late", "type": "choice", "text": "Smenaga kechikayotganingizni tushundingiz. Qanday harakat qilasiz?", "options": ["Oldindan rahbarga xabar beraman va imkon qadar tez yetib boraman", "Qachon yetsam, o'shanda kelaman, hamkasblarga yozaman", "Joyida tushuntiraman", "Bu qo'rqinchli emas, do'konga zarar yo'q"]}, {"key": "motive", "block": "5/5 · Motivatsiya", "type": "choice", "text": "Ishda siz uchun eng muhimi nima?", "options": ["Daromad va sotuvdan foiz", "O'qish va karyera o'sishi", "Barqarorlik va rasmiy ish haqi", "Qulay grafik", "Hozircha boshqa ish qidiryapman, bu vaqtinchalik"]}];
+var API_URL = "https://texnomart-production.up.railway.app/api/submit";
+var SLOTS = ["10:00 - 12:00", "14:00 - 17:00"];
+var PHOTO_AFTER = "marital_status";
+var DRAFT_KEY = "texnomart_anketa_v3";
+var tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { try { tg.ready(); tg.expand(); tg.enableClosingConfirmation(); } catch (e) {} }
+
+var STEPS = [];
+QUESTIONS.forEach(function (q) { STEPS.push({kind: "q", q: q}); if (q.key === PHOTO_AFTER) STEPS.push({kind: "photo"}); });
+STEPS.push({kind: "slot"});
+
+var main = document.getElementById("main"), nav = document.getElementById("nav");
+var nextBtn = document.getElementById("next"), backBtn = document.getElementById("back");
+var state = {i: -1, a: {}, slot: "", photo: "", sid: ""};
+var stream = null;
+
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function clear() { stopCam(); while (main.firstChild) main.removeChild(main.firstChild); }
+function newSid() { var s = ""; var c = "abcdefghijklmnopqrstuvwxyz0123456789"; for (var i = 0; i < 20; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
+function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({i: state.i, a: state.a, slot: state.slot, sid: state.sid})); } catch (e) {} }
+function loadDraft() { try { var d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); return d && d.a && d.i >= 0 ? d : null; } catch (e) { return null; } }
+function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+function normPhone(v) {
+  var d = String(v).replace(/\D/g, "");
+  if (d.length === 9) d = "998" + d;
+  if (d.length === 12 && d.indexOf("998") === 0) return "+" + d;
+  return "";
+}
+
+// ---------- welcome
+function welcome() {
+  state.i = -1; nav.classList.add("hidden"); clear();
+  var hero = el("div", "hero"); hero.appendChild(el("h1", null, JOB.position || "Sotuvchi-konsultant"));
+  hero.appendChild(el("p", null, (JOB.company || "Texnomart") + " jamoasiga qo'shiling")); main.appendChild(hero);
+  var st = el("div", "stats");
+  [["2008", "yildan beri"], ["40+", "do'kon"], ["1000+", "xodim"]].forEach(function (x) { var s = el("div", "stat"); s.appendChild(el("b", null, x[0])); s.appendChild(el("span", null, x[1])); st.appendChild(s); });
+  main.appendChild(st);
+  if (!(tg && tg.initData)) main.appendChild(el("div", "warn", "Anketani Telegram ichida, bot tugmasi orqali oching. Aks holda yuborib bo'lmaydi."));
+  else if (API_URL.indexOf("PASTE_") === 0) main.appendChild(el("div", "warn", "Server manzili (API_URL) sozlanmagan."));
+  var c = el("div", "card"); c.appendChild(el("h3", null, "Vakansiya shartlari"));
+  var ul = document.createElement("ul");
+  [JOB.training, "Grafik: " + JOB.schedule, "Daromad: " + JOB.income, "Tajriba shart emas, ustoz bilan o'rgatamiz"].forEach(function (t) { if (t) ul.appendChild(el("li", null, t)); });
+  c.appendChild(ul); main.appendChild(c);
+  main.appendChild(el("div", "hint", "Anketa taxminan 15 daqiqa oladi. Rost va o'z so'zlaringiz bilan javob bering."));
+  var lab = el("label", "consent"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "consent";
+  lab.appendChild(cb); lab.appendChild(el("span", null, "Ism, telefon, javoblarim va selfie suratim ishga qabul qilish maqsadida qayta ishlanishiga roziman."));
+  main.appendChild(lab);
+  var go = el("button", "btn", "Boshlash"); go.style.width = "100%"; main.appendChild(go);
+  var err = el("div", "err"); main.appendChild(err);
+  go.onclick = function () { if (!cb.checked) { err.textContent = "Davom etish uchun rozilik belgisini qo'ying."; return; } state = {i: 0, a: {}, slot: "", photo: "", sid: newSid()}; render(); };
+  var d = loadDraft();
+  if (d) {
+    var r = el("button", "btn sec", "Davom ettirish (saqlangan javoblar)"); r.style.cssText = "width:100%;margin-top:10px;flex:none";
+    r.onclick = function () { if (!cb.checked) { err.textContent = "Davom etish uchun rozilik belgisini qo'ying."; return; } state = {i: Math.min(d.i, STEPS.length - 1), a: d.a, slot: d.slot || "", photo: "", sid: d.sid || newSid()}; render(); };
+    main.appendChild(r);
+  }
+}
+
+// ---------- steps
+function render() {
+  clear(); nav.classList.remove("hidden");
+  var step = STEPS[state.i], total = STEPS.length;
+  var pr = el("div", "progress"); var bar = document.createElement("i"); bar.style.width = Math.round((state.i + 1) / total * 100) + "%"; pr.appendChild(bar); main.appendChild(pr);
+  var m = el("div", "meta"); m.appendChild(el("span", null, "Savol " + (state.i + 1) + " / " + total)); main.appendChild(m);
+  nextBtn.disabled = false; nextBtn.textContent = state.i === total - 1 ? "Yuborish" : "Davom etish";
+  backBtn.style.visibility = state.i === 0 ? "hidden" : "visible";
+  var err = el("div", "err"); err.id = "err";
+  if (step.kind === "q") renderQ(step.q, err);
+  else if (step.kind === "photo") renderPhoto(err);
+  else renderSlot(err);
+  main.appendChild(err);
+  window.scrollTo(0, 0);
+}
+function blockLabel(q) { for (var k = state.i; k >= 0; k--) { var s = STEPS[k]; if (s.kind === "q" && s.q.block) return s.q.block; } return ""; }
+function renderQ(q, err) {
+  var b = blockLabel(q); if (b) main.appendChild(el("div", "block", b));
+  main.appendChild(el("h2", "q", q.text));
+  if (q.type === "choice") {
+    var cur = state.a[q.key + "_i"];
+    q.options.forEach(function (o, n) {
+      var bt = el("button", "opt" + (cur === n ? " sel" : ""), o);
+      bt.onclick = function () { state.a[q.key + "_i"] = n; state.a[q.key] = o; saveDraft(); Array.prototype.forEach.call(main.querySelectorAll(".opt"), function (x) { x.classList.remove("sel"); }); bt.classList.add("sel"); err.textContent = ""; };
+      main.appendChild(bt);
+    });
+  } else {
+    var long_ = q.type === "text" && q.key !== "fio" && q.key !== "phone" && q.key !== "district" && q.key !== "last_job" && q.key.indexOf("calc_") !== 0;
+    var inp = long_ ? document.createElement("textarea") : document.createElement("input");
+    if (!long_) { inp.type = q.key === "phone" ? "tel" : "text"; if (q.type === "number") inp.inputMode = "numeric"; /* type=number probelli summani (1 260 000) qabul qilmaydi */ }
+    if (q.key === "phone") inp.placeholder = "+998 90 123 45 67";
+    inp.value = state.a[q.key] || "";
+    inp.oninput = function () { state.a[q.key] = inp.value; saveDraft(); err.textContent = ""; };
+    main.appendChild(inp);
+    if (long_) main.appendChild(el("div", "hint", "O'z so'zlaringiz bilan batafsil yozing."));
+  }
+}
+function renderSlot(err) {
+  main.appendChild(el("div", "block", "Oxirgi qadam"));
+  main.appendChild(el("h2", "q", "Suhbat uchun qaysi vaqt qulay?"));
+  SLOTS.forEach(function (s) {
+    var bt = el("button", "opt" + (state.slot === s ? " sel" : ""), s);
+    bt.onclick = function () { state.slot = s; saveDraft(); Array.prototype.forEach.call(main.querySelectorAll(".opt"), function (x) { x.classList.remove("sel"); }); bt.classList.add("sel"); err.textContent = ""; };
+    main.appendChild(bt);
+  });
+}
+
+// ---------- selfie
+function stopCam() { if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; } }
+function renderPhoto(err) {
+  main.appendChild(el("div", "block", "Surat"));
+  main.appendChild(el("h2", "q", "Selfie yuboring"));
+  main.appendChild(el("div", "hint", "Yuzingiz aniq ko'rinsin. Surat faqat rekruterga yuboriladi."));
+  var box = el("div", "cam"); box.style.marginTop = "12px"; main.appendChild(box);
+  var row = el("div", "row"); main.appendChild(row);
+  var file = document.createElement("input"); file.type = "file"; file.accept = "image/*"; file.setAttribute("capture", "user"); file.className = "hidden"; main.appendChild(file);
+  function showPhoto() {
+    stopCam(); box.textContent = ""; var im = document.createElement("img"); im.src = state.photo; im.alt = "Selfie"; box.appendChild(im);
+    row.textContent = ""; var again = el("button", "btn sec", "Qayta olish"); again.style.flex = "1"; again.onclick = showCam; row.appendChild(again);
+  }
+  function showFallback(msg) {
+    stopCam(); box.textContent = ""; box.appendChild(el("div", "ph", msg || "Kamerani ochib bo'lmadi."));
+    row.textContent = ""; var b = el("button", "btn", "Kamera bilan suratga olish"); b.onclick = function () { file.click(); }; row.appendChild(b);
+  }
+  function showCam() {
+    state.photo = ""; box.textContent = ""; row.textContent = "";
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showFallback("Brauzer kamerani qo'llamaydi."); return; }
+    navigator.mediaDevices.getUserMedia({video: {facingMode: "user", width: {ideal: 960}, height: {ideal: 1280}}, audio: false}).then(function (s) {
+      stream = s; var v = document.createElement("video"); v.setAttribute("playsinline", ""); v.muted = true; v.autoplay = true; v.srcObject = s; box.appendChild(v);
+      var snap = el("button", "btn", "📸 Suratga olish"); snap.onclick = function () {
+        if (!v.videoWidth) { err.textContent = "Kamera hali tayyor emas."; return; }
+        var c = document.createElement("canvas"); var sc = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+        c.width = Math.round(v.videoWidth * sc); c.height = Math.round(v.videoHeight * sc);
+        var ctx = c.getContext("2d"); ctx.translate(c.width, 0); ctx.scale(-1, 1); ctx.drawImage(v, 0, 0, c.width, c.height);
+        state.photo = shrink(c); err.textContent = ""; showPhoto();
+      };
+      row.appendChild(snap);
+    }).catch(function () { showFallback("Kameraga ruxsat berilmadi yoki kamera yo'q. Telefon kamerasi orqali oling."); });
+  }
+  file.onchange = function () {
+    var f = file.files && file.files[0]; if (!f) return;
+    var im = new Image(), url = URL.createObjectURL(f);
+    im.onload = function () {
+      var sc = Math.min(1, 640 / Math.max(im.width, im.height)); var c = document.createElement("canvas");
+      c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); state.photo = shrink(c); err.textContent = ""; showPhoto();
+    };
+    im.onerror = function () { err.textContent = "Rasmni o'qib bo'lmadi, qayta urinib ko'ring."; };
+    im.src = url;
+  };
+  if (state.photo) showPhoto(); else showCam();
+}
+function shrink(canvas) { var q = 0.85, d = canvas.toDataURL("image/jpeg", q); while (d.length > 600000 && q > 0.35) { q -= 0.1; d = canvas.toDataURL("image/jpeg", q); } return d; }
+
+// ---------- validation / navigation
+function validate() {
+  var step = STEPS[state.i];
+  if (step.kind === "photo") return state.photo ? "" : "Iltimos, selfie oling.";
+  if (step.kind === "slot") return state.slot ? "" : "Qulay vaqtni tanlang.";
+  var q = step.q, v = state.a[q.key];
+  if (q.type === "choice") return typeof state.a[q.key + "_i"] === "number" ? "" : "Variantni tanlang.";
+  v = (v || "").trim();
+  if (!v) return "Javob yozing.";
+  if (q.key === "phone") { var p = normPhone(v); if (!p) return "Telefon raqam noto'g'ri. Masalan: +998 90 123 45 67"; v = p; }
+  if (q.key === "age") { var n = parseInt(v, 10); if (!(n >= 16 && n <= 70)) return "Yoshni to'g'ri kiriting (16-70)."; v = String(n); }
+  if (q.key === "fio" && v.length < 3) return "Ism-familiyani to'liq yozing.";
+  state.a[q.key] = v;
+  return "";
+}
+nextBtn.onclick = function () {
+  var e = validate(); var err = document.getElementById("err");
+  if (e) { err.textContent = e; return; }
+  saveDraft();
+  if (state.i === STEPS.length - 1) submit(); else { state.i++; render(); }
+};
+backBtn.onclick = function () { if (state.i > 0) { state.i--; render(); } };
+
+// ---------- submit
+var ERRORS = {telegram: "Anketani Telegram ichida, bot tugmasi orqali oching.", rate: "Juda tez. Bir necha soniyadan keyin qayta urinib ko'ring.", data: "Ma'lumotlarda xatolik. Barcha savollarga javob berilganini tekshiring.", photo: "Selfie noto'g'ri. Qayta oling.", server: "Serverda xatolik. Birozdan keyin qayta urinib ko'ring.", big: "Surat juda katta. Qayta oling."};
+function submit() {
+  var err = document.getElementById("err"); err.textContent = "";
+  if (API_URL.indexOf("PASTE_") === 0) { err.textContent = "Server manzili sozlanmagan."; return; }
+  nextBtn.disabled = true; nextBtn.textContent = "Yuborilmoqda...";
+  var body = JSON.stringify({v: 3, sid: state.sid, initData: (tg && tg.initData) || "", slot: state.slot, answers: state.a, photo: state.photo});
+  fetch(API_URL, {method: "POST", headers: {"Content-Type": "text/plain;charset=UTF-8"}, body: body}).then(function (r) {
+    return r.json().catch(function () { return {}; }).then(function (j) { return {s: r.status, j: j}; });
+  }).then(function (x) {
+    if (x.j && x.j.ok) { done(); return; }
+    err.textContent = ERRORS[x.j && x.j.error] || "Yuborib bo'lmadi. Qayta urinib ko'ring.";
+    nextBtn.disabled = false; nextBtn.textContent = "Yuborish";
+  }).catch(function () { err.textContent = "Internet aloqasi yo'q yoki server javob bermadi. Javoblaringiz saqlangan, qayta urinib ko'ring."; nextBtn.disabled = false; nextBtn.textContent = "Yuborish"; });
+}
+function done() {
+  clearDraft(); clear(); nav.classList.add("hidden");
+  try { if (tg) tg.disableClosingConfirmation(); } catch (e) {}
+  var d = el("div", "done"); d.appendChild(el("div", "tick", "✅")); d.appendChild(el("h2", null, "Rahmat!"));
+  d.appendChild(el("p", null, "Anketangiz yuborildi. Rekruter siz ko'rsatgan raqam orqali bog'lanadi."));
+  var c = el("button", "btn", "Yopish"); c.style.width = "100%"; c.onclick = function () { if (tg) tg.close(); }; d.appendChild(c); main.appendChild(d);
+}
+welcome();
+})();
+</script>
+</body>
+</html>
