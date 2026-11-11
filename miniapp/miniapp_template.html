@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Texnomart</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--brand-yellow:#ffc800;--brand-yellow-hover:#e6b400;--dark-ink:#1c1c1e;--dark-soft:#2c2c2e;--paper:#fff;--surface:#f7f7f9;--surface-border:#e2e2e8;--text-primary:#1c1c1e;--text-secondary:#55555c;--text-muted:#8e8e93;--danger:#e53935;--ok:#2e7d32;--font-body:'Montserrat',system-ui,-apple-system,sans-serif;--radius-sm:8px;--radius-md:14px;--radius-lg:20px;--shadow-sm:0 2px 8px rgba(0,0,0,.06)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--text-primary);font-family:var(--font-body);font-size:15px;line-height:1.45}
+.app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--dark-ink);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+header .logo{font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;letter-spacing:-1px;color:#fff;line-height:1}
+header .logo span{color:var(--brand-yellow)}
+header .ttl{font-weight:600;font-size:13px;opacity:.9}
+main{flex:1;padding:18px 16px 110px}
+.hero{background:var(--brand-yellow);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+.hero h1{margin:0 0 6px;font-size:22px;font-weight:800}
+.hero p{margin:0;font-weight:500}
+.stats{display:flex;gap:8px;margin:0 0 16px}
+.stat{flex:1;background:var(--surface);border:1px solid var(--surface-border);border-radius:var(--radius-md);padding:10px;text-align:center}
+.stat b{display:block;font-size:18px;font-weight:800}.stat span{font-size:11px;color:var(--text-muted)}
+.card{background:var(--surface);border:1px solid var(--surface-border);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:14px;font-weight:700}
+.card ul{margin:0;padding-left:18px;color:var(--text-secondary);font-size:14px}
+.card li{margin:4px 0}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-secondary);margin:14px 0}
+.consent input{width:22px;height:22px;margin-top:1px;accent-color:var(--dark-ink);flex:none}
+.warn{background:#fff4e5;border:1px solid #ffc27a;color:#7a4a00;border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;font-size:13px}
+.progress{height:6px;background:var(--surface-border);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.progress>i{display:block;height:100%;width:0;background:var(--brand-yellow);transition:width .25s}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:14px}
+.block{font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.q{font-size:18px;font-weight:700;margin:0 0 16px}
+.opt{display:block;width:100%;text-align:left;background:var(--paper);border:2px solid var(--surface-border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;font:inherit;font-weight:500;color:var(--text-primary);cursor:pointer}
+.opt.sel{border-color:var(--brand-yellow);background:#fffbe6;font-weight:700}
+input[type=text],input[type=tel],input[type=number],textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:2px solid var(--surface-border);border-radius:var(--radius-md);background:var(--paper);color:var(--text-primary)}
+textarea{min-height:150px;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--brand-yellow)}
+.hint{font-size:12px;color:var(--text-muted);margin-top:6px}
+.err{color:var(--danger);font-size:13px;font-weight:600;margin-top:8px;min-height:18px}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--surface-border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;gap:10px;max-width:560px;margin:0 auto}
+.btn{flex:1;border:0;border-radius:var(--radius-md);padding:15px;font:inherit;font-weight:800;font-size:15px;cursor:pointer;background:var(--brand-yellow);color:var(--dark-ink)}
+.btn:active{background:var(--brand-yellow-hover)}
+.btn.sec{flex:0 0 36%;background:var(--surface);border:1px solid var(--surface-border);font-weight:600}
+.btn[disabled]{opacity:.5}
+.cam{background:var(--dark-ink);border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;position:relative}
+.cam video,.cam img{width:100%;height:100%;object-fit:cover}
+.cam video{transform:scaleX(-1)}
+.cam .ph{color:#aaa;text-align:center;padding:20px;font-size:14px}
+.row{display:flex;gap:10px;margin-top:12px}
+.row .btn{padding:12px;font-size:14px}
+.done{text-align:center;padding-top:40px}.done .tick{font-size:56px}
+.langs{display:flex;gap:8px;margin-bottom:14px}.langs button{flex:1;padding:10px 4px;border-radius:var(--radius-md);border:2px solid var(--surface-border);background:var(--paper);font:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--text-primary)}.langs button.sel{border-color:var(--brand-yellow);background:#fffbe6}
+.flagbtn{display:flex;align-items:center;gap:14px;font-size:17px;font-weight:700;padding:16px}
+.flag{width:48px;height:32px;border-radius:5px;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.12)}.flag svg{display:block;width:100%;height:100%}
+.link{background:none;border:0;color:var(--text-secondary);font:inherit;font-weight:600;padding:10px 0;cursor:pointer;text-decoration:underline}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+<header><span class="logo">texnomart<span>*</span></span><span class="ttl" id="ttl"></span></header>
+<main id="main"></main>
+<div class="nav hidden" id="nav"><button class="btn sec" id="back"></button><button class="btn" id="next"></button></div>
+</div>
+<script>
+(function () {
+"use strict";
+var JOB_TR = /*@@JOB@@*/{};
+var QUESTIONS = /*@@QUESTIONS@@*/[];
+var BLOCKS = /*@@BLOCKS@@*/{};
+var UI = /*@@UI@@*/{};
+var LANGS = /*@@LANGS@@*/{};
+var API_URL = "PASTE_API_URL_HERE";
+var FLAGS = {
+  uz: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#1eb53a"/><rect width="60" height="27" fill="#ce1126"/><rect width="60" height="26" fill="#fff"/><rect width="60" height="14" fill="#ce1126"/><rect width="60" height="13" fill="#0099b5"/><circle cx="11" cy="6.5" r="4" fill="#fff"/><circle cx="12.6" cy="6.5" r="4" fill="#0099b5"/><g fill="#fff"><circle cx="19" cy="9.5" r=".8"/><circle cx="22" cy="9.5" r=".8"/><circle cx="25" cy="9.5" r=".8"/><circle cx="22" cy="6.5" r=".8"/><circle cx="25" cy="6.5" r=".8"/><circle cx="25" cy="3.5" r=".8"/></g></svg>',
+  ru: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#d52b1e"/><rect width="60" height="26.7" fill="#0039a6"/><rect width="60" height="13.3" fill="#fff"/></svg>',
+  en: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0L60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0L60 40M60 0L0 40" stroke="#c8102e" stroke-width="3"/><path d="M30 0V40M0 20H60" stroke="#fff" stroke-width="13"/><path d="M30 0V40M0 20H60" stroke="#c8102e" stroke-width="8"/></svg>'
+};
+var SLOTS = ["10:00 - 12:00", "14:00 - 17:00"];
+var PHOTO_AFTER = "age";
+var DRAFT_KEY = "texnomart_anketa_v4";
+var tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { try { tg.ready(); tg.expand(); tg.enableClosingConfirmation(); } catch (e) {} }
+
+var main = document.getElementById("main"), nav = document.getElementById("nav");
+var nextBtn = document.getElementById("next"), backBtn = document.getElementById("back");
+var state = {i: -1, a: {}, slot: "", photo: "", sid: "", lang: ""};
+var stream = null;
+
+function T(k) { var u = UI[k] || {}; return u[state.lang] || u.uz || k; }
+function qText(q) { return (q.t[state.lang] || q.t.uz)[0]; }
+function qOpts(q) { return (q.t[state.lang] || q.t.uz)[1]; }
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function clear() { stopCam(); while (main.firstChild) main.removeChild(main.firstChild); }
+function newSid() { var s = "", c = "abcdefghijklmnopqrstuvwxyz0123456789"; for (var i = 0; i < 20; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
+function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({i: state.i, a: state.a, slot: state.slot, sid: state.sid, lang: state.lang})); } catch (e) {} }
+function loadDraft() { try { var d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); return d && d.a && d.i >= 0 ? d : null; } catch (e) { return null; } }
+function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+function normPhone(v) {
+  var d = String(v).replace(/\D/g, "");
+  if (d.length === 9) d = "998" + d;
+  if (d.length === 12 && d.indexOf("998") === 0) return "+" + d;
+  return "";
+}
+function setLang(l) {
+  state.lang = LANGS[l] ? l : "uz";
+  document.documentElement.lang = state.lang;
+  document.getElementById("ttl").textContent = T("title");
+  backBtn.textContent = T("back");
+}
+
+// ---------- which questions apply (position + conditional questions); mirrors the server
+function applies(q, a) {
+  if (q.pos !== undefined && (a.position_i === undefined ? 0 : a.position_i) !== q.pos) return false;
+  var w = q.when;
+  if (w) { var v = a[w.key + "_i"]; if (w.i !== undefined && v !== w.i) return false; if (w["in"] && w["in"].indexOf(v) < 0) return false; }
+  return true;
+}
+function steps() {
+  var s = [];
+  QUESTIONS.forEach(function (q) { if (q.key !== "position" && applies(q, state.a)) s.push({kind: "q", q: q}); if (q.key === PHOTO_AFTER) s.push({kind: "photo"}); });
+  s.push({kind: "slot"});
+  return s;
+}
+
+// ---------- language + welcome
+function langBar(onPick) {
+  var bar = el("div", "langs");
+  Object.keys(LANGS).forEach(function (l) {
+    var b = el("button", state.lang === l ? "sel" : "", LANGS[l]); b.setAttribute("data-lang", l);
+    b.onclick = function () { setLang(l); onPick(); }; bar.appendChild(b);
+  });
+  return bar;
+}
+function langScreen() {
+  state.i = -1; nav.classList.add("hidden"); clear();
+  var hero = el("div", "hero"); hero.appendChild(el("h1", null, "texnomart*")); hero.appendChild(el("p", null, T("choose_lang"))); main.appendChild(hero);
+  Object.keys(LANGS).forEach(function (l) {
+    var b = el("button", "opt flagbtn" + (preferred === l ? " sel" : "")); b.setAttribute("data-lang", l);
+    var f = el("span", "flag"); f.innerHTML = FLAGS[l] || "";   // статичная разметка флага, без данных пользователя
+    b.appendChild(f); b.appendChild(el("span", null, LANGS[l]));
+    b.onclick = function () { setLang(l); posScreen(); }; main.appendChild(b);
+  });
+}
+var POSQ = QUESTIONS.filter(function (q) { return q.key === "position"; })[0];
+function posScreen() {
+  state.i = -1; nav.classList.add("hidden"); clear();
+  var hero = el("div", "hero"); hero.appendChild(el("h1", null, T("hero_title"))); hero.appendChild(el("p", null, qText(POSQ))); main.appendChild(hero);
+  qOpts(POSQ).forEach(function (o, n) {
+    var b = el("button", "opt flagbtn", o); b.setAttribute("data-pos", n);
+    b.onclick = function () { state.a = {position_i: n}; welcome(); }; main.appendChild(b);
+  });
+  var back = el("button", "link", "← " + T("back")); back.id = "toLang"; back.onclick = langScreen; main.appendChild(back);
+}
+function welcome() {
+  state.i = -1; nav.classList.add("hidden"); clear();
+  var pos = state.a.position_i === 1 ? 1 : 0;
+  var hero = el("div", "hero"); hero.appendChild(el("h1", null, qOpts(POSQ)[pos])); hero.appendChild(el("p", null, T("hero_title"))); main.appendChild(hero);
+  var st = el("div", "stats");
+  [["2008", T("st_year")], ["40+", T("st_store")], ["1000+", T("st_staff")]].forEach(function (x) { var s = el("div", "stat"); s.appendChild(el("b", null, x[0])); s.appendChild(el("span", null, x[1])); st.appendChild(s); });
+  main.appendChild(st);
+  if (!(tg && tg.initData)) main.appendChild(el("div", "warn", T("warn_tg")));
+  else if (API_URL.indexOf("PASTE_") === 0) main.appendChild(el("div", "warn", T("warn_api")));
+  var c = el("div", "card"); c.appendChild(el("h3", null, T("terms")));
+  var ul = document.createElement("ul"), L = state.lang;
+  [JOB_TR.training[L], T("t_schedule") + ": " + JOB_TR.schedule[L], T("t_income") + ": " + JOB_TR.income_pos[pos][L], T("t_noexp")].forEach(function (t) { ul.appendChild(el("li", null, t)); });
+  c.appendChild(ul); main.appendChild(c);
+  main.appendChild(el("div", "hint", T("hint_time")));
+  var lab = el("label", "consent"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "consent";
+  lab.appendChild(cb); lab.appendChild(el("span", null, T("consent"))); main.appendChild(lab);
+  var go = el("button", "btn", T("start")); go.id = "startBtn"; go.style.width = "100%"; main.appendChild(go);
+  var err = el("div", "err"); main.appendChild(err);
+  go.onclick = function () { if (!cb.checked) { err.textContent = T("consent_err"); return; } state = {i: 0, a: {position_i: pos}, slot: "", photo: "", sid: newSid(), lang: state.lang}; render(); };
+  var d = loadDraft();
+  if (d) {
+    var r = el("button", "btn sec", T("resume")); r.id = "resumeBtn"; r.style.cssText = "width:100%;margin-top:10px;flex:none";
+    r.onclick = function () { if (!cb.checked) { err.textContent = T("consent_err"); return; } state = {i: d.i, a: d.a, slot: d.slot || "", photo: "", sid: d.sid || newSid(), lang: state.lang}; state.i = Math.min(state.i, steps().length - 1); render(); };
+    main.appendChild(r);
+  }
+  var back = el("button", "link", "← " + T("back")); back.id = "toPos"; back.onclick = posScreen; main.appendChild(back);
+}
+
+// ---------- steps
+function render() {
+  clear(); nav.classList.remove("hidden");
+  var all = steps(); if (state.i > all.length - 1) state.i = all.length - 1;
+  var step = all[state.i], total = all.length;
+  var pr = el("div", "progress"); var bar = document.createElement("i"); bar.style.width = Math.round((state.i + 1) / total * 100) + "%"; pr.appendChild(bar); main.appendChild(pr);
+  var m = el("div", "meta"); m.appendChild(el("span", null, T("step").replace("{n}", state.i + 1).replace("{t}", total))); main.appendChild(m);
+  nextBtn.disabled = false; nextBtn.textContent = state.i === total - 1 ? T("submit") : T("next");
+  backBtn.textContent = T("back"); backBtn.style.visibility = state.i === 0 ? "hidden" : "visible";
+  var err = el("div", "err"); err.id = "err";
+  if (step.kind === "q") renderQ(step.q, err, all);
+  else if (step.kind === "photo") renderPhoto(err);
+  else renderSlot(err);
+  main.appendChild(err);
+  window.scrollTo(0, 0);
+}
+function blockLabel(all) { for (var k = state.i; k >= 0; k--) { var s = all[k]; if (s.kind === "q" && s.q.block) return (BLOCKS[s.q.block] || {})[state.lang] || ""; } return ""; }
+var SHORT = {fio: 1, phone: 1, district: 1, age: 1, study_place: 1, children_ages: 1, calc_change: 1, calc_discount: 1, calc_total: 1};
+function renderQ(q, err, all) {
+  var b = blockLabel(all); if (b) main.appendChild(el("div", "block", b));
+  var h = el("h2", "q", qText(q)); h.setAttribute("data-key", q.key); main.appendChild(h);
+  if (q.type === "choice") {
+    var cur = state.a[q.key + "_i"];
+    qOpts(q).forEach(function (o, n) {
+      var bt = el("button", "opt" + (cur === n ? " sel" : ""), o);
+      bt.onclick = function () { state.a[q.key + "_i"] = n; saveDraft(); Array.prototype.forEach.call(main.querySelectorAll(".opt"), function (x) { x.classList.remove("sel"); }); bt.classList.add("sel"); err.textContent = ""; };
+      main.appendChild(bt);
+    });
+  } else {
+    var long_ = !SHORT[q.key];
+    var inp = long_ ? document.createElement("textarea") : document.createElement("input");
+    if (!long_) { inp.type = q.key === "phone" ? "tel" : "text"; if (q.type === "number") inp.inputMode = "numeric"; /* type=number rejects "1 260 000" */ }
+    if (q.key === "phone") inp.placeholder = "+998 90 123 45 67";
+    inp.value = state.a[q.key] || "";
+    inp.oninput = function () { state.a[q.key] = inp.value; saveDraft(); err.textContent = ""; };
+    main.appendChild(inp);
+    if (long_) main.appendChild(el("div", "hint", T("hint_long")));
+  }
+}
+function renderSlot(err) {
+  main.appendChild(el("div", "block", T("slot_block")));
+  var h = el("h2", "q", T("slot_title")); h.setAttribute("data-key", "slot"); main.appendChild(h);
+  SLOTS.forEach(function (s) {
+    var bt = el("button", "opt" + (state.slot === s ? " sel" : ""), s);
+    bt.onclick = function () { state.slot = s; saveDraft(); Array.prototype.forEach.call(main.querySelectorAll(".opt"), function (x) { x.classList.remove("sel"); }); bt.classList.add("sel"); err.textContent = ""; };
+    main.appendChild(bt);
+  });
+}
+
+// ---------- selfie
+function stopCam() { if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; } }
+function renderPhoto(err) {
+  main.appendChild(el("div", "block", T("photo_block")));
+  var h = el("h2", "q", T("photo_title")); h.setAttribute("data-key", "photo"); main.appendChild(h);
+  main.appendChild(el("div", "hint", T("photo_hint")));
+  var box = el("div", "cam"); box.style.marginTop = "12px"; main.appendChild(box);
+  var row = el("div", "row"); main.appendChild(row);
+  var file = document.createElement("input"); file.type = "file"; file.accept = "image/*"; file.setAttribute("capture", "user"); file.className = "hidden"; main.appendChild(file);
+  function showPhoto() {
+    stopCam(); box.textContent = ""; var im = document.createElement("img"); im.src = state.photo; im.alt = "Selfie"; box.appendChild(im);
+    row.textContent = ""; var again = el("button", "btn sec", T("retake")); again.style.flex = "1"; again.onclick = showCam; row.appendChild(again);
+  }
+  function showFallback(msg) {
+    stopCam(); box.textContent = ""; box.appendChild(el("div", "ph", msg));
+    row.textContent = ""; var b = el("button", "btn", T("use_phone_cam")); b.onclick = function () { file.click(); }; row.appendChild(b);
+  }
+  function showCam() {
+    state.photo = ""; box.textContent = ""; row.textContent = "";
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showFallback(T("cam_unsupported")); return; }
+    navigator.mediaDevices.getUserMedia({video: {facingMode: "user", width: {ideal: 960}, height: {ideal: 1280}}, audio: false}).then(function (s) {
+      stream = s; var v = document.createElement("video"); v.setAttribute("playsinline", ""); v.muted = true; v.autoplay = true; v.srcObject = s; box.appendChild(v);
+      var snap = el("button", "btn", T("take_photo")); snap.id = "snap"; snap.onclick = function () {
+        if (!v.videoWidth) { err.textContent = T("cam_notready"); return; }
+        var c = document.createElement("canvas"); var sc = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+        c.width = Math.round(v.videoWidth * sc); c.height = Math.round(v.videoHeight * sc);
+        var ctx = c.getContext("2d"); ctx.translate(c.width, 0); ctx.scale(-1, 1); ctx.drawImage(v, 0, 0, c.width, c.height);
+        state.photo = shrink(c); err.textContent = ""; showPhoto();
+      };
+      row.appendChild(snap);
+    }).catch(function () { showFallback(T("cam_denied")); });
+  }
+  file.onchange = function () {
+    var f = file.files && file.files[0]; if (!f) return;
+    var im = new Image(), url = URL.createObjectURL(f);
+    im.onload = function () {
+      var sc = Math.min(1, 640 / Math.max(im.width, im.height)); var c = document.createElement("canvas");
+      c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); state.photo = shrink(c); err.textContent = ""; showPhoto();
+    };
+    im.onerror = function () { err.textContent = T("img_err"); };
+    im.src = url;
+  };
+  if (state.photo) showPhoto(); else showCam();
+}
+function shrink(canvas) { var q = 0.85, d = canvas.toDataURL("image/jpeg", q); while (d.length > 600000 && q > 0.35) { q -= 0.1; d = canvas.toDataURL("image/jpeg", q); } return d; }
+
+// ---------- validation / navigation
+function validate() {
+  var step = steps()[state.i];
+  if (step.kind === "photo") return state.photo ? "" : T("photo_need");
+  if (step.kind === "slot") return state.slot ? "" : T("slot_need");
+  var q = step.q, v = state.a[q.key];
+  if (q.type === "choice") return typeof state.a[q.key + "_i"] === "number" ? "" : T("choose_opt");
+  v = (v || "").trim();
+  if (!v) return T("write_answer");
+  if (q.key === "phone") { var p = normPhone(v); if (!p) return T("bad_phone"); v = p; }
+  if (q.key === "age") { var n = parseInt(v, 10); if (!(n >= 16 && n <= 70)) return T("bad_age"); v = String(n); }
+  if (q.key === "fio" && v.length < 3) return T("fio_err");
+  state.a[q.key] = v;
+  return "";
+}
+nextBtn.onclick = function () {
+  var e = validate(); var err = document.getElementById("err");
+  if (e) { err.textContent = e; return; }
+  if (state.i >= steps().length - 1) { saveDraft(); submit(); } else { state.i++; saveDraft(); render(); }
+};
+backBtn.onclick = function () { if (state.i > 0) { state.i--; render(); } };
+
+// ---------- submit (only answers to the questions that apply to this candidate)
+function submit() {
+  var err = document.getElementById("err"); err.textContent = "";
+  if (API_URL.indexOf("PASTE_") === 0) { err.textContent = T("warn_api"); return; }
+  nextBtn.disabled = true; nextBtn.textContent = T("sending");
+  var answers = {position_i: state.a.position_i === 1 ? 1 : 0};
+  steps().forEach(function (s) {
+    if (s.kind !== "q") return;
+    if (s.q.type === "choice") answers[s.q.key + "_i"] = state.a[s.q.key + "_i"]; else answers[s.q.key] = state.a[s.q.key];
+  });
+  var body = JSON.stringify({v: 4, sid: state.sid, lang: state.lang, initData: (tg && tg.initData) || "", slot: state.slot, answers: answers, photo: state.photo});
+  fetch(API_URL, {method: "POST", headers: {"Content-Type": "text/plain;charset=UTF-8"}, body: body}).then(function (r) {
+    return r.json().catch(function () { return {}; }).then(function (j) { return {s: r.status, j: j}; });
+  }).then(function (x) {
+    if (x.j && x.j.ok) { done(); return; }
+    var k = "err_" + ((x.j && x.j.error) || "");
+    err.textContent = UI[k] ? T(k) : T("err_generic");
+    nextBtn.disabled = false; nextBtn.textContent = T("submit");
+  }).catch(function () { err.textContent = T("err_network"); nextBtn.disabled = false; nextBtn.textContent = T("submit"); });
+}
+function done() {
+  clearDraft(); clear(); nav.classList.add("hidden");
+  try { if (tg) tg.disableClosingConfirmation(); } catch (e) {}
+  var d = el("div", "done"); d.appendChild(el("div", "tick", "✅")); d.appendChild(el("h2", null, T("done_title")));
+  d.appendChild(el("p", null, T("done_text")));
+  var c = el("button", "btn", T("close")); c.style.width = "100%"; c.onclick = function () { if (tg) tg.close(); }; d.appendChild(c); main.appendChild(d);
+}
+
+// start: language from the bot link (?lang=ru), then from a saved draft, otherwise ask
+var m = /[?&]lang=([a-z]{2})/.exec(location.search), d0 = loadDraft();
+var preferred = (m && LANGS[m[1]] && m[1]) || (d0 && LANGS[d0.lang] && d0.lang) || "";
+setLang(preferred || "uz");
+langScreen();   // первый экран всегда выбор языка, затем должность, условия и анкета
+})();
+</script>
+</body>
+</html>

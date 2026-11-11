@@ -2,6 +2,7 @@
 import csv
 import datetime
 import io
+import json
 import os
 import sqlite3
 from contextlib import closing
@@ -33,6 +34,11 @@ def init():
     cols = {r["name"] for r in _run("PRAGMA table_info(candidates)", (), "all")}
     if "photo_file_id" not in cols:
         _run("ALTER TABLE candidates ADD COLUMN photo_file_id TEXT")
+    if "branch" not in cols:   # veb-panel: filial
+        _run("ALTER TABLE candidates ADD COLUMN branch TEXT DEFAULT ''")
+    _run("""CREATE TABLE IF NOT EXISTS status_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, candidate_id INTEGER, old_status TEXT, new_status TEXT,
+        changed_by TEXT, ts TEXT)""")
 
 
 def save(tg_id, username, answers_json, fio, phone, pct, verdict, red, yellow, flags, photo_file_id=None):
@@ -67,11 +73,29 @@ def listing(verdict=None, newest=False, limit=20):
     return _run("SELECT * FROM candidates %s ORDER BY %s LIMIT ?" % (where, order), tuple(args), "all")
 
 
-def set_status(cid, status):
-    if status not in STATUSES or not get(cid):
+def set_status(cid, status, by="telegram"):
+    """Holatni o'zgartiradi va tarixga yozadi (kim, qachon)."""
+    row = get(cid)
+    if status not in STATUSES or not row:
         return False
     _run("UPDATE candidates SET status=? WHERE id=?", (status, cid))
+    if row["status"] != status:
+        _run("INSERT INTO status_history (candidate_id, old_status, new_status, changed_by, ts) VALUES (?,?,?,?,?)",
+             (cid, row["status"], status, by, datetime.datetime.now().isoformat(timespec="seconds")))
     return True
+
+
+def set_branch(cid, branch):
+    _run("UPDATE candidates SET branch=? WHERE id=?", (branch, cid))
+
+
+def history(cid):
+    return _run("SELECT old_status, new_status, changed_by, ts FROM status_history WHERE candidate_id=? ORDER BY id DESC LIMIT 20",
+                (cid,), "all")
+
+
+def all_rows():
+    return _run("SELECT * FROM candidates ORDER BY pct DESC, id ASC", (), "all")
 
 
 def stats():
@@ -85,8 +109,12 @@ def export_csv():
     rows = _run("SELECT * FROM candidates ORDER BY pct DESC, id ASC", (), "all")
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["ID", "Sana", "F.I.Sh.", "Telefon", "Telegram", "Moslik %", "Tavsiya", "Qizil", "Sariq", "Holat", "Flaglar"])
+    w.writerow(["ID", "Дата", "Ф.И.О.", "Должность", "Телефон", "Telegram", "Соответствие %", "Рекомендация", "Красные", "Жёлтые", "Статус", "Флаги"])
     for r in rows:
-        w.writerow([r["id"], r["ts"], r["fio"], r["phone"], ("@" + r["username"]) if r["username"] else "",
+        try:
+            pos = ["Консультант", "Кассир"][json.loads(r["answers"] or "{}").get("position_i", 0)]
+        except (ValueError, IndexError, TypeError):
+            pos = ""
+        w.writerow([r["id"], r["ts"], r["fio"], pos, r["phone"], ("@" + r["username"]) if r["username"] else "",
                     r["pct"], r["verdict"], r["red"], r["yellow"], r["status"], r["flags"]])
     return ("﻿" + buf.getvalue()).encode("utf-8")

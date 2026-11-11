@@ -8,7 +8,7 @@
 var SECRET = "BU_YERGA_MAXFIY_SOZ_YOZING";   // botdagi SHEETS_SECRET bilan bir xil bo'lsin
 var SHEET_NAME = "Nomzodlar";
 var HEADERS = ["Telegram ID", "Sana", "F.I.Sh.", "Yosh", "Telefon", "Telegram", "Hudud", "Moslik %",
-               "Tavsiya", "Qizil", "Sariq", "Holat", "Flaglar", "Javoblar (JSON)"];
+               "Tavsiya", "Qizil", "Sariq", "Holat", "Flaglar", "Javoblar (JSON)", "Lavozim"];
 
 function doPost(e) {
   try {
@@ -22,7 +22,7 @@ function doPost(e) {
       sh.setFrozenRows(1);
     }
     var row = [String(p.tg_id), p.ts, p.fio, p.age, p.phone, p.username ? "@" + p.username : "", p.district,
-               p.pct, p.verdict, p.red, p.yellow, p.status, p.flags, p.answers];
+               p.pct, p.verdict, p.red, p.yellow, p.status, p.flags, p.answers, p.position || ""];
 
     var lock = LockService.getScriptLock();
     lock.waitLock(20000);

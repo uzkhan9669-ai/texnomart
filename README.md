@@ -1,25 +1,40 @@
-# Texnomart: nomzodlarni baholash boti + Mini App
+# Texnomart: бот оценки кандидатов + Mini App
 
-Oqim: /start -> Mini App tugmasi -> anketa + selfie -> bot baholaydi -> rekruterga karta (selfie, ball, flaglar, tugmalar) -> Google Tablitsa.
+Вакансии: продавец-консультант и кассир. Кандидат выбирает язык (узбекский, русский, английский), заполняет анкету
+и делает селфи. Бот оценивает ответы и присылает рекрутеру карточку на русском: балл, вердикт, флаги, селфи, кнопки статуса.
 
-## 1. Railway (bot)
-1. Repozitoriyni Railway'ga ulang (fayllar: bot.py, webapi.py, scoring.py, store.py, sheets.py).
-2. Variables: BOT_TOKEN, RECRUITER_IDS, WEBAPP_URL, WEBAPP_ORIGIN, SHEETS_URL, SHEETS_SECRET.
-3. Settings -> Networking -> **Generate Domain** (bot HTTP serverni PORT da ochadi; Procfile: `web: python bot.py`).
-4. Disk vaqtinchalik: candidates.db qayta ishga tushganda o'chishi mumkin. Doimiy nusxa - Google Tablitsa (yoki Railway Volume + DB_PATH=/data/candidates.db).
-5. Bitta token = bitta ishlayotgan nusxa.
+## Файлы
+- `bot.py` бот и команды рекрутера, `webapi.py` приём анкет из Mini App, `scoring.py` вопросы и оценка,
+  `i18n.py` тексты на трёх языках, `store.py` база, `sheets.py` + `apps_script.gs` Google Таблица.
+- `miniapp/index.html` готовое мини-приложение (собирается скриптом `miniapp/build_miniapp.py`).
 
-## 2. Mini App (GitHub Pages)
-1. `python miniapp/build_miniapp.py https://<railway-domen>/api/submit` -> miniapp/index.html tayyor.
-2. index.html ni **alohida (ochiq) repozitoriyga** yuklang va Settings -> Pages ni yoqing. Botning kodini ochiq repoga qo'ymang.
-3. Pages manzilini WEBAPP_URL ga yozing; @BotFather da botning domenini sozlash shart emas (tugma orqali ochiladi).
-4. scoring.py o'zgarsa, build_miniapp.py ni qayta ishga tushiring. Baholash kalitlari index.html ga tushmaydi.
+## Railway (бот)
+1. Variables: `BOT_TOKEN`, `RECRUITER_IDS`, `WEBAPP_URL`, `WEBAPP_ORIGIN`, при желании `SHEETS_URL`, `SHEETS_SECRET`.
+2. Settings -> Networking -> Generate Domain. `Procfile`: `web: python bot.py`. Проверка: `https://домен/health`.
+3. Диск временный: `candidates.db` может обнулиться при перезапуске. Подключите Volume (`DB_PATH=/data/candidates.db`,
+   `STATE_PATH=/data/state.pkl`) или используйте Google Таблицу как копию.
 
-## 3. Google Tablitsa
-apps_script.gs ni jadvalga joylang, Web app sifatida e'lon qiling, URL -> SHEETS_URL, SECRET -> SHEETS_SECRET.
+## Mini App (GitHub Pages)
+1. `python miniapp/build_miniapp.py https://домен-railway/api/submit`
+2. Загрузите `miniapp/index.html` как `index.html` в репозиторий с включённым Pages.
+3. Адрес страницы -> `WEBAPP_URL`; `WEBAPP_ORIGIN` = `https://логин.github.io`.
+4. После изменения вопросов в `scoring.py` / `i18n.py` пересоберите `index.html`. Ключи оценки в него не попадают.
 
-## 4. Maxfiylik
-Selfie va oilaviy ahvol - shaxsiy ma'lumot. Rozilik anketada olinadi. Oilaviy ahvol baholashga ta'sir qilmaydi va jadvalga yuborilmaydi; selfie faqat Telegram file_id sifatida saqlanadi. Qonun bo'yicha maslahatlashing.
+## Как менять вопросы
+Тексты и варианты: `i18n.py` (все три языка, порядок вариантов одинаковый). Состав анкеты, условия показа и баллы: `_SPEC` в `scoring.py`.
 
-## Rekruter buyruqlari
-/reyting, /songgi, /stat, /csv, /nomzod ID (/n_ID), /holat ID status
+## Что не влияет на оценку
+Возраст (кроме пометки «младше 18»), семейное положение и дети показываются рекрутеру отдельным блоком и в балл не входят.
+В Google Таблицу семейное положение, дети и заметка о здоровье не отправляются.
+
+## Команды рекрутера
+`/reyting` (можно `qabul`, `zaxira`, `rad`, `kassir`, `konsultant`), `/songgi`, `/stat`, `/csv`, `/nomzod 12` или `/n_12`, `/holat 12 chaqirildi`
+
+## Веб-панель рекрутера
+Адрес: `https://домен-railway/dashboard`. Файлы: `dashboard.py`, `dashboard.html`.
+1. В Railway -> Variables задайте `DASHBOARD_PASSWORD` (не короче 8 символов, длинный и уникальный) и при желании `DASHBOARD_USERNAME` (по умолчанию `hr`).
+2. Без пароля панель выключена. Вход блокируется на 15 минут после 5 неверных попыток.
+3. В панели: обзор (вердикты, воронка статусов, должности, частые риски), список с поиском и фильтрами, карточка кандидата
+   с селфи, флагами и полным профилем, смена статуса, филиал, история статусов, выгрузка CSV.
+4. Статусы общие с Telegram: смена в панели видна в боте и уходит в Google Таблицу.
+5. Вход один на всех рекрутеров. Не передавайте пароль в чатах; при уходе сотрудника смените пароль.

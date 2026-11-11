@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Texnomart HR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--y:#ffc800;--ink:#1c1c1e;--soft:#2c2c2e;--bg:#f4f5f7;--card:#fff;--line:#e4e5ea;--txt:#1c1c1e;--mut:#6b6b74;--green:#1b8a4b;--amber:#b77900;--red:#c93030;--greenbg:#e5f5ec;--amberbg:#fff3d1;--redbg:#fde8e8;--r:12px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 Montserrat,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.top{background:var(--ink);color:#fff;display:flex;align-items:center;gap:18px;padding:0 20px;height:56px;position:sticky;top:0;z-index:5}
+.logo{font-weight:800;font-size:22px;letter-spacing:-1px;color:#fff;line-height:1}.logo i{font-style:normal;color:var(--y)}.login .logo{color:var(--ink)}
+.tabs{display:flex;gap:4px;flex:1}
+.tabs button{background:none;border:0;color:#c9c9cf;font-weight:600;padding:8px 14px;border-radius:8px}
+.tabs button.on{background:var(--soft);color:#fff}
+.top .out{background:none;border:1px solid #55555c;color:#fff;border-radius:8px;padding:6px 12px;font-weight:600}
+main{max-width:1280px;margin:0 auto;padding:22px 20px 60px}
+h1{font-size:22px;margin:0 0 4px;font-weight:800}
+.sub{color:var(--mut);margin-bottom:18px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.kpi .l{font-size:12px;color:var(--mut);font-weight:600}
+.kpi .v{font-size:28px;font-weight:800;margin-top:4px}
+.kpi.g .v{color:var(--green)}.kpi.a .v{color:var(--amber)}.kpi.r .v{color:var(--red)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.card h3{margin:0 0 12px;font-size:14px;font-weight:700}
+.bar{display:grid;grid-template-columns:150px 1fr 40px;gap:10px;align-items:center;margin:9px 0;font-size:13px}
+.bar .t{height:10px;background:#eef0f3;border-radius:5px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--y);border-radius:5px}
+.bar b{text-align:right}
+.risk{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.risk:last-child{border:0}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters input,.filters select,.field{background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 11px;min-width:150px}
+.filters input{flex:1;min-width:220px}
+.btn{background:var(--y);border:0;border-radius:9px;padding:9px 14px;font-weight:700}
+.btn.alt{background:#fff;border:1px solid var(--line)}
+.tablewrap{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);padding:11px 14px;border-bottom:1px solid var(--line);background:#fafafb}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#fffbe6}
+.name{font-weight:700}.minor{font-size:12px;color:var(--mut)}
+.tag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#eef0f3;white-space:nowrap}
+.tag.QABUL,.tag.qabul,.tag.chaqirildi{background:var(--greenbg);color:var(--green)}
+.tag.ZAXIRA,.tag.zaxira{background:var(--amberbg);color:var(--amber)}
+.tag.RAD,.tag.rad{background:var(--redbg);color:var(--red)}
+.pct{font-weight:800;font-size:15px}
+.empty{padding:34px;text-align:center;color:var(--mut)}
+.login{max-width:380px;margin:9vh auto 0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px}
+.login h2{margin:14px 0 4px}
+.login label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:14px 0 5px}
+.login input{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px}
+.login .btn{width:100%;margin-top:18px;padding:12px}
+.err{color:var(--red);font-weight:600;font-size:13px;min-height:18px;margin-top:10px}
+.shade{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:8}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:#fff;z-index:9;overflow:auto;padding:20px;box-shadow:-8px 0 30px rgba(0,0,0,.12)}
+.drawer .x{float:right;background:none;border:0;font-size:22px;line-height:1;color:var(--mut)}
+.who{display:flex;gap:14px;align-items:center;margin:6px 0 14px}
+.who img,.who .noimg{width:84px;height:84px;border-radius:14px;object-fit:cover;background:#eef0f3;flex:none}
+.who h2{margin:0 0 4px;font-size:19px}
+.flags div{padding:6px 0;font-size:13px;border-bottom:1px solid var(--line)}
+.flags div:last-child{border:0}
+.sec{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);font-weight:700;margin:18px 0 8px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.acts button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 12px;font-weight:600}
+.acts button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rowf{display:flex;gap:8px}
+.rowf input{flex:1}
+pre{white-space:pre-wrap;word-break:break-word;background:#fafafb;border:1px solid var(--line);border-radius:10px;padding:12px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:20}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.bar{grid-template-columns:110px 1fr 34px}}
+@media(max-width:560px){.top{gap:8px;padding:0 12px}.tabs button{padding:8px 9px}main{padding:16px 12px 50px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+"use strict";
+var app = document.getElementById("app");
+var META = {statuses: {}, verdicts: {}}, page = "overview", filters = {q: "", verdict: "", status: "", pos: "", sort: ""}, timer = null;
+
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function add(parent) { for (var i = 1; i < arguments.length; i++) if (arguments[i]) parent.appendChild(arguments[i]); return parent; }
+function api(path, body) {
+  var opt = {credentials: "same-origin", headers: {}};
+  if (body !== undefined) { opt.method = "POST"; opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
+  return fetch(path, opt).then(function (r) {
+    return r.json().catch(function () { return {}; }).then(function (j) {
+      if (r.status === 401 && path !== "/api/login") { showLogin(); throw new Error("auth"); }
+      if (!r.ok) throw new Error(j.error || "Ошибка " + r.status);
+      return j;
+    });
+  });
+}
+function logo() { var l = el("span", "logo", "texnomart"); l.appendChild(el("i", null, "*")); return l; }
+function toast(t) { var e = el("div", "toast", t); document.body.appendChild(e); setTimeout(function () { e.remove(); }, 2200); }
+function fmtDate(s) { var d = new Date(s); return isNaN(d) ? "" : d.toLocaleDateString("ru-RU") + " " + d.toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}); }
+function tag(code, text) { return el("span", "tag " + code, text); }
+
+// ---------- вход
+function showLogin(msg) {
+  app.textContent = "";
+  var f = el("form", "login");
+  add(f, logo(), el("h2", null, "Панель рекрутера"), el("div", "minor", "Войдите, чтобы увидеть кандидатов"));
+  var u = el("input"), p = el("input"), err = el("div", "err", msg || ""), b = el("button", "btn", "Войти");
+  u.id = "u"; u.autocomplete = "username"; p.id = "p"; p.type = "password"; p.autocomplete = "current-password"; b.type = "submit";
+  add(f, el("label", null, "Логин"), u, el("label", null, "Пароль"), p, b, err);
+  f.onsubmit = function (e) {
+    e.preventDefault(); err.textContent = ""; b.disabled = true;
+    api("/api/login", {username: u.value, password: p.value}).then(start).catch(function (x) { err.textContent = x.message; b.disabled = false; });
+  };
+  app.appendChild(f); u.focus();
+}
+
+// ---------- каркас
+function shell() {
+  app.textContent = "";
+  var top = el("div", "top"), tabs = el("div", "tabs"), out = el("button", "out", "Выйти");
+  [["overview", "Обзор"], ["candidates", "Кандидаты"]].forEach(function (t) {
+    var b = el("button", page === t[0] ? "on" : "", t[1]); b.id = "tab-" + t[0];
+    b.onclick = function () { page = t[0]; shell(); }; tabs.appendChild(b);
+  });
+  out.onclick = function () { api("/api/logout", {}).then(function () { showLogin(); }, function () { showLogin(); }); };
+  add(top, logo(), tabs, out);
+  var main = el("main"); main.id = "main";
+  add(app, top, main);
+  if (page === "overview") overview(main); else candidates(main);
+}
+
+// ---------- обзор
+function bars(card, pairs, max) {
+  max = Math.max(1, max || Math.max.apply(null, pairs.map(function (p) { return p[1]; })));
+  pairs.forEach(function (p) {
+    var row = el("div", "bar"), t = el("div", "t"), i = el("i"); i.style.width = Math.round(p[1] / max * 100) + "%";
+    t.appendChild(i); add(row, el("span", null, p[0]), t, el("b", null, String(p[1]))); card.appendChild(row);
+  });
+}
+function overview(main) {
+  add(main, el("h1", null, "Обзор подбора"), el("div", "sub", "Данные из базы анкет бота"));
+  api("/api/summary").then(function (d) {
+    var k = el("div", "kpis");
+    [["Всего анкет", d.total, ""], ["Принять", d.verdicts.QABUL, "g"], ["Резерв", d.verdicts.ZAXIRA, "a"], ["Отказ", d.verdicts.RAD, "r"], ["Средний балл", d.avg + "%", ""]].forEach(function (x) {
+      var c = el("div", "card kpi " + x[2]); add(c, el("div", "l", x[0]), el("div", "v", String(x[1]))); k.appendChild(c);
+    });
+    main.appendChild(k);
+    var g = el("div", "grid2"), c1 = el("div", "card"), c2 = el("div", "card");
+    c1.appendChild(el("h3", null, "Воронка по статусам"));
+    bars(c1, Object.keys(d.statuses).map(function (s) { return [META.statuses[s] || s, d.statuses[s]]; }), d.total);
+    c2.appendChild(el("h3", null, "Распределение по баллу"));
+    bars(c2, Object.keys(d.buckets).map(function (b) { return [b + "%", d.buckets[b]]; }), d.total);
+    add(g, c1, c2); main.appendChild(g);
+    var g2 = el("div", "grid2"), c3 = el("div", "card"), c4 = el("div", "card");
+    c3.appendChild(el("h3", null, "По должностям"));
+    bars(c3, Object.keys(d.positions).map(function (p) { return [p, d.positions[p]]; }), d.total);
+    if (!d.total) c3.appendChild(el("div", "minor", "Анкет пока нет"));
+    c4.appendChild(el("h3", null, "Частые риски"));
+    if (!d.top_risks.length) c4.appendChild(el("div", "minor", "Флагов пока нет"));
+    d.top_risks.forEach(function (r) { var row = el("div", "risk"); add(row, el("span", null, r[0]), el("b", null, String(r[1]))); c4.appendChild(row); });
+    add(g2, c3, c4); main.appendChild(g2);
+    main.appendChild(el("div", "sec", "Последние анкеты"));
+    main.appendChild(table(d.recent));
+  }).catch(function (e) { if (e.message !== "auth") main.appendChild(el("div", "err", e.message)); });
+}
+
+// ---------- кандидаты
+function table(items) {
+  var wrap = el("div", "tablewrap");
+  if (!items.length) { wrap.appendChild(el("div", "empty", "Кандидатов не найдено")); return wrap; }
+  var t = el("table"), th = el("tr"), tb = el("tbody");
+  ["Кандидат", "Должность", "Балл", "Рекомендация", "Флаги", "Статус", "Филиал", "Дата"].forEach(function (h) { th.appendChild(el("th", null, h)); });
+  add(t, add(el("thead"), th), tb);
+  items.forEach(function (c) {
+    var tr = el("tr"); tr.setAttribute("data-id", c.id);
+    var who = el("td"); add(who, el("div", "name", c.fio || "-"), el("div", "minor", [c.age ? c.age + " лет" : "", c.phone].filter(Boolean).join(" · ")));
+    var v = el("td"); v.appendChild(tag(c.verdict, c.verdict_ru));
+    var s = el("td"); s.appendChild(tag(c.status, c.status_ru));
+    add(tr, who, el("td", null, c.pos), el("td", "pct", c.pct + "%"), v, el("td", null, "🔴 " + c.red + "  🟡 " + c.yellow), s, el("td", null, c.branch || "-"), el("td", "minor", fmtDate(c.ts)));
+    tr.onclick = function () { openCandidate(c.id); };
+    tb.appendChild(tr);
+  });
+  wrap.appendChild(t); return wrap;
+}
+function select(id, first, map, value) {
+  var s = el("select"); s.id = id; s.appendChild(new Option(first, ""));
+  Object.keys(map).forEach(function (k) { s.appendChild(new Option(map[k], k)); });
+  s.value = value; return s;
+}
+function candidates(main) {
+  add(main, el("h1", null, "Кандидаты"), el("div", "sub", "Анкеты из Telegram Mini App и чата"));
+  var f = el("div", "filters"), q = el("input"), holder = el("div"), count = el("div", "minor");
+  q.id = "q"; q.placeholder = "Поиск: имя, телефон, район, филиал"; q.value = filters.q;
+  var v = select("fv", "Все рекомендации", META.verdicts, filters.verdict), s = select("fs", "Все статусы", META.statuses, filters.status);
+  var p = select("fp", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, filters.pos);
+  var o = select("fo", "Сначала высокий балл", {"new": "Сначала новые"}, filters.sort);
+  var csv = el("a", "btn alt", "Скачать CSV"); csv.href = "/api/export.csv"; csv.style.textDecoration = "none";
+  add(f, q, v, s, p, o, csv); count.style.margin = "0 0 8px"; add(main, f, count, holder);
+  function load() {
+    filters = {q: q.value, verdict: v.value, status: s.value, pos: p.value, sort: o.value};
+    var qs = Object.keys(filters).filter(function (k) { return filters[k]; }).map(function (k) { return k + "=" + encodeURIComponent(filters[k]); }).join("&");
+    api("/api/candidates" + (qs ? "?" + qs : "")).then(function (d) {
+      holder.textContent = ""; count.textContent = "Найдено: " + d.count; holder.appendChild(table(d.items));
+    }).catch(function (e) { if (e.message !== "auth") { holder.textContent = ""; holder.appendChild(el("div", "err", e.message)); } });
+  }
+  q.oninput = function () { clearTimeout(timer); timer = setTimeout(load, 250); };
+  v.onchange = s.onchange = p.onchange = o.onchange = load;
+  load();
+}
+
+// ---------- карточка кандидата
+function closeDrawer() { Array.prototype.forEach.call(document.querySelectorAll(".drawer,.shade"), function (e) { e.remove(); }); }
+function openCandidate(id) {
+  api("/api/candidates/" + id).then(function (c) {
+    closeDrawer();
+    var shade = el("div", "shade"), d = el("div", "drawer"), x = el("button", "x", "×");
+    shade.onclick = x.onclick = function () { closeDrawer(); shell(); };
+    d.appendChild(x);
+    var who = el("div", "who"), info = el("div");
+    if (c.photo) { var im = el("img"); im.alt = "Селфи"; im.src = "/api/candidates/" + id + "/photo"; im.onerror = function () { im.replaceWith(el("div", "noimg")); }; who.appendChild(im); }
+    else who.appendChild(el("div", "noimg"));
+    add(info, el("h2", null, c.fio || "-"), el("div", "minor", [c.pos, c.age ? c.age + " лет" : "", c.phone, c.username ? "@" + c.username : ""].filter(Boolean).join(" · ")));
+    var line = el("div"); line.style.marginTop = "8px"; add(line, el("span", "pct", c.pct + "%  "), tag(c.verdict, c.verdict_ru)); info.appendChild(line);
+    add(who, info); d.appendChild(who);
+    if (c.slot) d.appendChild(el("div", "minor", "Удобное время для собеседования: " + c.slot));
+
+    d.appendChild(el("div", "sec", "Статус"));
+    var acts = el("div", "acts");
+    Object.keys(META.statuses).forEach(function (s) {
+      var b = el("button", c.status === s ? "on" : "", META.statuses[s]); b.setAttribute("data-status", s);
+      b.onclick = function () { api("/api/candidates/" + id, {status: s}).then(function () { toast("Статус: " + META.statuses[s]); openCandidate(id); }).catch(function (e) { toast(e.message); }); };
+      acts.appendChild(b);
+    });
+    d.appendChild(acts);
+
+    d.appendChild(el("div", "sec", "Филиал"));
+    var rf = el("div", "rowf"), bi = el("input", "field"), bs = el("button", "btn alt", "Сохранить");
+    bi.id = "branch"; bi.maxLength = 80; bi.placeholder = "Например: Чиланзар"; bi.value = c.branch;
+    bs.onclick = function () { api("/api/candidates/" + id, {branch: bi.value}).then(function () { toast("Филиал сохранён"); }).catch(function (e) { toast(e.message); }); };
+    add(rf, bi, bs); d.appendChild(rf);
+
+    d.appendChild(el("div", "sec", "Риски и флаги"));
+    var fl = el("div", "flags");
+    if (!c.flags.length) fl.appendChild(el("div", null, "По анкете серьёзных рисков не выявлено"));
+    c.flags.forEach(function (f) { fl.appendChild(el("div", null, f[0] + " " + f[1])); });
+    d.appendChild(fl);
+
+    d.appendChild(el("div", "sec", "Полный профиль"));
+    d.appendChild(el("pre", null, c.profile));
+    if (c.history.length) {
+      d.appendChild(el("div", "sec", "История статусов"));
+      c.history.forEach(function (h) {
+        d.appendChild(el("div", "minor", fmtDate(h.ts) + ": " + (META.statuses[h.old_status] || h.old_status) + " → " + (META.statuses[h.new_status] || h.new_status) + " (" + h.changed_by + ")"));
+      });
+    }
+    add(document.body, shade, d);
+  }).catch(function (e) { if (e.message !== "auth") toast(e.message); });
+}
+
+function start() { return api("/api/me").then(function (m) { META = m; shell(); }); }
+start().catch(function (e) { if (e.message !== "auth") showLogin(e.message); });
+})();
+</script>
+</body>
+</html>

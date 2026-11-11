@@ -1,14 +1,13 @@
-"""Telegram-bot: nomzodlarni kompetensiyalar bo'yicha so'rovdan o'tkazish va baholash (Texnomart, sotuvchi-konsultant).
+"""Telegram-бот Texnomart: анкета кандидата (Mini App или чат), оценка и карточка для рекрутера.
 
-Ishga tushirish:
+Запуск:
     pip install -r requirements.txt
-    export BOT_TOKEN="@BotFather bergan token"
-    export RECRUITER_IDS="123456789,987654321"     # rekruterlarning Telegram ID lari (@userinfobot dan bilib oling)
-    python bot.py
+    BOT_TOKEN, RECRUITER_IDS, WEBAPP_URL, WEBAPP_ORIGIN (и при желании SHEETS_URL, SHEETS_SECRET) задаются
+    переменными окружения; затем python bot.py
 
-Nomzod anketani to'ldiradi va hech qanday baho ko'rmaydi. Rekruterga qisqa karta keladi (ball, tavsiya, flaglar)
-va tugmalar: to'liq profil, chaqirish, zaxira, rad. Hamma nomzodlar candidates.db bazasida saqlanadi.
-Rekruter buyruqlari: /reyting, /songgi, /stat, /csv, /nomzod, /holat (/start yozsangiz ro'yxat chiqadi).
+Кандидат выбирает язык (uz/ru/en), заполняет анкету и оценку не видит. Рекрутеру всё приходит на русском:
+карточка с селфи, баллом, вердиктом, флагами и кнопками статуса. Кандидаты хранятся в candidates.db.
+Команды рекрутера: /reyting, /songgi, /stat, /csv, /nomzod, /holat (список по /start).
 """
 import asyncio
 import json
@@ -20,10 +19,13 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppI
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler, ContextTypes,
                           MessageHandler, PicklePersistence, filters)
 
+import dashboard
+import i18n
 import sheets
 import store
 import webapi
-from scoring import JOB, QUESTIONS, build_profile, evaluate, verdict_code
+from scoring import (JOB, QUESTIONS, VERDICT_RU, applies, build_profile, clean_answers, evaluate,
+                     position_name, verdict_code)
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("texnomart-bot")
@@ -33,31 +35,21 @@ RECRUITERS = {int(x) for x in re.split(r"[\s,;]+", os.environ.get("RECRUITER_IDS
               if x.strip().lstrip("-").isdigit()}
 WEBAPP_URL = os.environ.get("WEBAPP_URL", "")
 EMOJI = {"QABUL": "🟢", "ZAXIRA": "🟡", "RAD": "🔴"}
-VERDICT_ARGS = {"qabul": "QABUL", "zaxira": "ZAXIRA", "rad": "RAD"}
-
-GREETING = (
-    "Assalomu alaykum! Bu %s kompaniyasidagi «%s» vakansiyasi uchun anketa.\n\n"
-    "Shartlar:\n"
-    "- %s\n"
-    "- Grafik: %s\n"
-    "- Daromad: %s\n"
-    "- Tajriba shart emas, ustoz bilan o'rgatamiz.\n\n"
-    "Anketa taxminan 15 daqiqa oladi. Iltimos, rost va o'z so'zlaringiz bilan javob bering. "
-    "Oldingi savolga qaytish uchun /orqaga ni yozing.\n\n"
-    "Anketani boshlash tugmasini bosib, ism, telefon, javoblaringiz va selfie suratingiz ishga qabul qilish "
-    "maqsadida qayta ishlanishiga rozilik bildirasiz."
-) % (JOB["company"], JOB["position"], JOB["training"], JOB["schedule"], JOB["income"])
+VERDICT_ARGS = {"qabul": "QABUL", "zaxira": "ZAXIRA", "rad": "RAD", "принять": "QABUL", "резерв": "ZAXIRA", "отказ": "RAD"}
+POS_ARGS = {"konsultant": 0, "консультант": 0, "kassir": 1, "кассир": 1}
+STATUS_RU = {"yangi": "новая", "chaqirildi": "приглашён", "zaxira": "резерв", "rad": "отказ", "qabul": "принят"}
+STATUS_ARGS = dict({v: k for k, v in STATUS_RU.items()}, **{k: k for k in STATUS_RU})
 
 HELP = (
-    "Rekruter buyruqlari:\n"
-    "/reyting - eng yuqori ballli nomzodlar (/reyting qabul, /reyting zaxira, /reyting rad)\n"
-    "/songgi - oxirgi kelgan anketalar\n"
-    "/stat - umumiy statistika\n"
-    "/csv - barcha nomzodlar jadvali (Excel uchun)\n"
-    "/nomzod 12 yoki /n_12 - to'liq profil\n"
-    "/holat 12 chaqirildi - holatni o'zgartirish (%s)\n"
-    "/anketa - anketani o'zingiz sinab ko'rish"
-) % ", ".join(store.STATUSES)
+    "Команды рекрутера:\n"
+    "/reyting - лучшие кандидаты по баллу (можно: /reyting qabul, zaxira, rad, kassir, konsultant)\n"
+    "/songgi - последние анкеты\n"
+    "/stat - общая статистика\n"
+    "/csv - таблица всех кандидатов (для Excel)\n"
+    "/nomzod 12 или /n_12 - полный профиль\n"
+    "/holat 12 chaqirildi - сменить статус (%s)\n"
+    "/anketa - пройти анкету самому"
+) % ", ".join("%s = %s" % (k, v) for k, v in STATUS_RU.items())
 
 
 def is_rec(update):
@@ -72,17 +64,17 @@ def is_rec(update):
 def only_rec(fn):
     async def wrapper(update, context):
         if not is_rec(update):
-            await update.effective_message.reply_text("Bu buyruq faqat rekruter uchun.")
+            await update.effective_message.reply_text("Эта команда только для рекрутера.")
             return
         return await fn(update, context)
     return wrapper
 
 
 def split_text(text, limit=4000):
-    """Telegram limiti 4096 belgi: matnni qator chegarasida bo'laklarga ajratadi."""
+    """Лимит Telegram 4096 символов: делит текст на части по границам строк."""
     parts, cur = [], ""
     for line in text.split("\n"):
-        while len(line) > limit:  # juda uzun bitta qator
+        while len(line) > limit:  # одна очень длинная строка
             if cur:
                 parts.append(cur)
                 cur = ""
@@ -104,7 +96,7 @@ async def send_long(bot, chat_id, text, markup=None):
 
 
 async def sync_sheet(cid):
-    """Nomzod yozuvini Google Tablitsaga yuboradi (agar SHEETS_URL berilgan bo'lsa). Botni to'xtatmaydi."""
+    """Отправляет запись кандидата в Google Таблицу (если задан SHEETS_URL). Бота не останавливает."""
     if not sheets.enabled():
         return
     row = store.get(cid)
@@ -115,35 +107,58 @@ async def sync_sheet(cid):
 def status_markup(cid, with_profile=False):
     rows = []
     if with_profile:
-        rows.append([InlineKeyboardButton("To'liq profil", callback_data="p:%d" % cid)])
-    rows.append([InlineKeyboardButton("✅ Chaqirish", callback_data="s:%d:chaqirildi" % cid),
-                 InlineKeyboardButton("⭐ Zaxira", callback_data="s:%d:zaxira" % cid),
-                 InlineKeyboardButton("❌ Rad", callback_data="s:%d:rad" % cid)])
+        rows.append([InlineKeyboardButton("Полный профиль", callback_data="p:%d" % cid)])
+    rows.append([InlineKeyboardButton("✅ Пригласить", callback_data="s:%d:chaqirildi" % cid),
+                 InlineKeyboardButton("⭐ Резерв", callback_data="s:%d:zaxira" % cid),
+                 InlineKeyboardButton("❌ Отказ", callback_data="s:%d:rad" % cid)])
     return InlineKeyboardMarkup(rows)
 
 
-# ---------------------------------------------------------------- nomzod tomoni
+# ---------------------------------------------------------------- сторона кандидата
+def lang_of(st):
+    return i18n.lang_ok(st.get("lang"))
+
+
+def next_index(answers, start, step=1):
+    """Ближайший вопрос, который относится к кандидату, начиная с start в направлении step. None, если нет."""
+    j = start
+    while 0 <= j < len(QUESTIONS):
+        if applies(QUESTIONS[j], answers):
+            return j
+        j += step
+    return None
+
+
 async def send_question(chat_id, context):
     st = context.user_data
+    lang, a = lang_of(st), st["answers"]
     q = QUESTIONS[st["i"]]
     if q.get("block"):
-        await context.bot.send_message(chat_id, "— %s —" % q["block"])
-    text = "(%d/%d) %s" % (st["i"] + 1, len(QUESTIONS), q["text"])
+        await context.bot.send_message(chat_id, "— %s —" % i18n.block(q["block"], lang))
+    active = [n for n, x in enumerate(QUESTIONS) if applies(x, a)]
+    num = active.index(st["i"]) + 1 if st["i"] in active else st["i"] + 1
+    text = "(%d/%d) %s" % (num, len(active), i18n.q_text(q["key"], lang))
     markup = None
     if q["type"] == "choice":
         markup = InlineKeyboardMarkup([[InlineKeyboardButton(o, callback_data="a:%d:%d" % (st["i"], n))]
-                                       for n, o in enumerate(q["options"])])
+                                       for n, o in enumerate(i18n.q_options(q["key"], lang))])
     await context.bot.send_message(chat_id, text, reply_markup=markup)
 
 
 async def begin(update, context):
     context.user_data.clear()
-    context.user_data.update({"i": -1, "answers": {}})
+    context.user_data.update({"i": -2, "answers": {}, "lang": "uz"})
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton(i18n.LANG_FLAGS[l] + " " + i18n.LANG_NAMES[l], callback_data="l:" + l)] for l in i18n.LANGS])
+    await update.effective_message.reply_text(i18n.ui("choose_lang", "uz"), reply_markup=markup)
+
+
+async def send_greeting(message, lang):
     rows = []
     if WEBAPP_URL:
-        rows.append([InlineKeyboardButton("📝 Anketani to'ldirish (selfie bilan)", web_app=WebAppInfo(url=WEBAPP_URL))])
-    rows.append([InlineKeyboardButton("💬 Chatda to'ldirish", callback_data="go")])
-    await update.effective_message.reply_text(GREETING, reply_markup=InlineKeyboardMarkup(rows))
+        url = WEBAPP_URL + ("&" if "?" in WEBAPP_URL else "?") + "lang=" + lang
+        rows.append([InlineKeyboardButton(i18n.ui("btn_web", lang), web_app=WebAppInfo(url=url))])
+    rows.append([InlineKeyboardButton(i18n.ui("btn_chat", lang), callback_data="go")])
+    await message.reply_text(i18n.greeting(lang, JOB["company"]), reply_markup=InlineKeyboardMarkup(rows))
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -159,24 +174,26 @@ async def anketa(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     st = context.user_data
-    if "i" not in st or st["i"] <= 0:
-        await update.effective_message.reply_text("Orqaga qaytib bo'lmaydi.")
+    prev = next_index(st["answers"], st["i"] - 1, -1) if st.get("i", -1) > 0 else None
+    if prev is None:
+        await update.effective_message.reply_text(i18n.ui("no_back", lang_of(st)))
         return
-    st["i"] -= 1
+    st["i"] = prev
     await send_question(update.effective_chat.id, context)
 
 
 async def advance(chat_id, context, user):
     st = context.user_data
-    st["i"] += 1
-    if st["i"] >= len(QUESTIONS):
+    nxt = next_index(st["answers"], st["i"] + 1)
+    if nxt is None:
         await finish(chat_id, context, user)
     else:
+        st["i"] = nxt
         await send_question(chat_id, context)
 
 
 async def publish(bot, user_id, username, a, photo=None):
-    """Javoblarni baholaydi, bazaga saqlaydi, rekruterga karta (selfie bilan) yuboradi va jadvalga yozadi."""
+    """Оценивает ответы, сохраняет в базу, отправляет рекрутерам карточку (с селфи) и пишет в таблицу."""
     ev = evaluate(a)
     code = verdict_code(ev["verdict"])
     red = sum(1 for f in ev["flags"] if f[0] == "🔴")
@@ -184,40 +201,47 @@ async def publish(bot, user_id, username, a, photo=None):
     flags = " | ".join(f[1] for f in ev["flags"])
     cid = store.save(user_id, username or "", json.dumps(a, ensure_ascii=False), a.get("fio", ""),
                      a.get("phone", ""), ev["pct"], code, red, yellow, flags)
-    card = ("🆕 Yangi nomzod #%d\n%s, %s yosh, %s\n%s %d%%  %s\n🔴 %d   🟡 %d\n/n_%d - to'liq profil"
-            % (cid, a.get("fio", "-"), a.get("age", "-"), a.get("phone", "-"),
-               EMOJI[code], ev["pct"], code, red, yellow, cid))
+    card = ("🆕 Новый кандидат #%d · %s\n%s, %s лет, %s\n%s %d%%  %s\n🔴 %d   🟡 %d"
+            % (cid, position_name(a), a.get("fio", "-"), a.get("age", "-"), a.get("phone", "-"),
+               EMOJI[code], ev["pct"], VERDICT_RU[code], red, yellow))
+    top = [f for f in ev["flags"] if f[0] == "🔴"][:3] or ev["flags"][:2]
+    for lvl, text, _c in top:  # главные риски сразу в уведомлении
+        card += "\n%s %s" % (lvl, text if len(text) <= 110 else text[:107] + "...")
+    card += "\n/n_%d - полный профиль" % cid
     markup = status_markup(cid, with_profile=True)
-    photo_ref = photo  # birinchi rekruterga baytlar, keyin Telegram file_id
+    photo_ref = photo  # первому рекрутеру байты, остальным file_id Telegram
     for rid in sorted(RECRUITERS):
         try:
             if photo_ref is not None:
-                msg = await bot.send_photo(rid, photo_ref, caption=card, reply_markup=markup)
+                msg = await bot.send_photo(rid, photo_ref, caption=card[:1024], reply_markup=markup)
                 if isinstance(photo_ref, (bytes, bytearray)) and getattr(msg, "photo", None):
                     photo_ref = msg.photo[-1].file_id
                     store.set_photo(cid, photo_ref)
             else:
                 await bot.send_message(rid, card, reply_markup=markup)
-        except Exception:  # rekruter botni bloklagan bo'lishi mumkin
-            log.exception("Rekruterga yuborib bo'lmadi: %s", rid)
+        except Exception:  # рекрутер мог заблокировать бота
+            log.exception("Не удалось отправить рекрутеру: %s", rid)
     await sync_sheet(cid)
     return cid
 
 
 async def finish(chat_id, context, user):
-    a = dict(context.user_data["answers"])
+    st = context.user_data
+    lang = lang_of(st)
+    a = clean_answers(dict(st["answers"]))
+    a["ui_lang"] = lang
     context.user_data.clear()
-    await context.bot.send_message(chat_id, "Rahmat! Anketa yuborildi. Rekruter siz ko'rsatgan raqam orqali bog'lanadi.")
+    await context.bot.send_message(chat_id, i18n.ui("thanks", lang))
     await publish(context.bot, user.id, user.username, a)
 
 
 async def accept_web(bot, user, answers, photo):
-    """Mini App dan kelgan anketa (webapi tekshirgan)."""
+    """Анкета из Mini App (уже проверена в webapi)."""
     await publish(bot, user["id"], user.get("username"), answers, photo)
     try:
-        await bot.send_message(user["id"], "Rahmat! Anketangiz qabul qilindi. Rekruter siz ko'rsatgan raqam orqali bog'lanadi.")
+        await bot.send_message(user["id"], i18n.ui("thanks", answers.get("ui_lang")))
     except Exception:
-        log.exception("Nomzodga javob yuborib bo'lmadi")
+        log.exception("Не удалось ответить кандидату")
 
 
 async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -229,7 +253,13 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await cq.answer()
     st = context.user_data
     if "i" not in st:
-        await cq.message.reply_text("Anketani boshlash uchun /start ni bosing.")
+        await cq.message.reply_text(i18n.ui("press_start", "uz"))
+        return
+    if data.startswith("l:"):
+        if st["i"] <= -1:  # язык выбирается до начала анкеты
+            st["lang"] = i18n.lang_ok(data[2:])
+            st["i"] = -1
+            await send_greeting(cq.message, st["lang"])
         return
     if data == "go":
         if st["i"] == -1:
@@ -240,12 +270,12 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not m:
         return
     qi, n = int(m.group(1)), int(m.group(2))
-    if qi != st["i"] or not 0 <= qi < len(QUESTIONS):  # eski tugma bosildi
+    if qi != st["i"] or not 0 <= qi < len(QUESTIONS):  # нажата старая кнопка
         return
     q = QUESTIONS[qi]
     if q["type"] != "choice" or n >= len(q["options"]):
         return
-    st["answers"][q["key"]] = q["options"][n]
+    st["answers"][q["key"]] = q["options"][n]   # в базе вариант хранится по-русски (для рекрутера)
     st["answers"][q["key"] + "_i"] = n
     await advance(cq.message.chat_id, context, cq.from_user)
 
@@ -253,48 +283,50 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     st = context.user_data
     msg = update.effective_message
+    lang = lang_of(st)
     if "i" not in st or st["i"] < 0:
-        await msg.reply_text("Anketani boshlash uchun /start ni bosing.")
+        await msg.reply_text(i18n.ui("press_start", lang))
         return
     q = QUESTIONS[st["i"]]
     if q["type"] == "choice":
-        await msg.reply_text("Iltimos, savol ostidagi tugma orqali variantni tanlang.")
+        await msg.reply_text(i18n.ui("use_buttons", lang))
         return
     text = (msg.text or "").strip()
     digits = re.sub(r"\D", "", text)
     if q["type"] == "number" and not digits:
-        await msg.reply_text("Iltimos, raqam kiriting.")
+        await msg.reply_text(i18n.ui("need_number", lang))
         return
     if q["key"] == "phone" and not 9 <= len(digits) <= 12:
-        await msg.reply_text("Raqam noto'g'ri. Masalan: +998 90 123 45 67")
+        await msg.reply_text(i18n.ui("bad_phone", lang))
         return
     if q["key"] == "age" and not 14 <= int(digits[:3]) <= 80:
-        await msg.reply_text("Yoshni to'g'ri kiriting.")
+        await msg.reply_text(i18n.ui("bad_age", lang))
         return
     st["answers"][q["key"]] = text[:1500]
     await advance(update.effective_chat.id, context, update.effective_user)
 
 
-# ---------------------------------------------------------------- rekruter tomoni
+# ---------------------------------------------------------------- сторона рекрутера
 async def send_profile(bot, chat_id, cid):
     row = store.get(cid)
     if not row:
-        await bot.send_message(chat_id, "Nomzod #%d topilmadi." % cid)
+        await bot.send_message(chat_id, "Кандидат #%d не найден." % cid)
         return
     text = build_profile(json.loads(row["answers"]), row["ts"])
-    text += "\n\nTelegram: %s\nHolat: %s\n#%d" % (("@" + row["username"]) if row["username"] else "-", row["status"], cid)
+    text += "\n\nTelegram: %s\nСтатус: %s\n#%d" % (("@" + row["username"]) if row["username"] else "-",
+                                                 STATUS_RU.get(row["status"], row["status"]), cid)
     if row["photo_file_id"]:
         try:
             await bot.send_photo(chat_id, row["photo_file_id"], caption="#%d %s" % (cid, row["fio"] or ""))
         except Exception:
-            log.exception("Selfieni yuborib bo'lmadi")
+            log.exception("Не удалось отправить селфи")
     await send_long(bot, chat_id, text, markup=status_markup(cid))
 
 
 async def rec_button(update, context):
     cq = update.callback_query
     if not is_rec(update):
-        await cq.answer("Ruxsat yo'q", show_alert=True)
+        await cq.answer("Нет доступа", show_alert=True)
         return
     await cq.answer()
     parts = cq.data.split(":")
@@ -302,56 +334,71 @@ async def rec_button(update, context):
         await send_profile(context.bot, cq.message.chat_id, int(parts[1]))
     elif parts[0] == "s" and len(parts) == 3 and parts[1].isdigit():
         ok = store.set_status(int(parts[1]), parts[2])
-        await cq.message.reply_text("#%s holati: %s" % (parts[1], parts[2]) if ok else "Holatni o'zgartirib bo'lmadi.")
+        await cq.message.reply_text("#%s статус: %s" % (parts[1], STATUS_RU.get(parts[2], parts[2])) if ok
+                                    else "Не удалось сменить статус.")
         if ok:
             await sync_sheet(int(parts[1]))
 
 
+def row_pos(r):
+    try:
+        return json.loads(r["answers"] or "{}").get("position_i", 0)
+    except (ValueError, TypeError):
+        return 0
+
+
 def row_line(r):
-    return "%d. %s %s - %d%% (🔴%d 🟡%d) %s | %s /n_%d" % (
-        r["id"], EMOJI.get(r["verdict"], ""), r["fio"] or "-", r["pct"], r["red"], r["yellow"],
-        r["status"], r["verdict"], r["id"])
+    return "%d. %s %s (%s) - %d%% (🔴%d 🟡%d) %s | %s /n_%d" % (
+        r["id"], EMOJI.get(r["verdict"], ""), r["fio"] or "-", ["Консультант", "Кассир"][row_pos(r) if row_pos(r) in (0, 1) else 0],
+        r["pct"], r["red"], r["yellow"], STATUS_RU.get(r["status"], r["status"]),
+        VERDICT_RU.get(r["verdict"], r["verdict"]), r["id"])
 
 
 async def list_reply(update, context, rows, title):
     if not rows:
-        await update.effective_message.reply_text("Hozircha nomzodlar yo'q.")
+        await update.effective_message.reply_text("Кандидатов пока нет.")
         return
     await send_long(context.bot, update.effective_chat.id, title + "\n\n" + "\n".join(row_line(r) for r in rows))
 
 
 @only_rec
 async def reyting(update, context):
-    arg = (context.args[0].lower() if context.args else "")
-    verdict = VERDICT_ARGS.get(arg)
-    await list_reply(update, context, store.listing(verdict=verdict, limit=20),
-                     "Reyting (ball bo'yicha)" + (": " + verdict if verdict else ""))
+    args = [x.lower() for x in (context.args or [])]
+    verdict = next((VERDICT_ARGS[x] for x in args if x in VERDICT_ARGS), None)
+    pos = next((POS_ARGS[x] for x in args if x in POS_ARGS), None)
+    rows = store.listing(verdict=verdict, limit=20 if pos is None else 500)
+    title = "Рейтинг по баллу"
+    if pos is not None:
+        rows = [r for r in rows if row_pos(r) == pos][:20]
+        title += ", " + ["консультанты", "кассиры"][pos]
+    if verdict:
+        title += ": " + VERDICT_RU[verdict]
+    await list_reply(update, context, rows, title)
 
 
 @only_rec
 async def songgi(update, context):
-    await list_reply(update, context, store.listing(newest=True, limit=15), "Oxirgi anketalar")
+    await list_reply(update, context, store.listing(newest=True, limit=15), "Последние анкеты")
 
 
 @only_rec
 async def stat(update, context):
     by_v, by_s = store.stats()
-    total = sum(by_v.values())
-    lines = ["Jami nomzodlar: %d" % total, ""]
-    lines += ["%s %s: %d" % (EMOJI[k], k, by_v.get(k, 0)) for k in ("QABUL", "ZAXIRA", "RAD")]
-    lines += ["", "Holatlar: " + ", ".join("%s %d" % (k, by_s.get(k, 0)) for k in store.STATUSES)]
+    lines = ["Всего кандидатов: %d" % sum(by_v.values()), ""]
+    lines += ["%s %s: %d" % (EMOJI[k], VERDICT_RU[k], by_v.get(k, 0)) for k in ("QABUL", "ZAXIRA", "RAD")]
+    lines += ["", "Статусы: " + ", ".join("%s %d" % (STATUS_RU[k], by_s.get(k, 0)) for k in store.STATUSES)]
     await update.effective_message.reply_text("\n".join(lines))
 
 
 @only_rec
 async def csv_export(update, context):
-    await update.effective_message.reply_document(document=store.export_csv(), filename="nomzodlar.csv")
+    await update.effective_message.reply_document(document=store.export_csv(), filename="kandidaty.csv")
 
 
 @only_rec
 async def nomzod(update, context):
     if not context.args or not context.args[0].isdigit():
-        await update.effective_message.reply_text("Masalan: /nomzod 12")
+        await update.effective_message.reply_text("Например: /nomzod 12")
         return
     await send_profile(context.bot, update.effective_chat.id, int(context.args[0]))
 
@@ -365,34 +412,41 @@ async def open_profile(update, context):
 
 @only_rec
 async def holat(update, context):
+    hint = "Например: /holat 12 chaqirildi\nСтатусы: " + ", ".join("%s (%s)" % (k, v) for k, v in STATUS_RU.items())
     if len(context.args) != 2 or not context.args[0].isdigit():
-        await update.effective_message.reply_text("Masalan: /holat 12 chaqirildi\nHolatlar: " + ", ".join(store.STATUSES))
+        await update.effective_message.reply_text(hint)
         return
-    ok = store.set_status(int(context.args[0]), context.args[1].lower())
-    await update.effective_message.reply_text("Holat o'zgartirildi." if ok else "Nomzod yoki holat noto'g'ri.")
+    status = STATUS_ARGS.get(context.args[1].lower(), context.args[1].lower())
+    ok = store.set_status(int(context.args[0]), status)
+    await update.effective_message.reply_text("Статус изменён: %s." % STATUS_RU[status] if ok
+                                              else "Кандидат или статус указан неверно.\n" + hint)
     if ok:
         await sync_sheet(int(context.args[0]))
 
 
 async def on_error(update, context):
-    log.error("Xatolik", exc_info=context.error)
+    log.error("Ошибка", exc_info=context.error)
 
 
 def main():
     if not TOKEN:
-        raise SystemExit("BOT_TOKEN o'rnatilmagan.")
+        raise SystemExit("Не задан BOT_TOKEN.")
     if not RECRUITERS:
-        log.warning("RECRUITER_IDS bo'sh: nomzod kartalari hech kimga yuborilmaydi!")
+        log.warning("RECRUITER_IDS пуст: карточки кандидатов никому не будут отправлены!")
     store.init()
-    persistence = PicklePersistence(filepath=os.environ.get("STATE_PATH", "state.pkl"))
+
     async def post_init(application):
         port = int(os.environ.get("PORT", "8080"))
-        webapi.start_server(asyncio.get_running_loop(),
-                            lambda user, answers, photo: accept_web(application.bot, user, answers, photo),
-                            TOKEN, port, os.environ.get("WEBAPP_ORIGIN", ""))
+        loop = asyncio.get_running_loop()
+        dash = dashboard.Dashboard(TOKEN, on_change=lambda cid: asyncio.run_coroutine_threadsafe(sync_sheet(cid), loop))
+        if not dash.enabled:
+            log.warning("Веб-панель выключена: задайте DASHBOARD_PASSWORD (не короче 8 символов).")
+        webapi.start_server(loop, lambda user, answers, photo: accept_web(application.bot, user, answers, photo),
+                            TOKEN, port, os.environ.get("WEBAPP_ORIGIN", ""), dash=dash)
         if not WEBAPP_URL:
-            log.warning("WEBAPP_URL bo'sh: Mini App tugmasi ko'rsatilmaydi (faqat chat rejimi).")
+            log.warning("WEBAPP_URL пуст: кнопка Mini App не показывается (только режим чата).")
 
+    persistence = PicklePersistence(filepath=os.environ.get("STATE_PATH", "state.pkl"))
     app = Application.builder().token(TOKEN).persistence(persistence).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("anketa", anketa))

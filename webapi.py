@@ -20,7 +20,8 @@ import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from scoring import QUESTIONS
+import i18n
+from scoring import QUESTIONS, applies
 
 log = logging.getLogger("texnomart-bot.web")
 
@@ -64,6 +65,8 @@ def sanitize(a):
         return None
     out = {}
     for q in QUESTIONS:
+        if not applies(q, out):   # boshqa lavozim yoki shartli savol: kutilmaydi va saqlanmaydi
+            continue
         k = q["key"]
         if q["type"] == "choice":
             i = a.get(k + "_i")
@@ -151,6 +154,7 @@ class Gate:
         photo = decode_photo(p.get("photo"))
         if photo is None:
             return 400, {"ok": False, "error": "photo"}
+        answers["ui_lang"] = i18n.lang_ok(p.get("lang"))
         slot = p.get("slot")
         if isinstance(slot, str) and SLOT_RE.match(slot):
             answers["slot"] = slot
@@ -170,7 +174,7 @@ class Gate:
         return 200, {"ok": True}
 
 
-def make_handler(gate):
+def make_handler(gate, dash=None):
     class Handler(BaseHTTPRequestHandler):
         timeout = 30
 
@@ -201,13 +205,35 @@ def make_handler(gate):
             self.send_header("Content-Length", "0")
             self.end_headers()
 
+        def _dash(self, method, body=b""):
+            ip = (self.headers.get("X-Forwarded-For") or self.client_address[0]).split(",")[0].strip()
+            code, headers, out = dash.handle(method, self.path, self.headers, body, ip)
+            self.send_response(code)
+            for k, v in headers.items():
+                self.send_header(k, v)
+            self.send_header("Content-Length", str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
+
         def do_GET(self):
-            if self.path.split("?")[0] in ("/", "/health"):
+            if dash and dash.match(self.path):
+                self._dash("GET")
+            elif self.path.split("?")[0] in ("/", "/health"):
                 self._json(200, {"ok": True})
             else:
                 self._json(404, {"ok": False})
 
         def do_POST(self):
+            if dash and dash.match(self.path):
+                try:
+                    n = int(self.headers.get("Content-Length") or 0)
+                except ValueError:
+                    n = 0
+                if not 0 <= n <= 10_000:
+                    self._json(413, {"ok": False, "error": "big"})
+                    return
+                self._dash("POST", self.rfile.read(n) if n else b"")
+                return
             if self.path.split("?")[0] != "/api/submit":
                 self._json(404, {"ok": False})
                 return
@@ -227,10 +253,10 @@ def make_handler(gate):
     return Handler
 
 
-def start_server(loop, process, token, port, origins=""):
+def start_server(loop, process, token, port, origins="", dash=None):
     """HTTP serverni alohida oqimda ishga tushiradi. process(user, answers, photo_bytes) - asinxron funksiya."""
     gate = Gate(loop, process, token, origins)
-    srv = ThreadingHTTPServer(("0.0.0.0", port), make_handler(gate))
+    srv = ThreadingHTTPServer(("0.0.0.0", port), make_handler(gate, dash))
     srv.daemon_threads = True
     threading.Thread(target=srv.serve_forever, daemon=True, name="webapi").start()
     log.info("Mini App uchun HTTP server: port %d", port)

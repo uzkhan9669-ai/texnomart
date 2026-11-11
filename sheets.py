@@ -22,12 +22,18 @@ def build_payload(row):
     """row: store dan olingan nomzod yozuvi (lug'at)."""
     answers = json.loads(row["answers"] or "{}")
     # oilaviy ahvol jadvalga yuborilmaydi (ma'lumotni kamaytirish uchun)
-    public = {k: v for k, v in answers.items() if not k.startswith("marital_status")}
+    private = ("marital_status", "children", "health_note")   # shaxsiy ma'lumot jadvalga yuborilmaydi
+    public = {k: v for k, v in answers.items() if not k.startswith(private)}
+    try:
+        position = ["Консультант", "Кассир"][answers.get("position_i", 0)]
+    except (IndexError, TypeError):
+        position = ""
     return {
         "secret": os.environ.get("SHEETS_SECRET", ""),
         "tg_id": row["tg_id"],
         "ts": row["ts"],
         "fio": row["fio"],
+        "position": position,
         "age": answers.get("age", ""),
         "phone": row["phone"],
         "username": row["username"] or "",
