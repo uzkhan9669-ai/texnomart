@@ -219,8 +219,8 @@ def make_handler(gate, dash=None):
 
         def do_GET(self):
             host = (self.headers.get("Host") or "").split(":")[0].strip().lower()
-            if dash and DASHBOARD_HOST and host == DASHBOARD_HOST and self.path.split("?")[0] == "/":
-                self.path = "/dashboard"   # на своём домене панель открывается с главной страницы
+            if dash and self.path.split("?")[0] == "/" and (dash.enabled or (DASHBOARD_HOST and host == DASHBOARD_HOST)):
+                self.path = "/dashboard"   # панель открывается с главной страницы (проверка сервера: /health)
             if dash and dash.match(self.path):
                 self._dash("GET")
             elif self.path.split("?")[0] in ("/", "/health"):
