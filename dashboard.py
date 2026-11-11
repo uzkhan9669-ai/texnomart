@@ -8,6 +8,7 @@
 с этого адреса блокируется на 15 минут. Ответы с данными кандидатов не кэшируются.
 """
 import base64
+import datetime
 import hashlib
 import hmac
 import json
@@ -197,7 +198,35 @@ class Dashboard:
             for f in (r["flags"] or "").split(" | "):
                 if f:
                     risks[f] = risks.get(f, 0) + 1
+        today = datetime.date.today()
+        days = [(today - datetime.timedelta(days=n)).isoformat() for n in range(13, -1, -1)]
+        per_day = {d: 0 for d in days}
+        week = prev_week = 0
+        for i in items:
+            d = (i["ts"] or "")[:10]
+            if d in per_day:
+                per_day[d] += 1
+            try:
+                age_days = (today - datetime.date.fromisoformat(d)).days
+            except ValueError:
+                continue
+            week += 0 <= age_days < 7
+            prev_week += 7 <= age_days < 14
+        comp, by_pos = {}, {}
+        for r, i in zip(rows, items):
+            sc = evaluate(self._answers(r))["scores"]
+            for k, v in list(sc["hard"].items()) + list(sc["soft"].items()):
+                comp.setdefault(k, []).append(v)
+            by_pos.setdefault(i["pos"], []).append(i["pct"])
+        share = lambda n: round(n * 100 / len(items)) if items else 0
         return self._json(200, {
+            "daily": [[d, per_day[d]] for d in days], "week": week, "prev_week": prev_week,
+            "invited_pct": share(sum(1 for i in items if i["status"] in ("chaqirildi", "qabul"))),
+            "hired": sum(1 for i in items if i["status"] == "qabul"),
+            "red_pct": share(sum(1 for i in items if i["red"])),
+            "competencies": sorted(([k, round(sum(v) / len(v), 1), len(v)] for k, v in comp.items()), key=lambda x: x[1]),
+            "pos_avg": {k: round(sum(v) / len(v)) for k, v in by_pos.items()},
+            "storage": store.storage_info(),
             "total": len(items), "avg": round(sum(i["pct"] for i in items) / len(items)) if items else 0,
             "verdicts": {k: sum(1 for i in items if i["verdict"] == k) for k in ("QABUL", "ZAXIRA", "RAD")},
             "statuses": {k: sum(1 for i in items if i["status"] == k) for k in store.STATUSES},

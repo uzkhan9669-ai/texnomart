@@ -23,6 +23,8 @@ def main():
     for q in QUESTIONS:
         item = {k: q[k] for k in ("key", "type", "block", "pos", "when") if k in q}
         item["t"] = {l: list(i18n.Q[q["key"]][l]) for l in i18n.LANGS}
+        if q["key"] in i18n.Q_POS:   # текст зависит от должности
+            item["tp"] = {str(p): {l: list(v[l]) for l in i18n.LANGS} for p, v in i18n.Q_POS[q["key"]].items()}
         qs.append(item)
     t = open(os.path.join(HERE, "miniapp_template.html"), encoding="utf-8").read()
     for mark, val in (("/*@@JOB@@*/{}", i18n.JOB_TR), ("/*@@QUESTIONS@@*/[]", qs), ("/*@@BLOCKS@@*/{}", i18n.BLOCKS),

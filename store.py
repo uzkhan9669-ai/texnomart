@@ -10,8 +10,26 @@ from contextlib import closing
 STATUSES = ("yangi", "chaqirildi", "zaxira", "rad", "qabul")
 
 
+def data_dir():
+    """Папка для данных. Если подключён постоянный диск (Railway Volume в /data), данные хранятся на нём."""
+    d = os.environ.get("DATA_DIR", "/data")
+    return d if os.path.isdir(d) and os.access(d, os.W_OK) else "."
+
+
 def _db_path():
-    return os.environ.get("DB_PATH", "candidates.db")
+    return os.environ.get("DB_PATH") or os.path.join(data_dir(), "candidates.db")
+
+
+def storage_info():
+    """Где лежит база и переживёт ли она перезапуск (лежит ли на отдельно подключённом диске)."""
+    path = os.path.abspath(_db_path())
+    d, persistent = os.path.dirname(path), False
+    while d and d != "/":
+        if os.path.ismount(d):
+            persistent = True
+            break
+        d = os.path.dirname(d)
+    return {"path": path, "persistent": persistent}
 
 
 def _run(sql, args=(), fetch=None):

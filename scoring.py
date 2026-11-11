@@ -274,9 +274,11 @@ def evaluate(a):
     elif i("workload") == 1:
         yellow("К большому объёму готов(а), но ждёт условий и помощи", "workload")
     if i("health") == 2:
-        red("Сообщил(а), что физические требования работы (на ногах, подъём груза) не подходят", "health")
+        red("Сообщил(а), что сидячая работа за компьютером и кассой не подходит по здоровью" if cashier
+            else "Сообщил(а), что физические требования работы (на ногах, подъём груза) не подходят", "health")
     elif i("health") == 1:
-        yellow("Есть ограничения для работы на ногах или с грузом: уточнить, какие задачи выполнимы", "health")
+        yellow("Есть ограничения для сидячей работы за компьютером и кассой: уточнить, что именно мешает" if cashier
+               else "Есть ограничения для работы на ногах или с грузом: уточнить, какие задачи выполнимы", "health")
     if i("change") == 2:
         yellow("Негативно относится к изменениям, проверить адаптивность", "change")
     if not cashier and i("kpi") == 2:
@@ -474,7 +476,7 @@ def build_profile(a, ts=None):
     out.append("Вечерняя смена (до 22:00): %s" % g("evening"))
     out.append("Обучение 14 дней: %s" % g("training"))
     out.append("Языки: %s" % g("lang"))
-    out.append("Физические требования: %s%s" % (g("health"), (" (%s)" % g("health_note")) if a.get("health_note") else ""))
+    out.append(("Сидячая работа (рассрочки, оплаты): %s%s" if cashier else "Физические требования: %s%s") % (g("health"), (" (%s)" % g("health_note")) if a.get("health_note") else ""))
     out.append("Выход на работу: %s" % g("start"))
     out.append("Ожидаемый доход: %s (условия: %s)" % (g("income"), JOB["income"][1 if cashier else 0]))
     if cashier:

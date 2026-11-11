@@ -23,16 +23,22 @@ button{cursor:pointer}
 main{max-width:1280px;margin:0 auto;padding:22px 20px 60px}
 h1{font-size:22px;margin:0 0 4px;font-weight:800}
 .sub{color:var(--mut);margin-bottom:18px}
-.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
 .kpi .l{font-size:12px;color:var(--mut);font-weight:600}
 .kpi .v{font-size:28px;font-weight:800;margin-top:4px}
-.kpi.g .v{color:var(--green)}.kpi.a .v{color:var(--amber)}.kpi.r .v{color:var(--red)}
+.kpi .n{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.3}
+.seg{display:flex;gap:2px;height:22px;border-radius:6px;overflow:hidden;background:#eef0f3}.seg i{display:block;min-width:6px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:13px}.lg{display:flex;align-items:center;gap:6px}.lg b{margin-left:2px}
+.dot{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700}
+h3.mt{margin-top:20px}
+.tip{position:fixed;z-index:30;background:var(--ink);color:#fff;font-size:12px;font-weight:600;padding:5px 9px;border-radius:7px;pointer-events:none;white-space:nowrap}
+.warnbox{background:var(--amberbg);border:1px solid #f0cf7a;color:#5c4300;border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-weight:500}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
 .card h3{margin:0 0 12px;font-size:14px;font-weight:700}
-.bar{display:grid;grid-template-columns:150px 1fr 40px;gap:10px;align-items:center;margin:9px 0;font-size:13px}
+.bar{display:grid;grid-template-columns:minmax(110px,42%) 1fr 40px;gap:10px;align-items:center;margin:9px 0;font-size:13px}
 .bar .t{height:10px;background:#eef0f3;border-radius:5px;overflow:hidden}
-.bar .t i{display:block;height:100%;background:var(--y);border-radius:5px}
+.bar .t i{display:block;height:100%;background:#2a78d6;border-radius:5px}
 .bar b{text-align:right}
 .risk{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
 .risk:last-child{border:0}
@@ -77,6 +83,7 @@ tbody tr:hover{background:#fffbe6}
 .rowf input{flex:1}
 pre{white-space:pre-wrap;word-break:break-word;background:#fafafb;border:1px solid var(--line);border-radius:10px;padding:12px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:20}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.bar{grid-template-columns:110px 1fr 34px}}
 @media(max-width:560px){.top{gap:8px;padding:0 12px}.tabs button{padding:8px 9px}main{padding:16px 12px 50px}}
 </style>
@@ -138,35 +145,87 @@ function shell() {
 }
 
 // ---------- обзор
-function bars(card, pairs, max) {
+var SVG = "http://www.w3.org/2000/svg";
+function svg(tag, attrs) { var e = document.createElementNS(SVG, tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); return e; }
+function tip(target, text) {   // подсказка при наведении
+  target.addEventListener("mousemove", function (ev) {
+    var t = document.getElementById("tip") || document.body.appendChild(el("div", "tip")); t.id = "tip"; t.textContent = text;
+    t.style.left = Math.min(ev.clientX + 12, window.innerWidth - t.offsetWidth - 8) + "px"; t.style.top = (ev.clientY - 34) + "px";
+  });
+  target.addEventListener("mouseleave", function () { var t = document.getElementById("tip"); if (t) t.remove(); });
+}
+function bars(card, pairs, max, fmt) {
   max = Math.max(1, max || Math.max.apply(null, pairs.map(function (p) { return p[1]; })));
   pairs.forEach(function (p) {
     var row = el("div", "bar"), t = el("div", "t"), i = el("i"); i.style.width = Math.round(p[1] / max * 100) + "%";
-    t.appendChild(i); add(row, el("span", null, p[0]), t, el("b", null, String(p[1]))); card.appendChild(row);
+    t.appendChild(i); add(row, el("span", null, p[0]), t, el("b", null, fmt ? fmt(p[1]) : String(p[1]))); if (p[2]) tip(row, p[2]); card.appendChild(row);
   });
+}
+function dayChart(card, daily) {   // анкеты по дням: столбцы, одна серия
+  var W = 560, H = 190, L = 28, B = 24, T = 14, n = daily.length, max = Math.max(1, Math.max.apply(null, daily.map(function (d) { return d[1]; })));
+  var top = max <= 4 ? 4 : Math.ceil(max / 4) * 4, step = (W - L - 6) / n, bw = Math.min(26, step - 4);
+  var s = svg("svg", {viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Анкеты по дням за 14 дней"}); s.style.width = "100%"; s.style.display = "block";
+  for (var g = 0; g <= 4; g++) {
+    var y = T + (H - T - B) * g / 4, v = Math.round(top - top * g / 4);
+    s.appendChild(svg("line", {x1: L, x2: W - 4, y1: y, y2: y, stroke: g === 4 ? "#b9bbc4" : "#eceef2", "stroke-width": 1}));
+    var tx = svg("text", {x: L - 6, y: y + 4, "text-anchor": "end", "font-size": 10, fill: "#6b6b74"}); tx.textContent = v; s.appendChild(tx);
+  }
+  daily.forEach(function (d, k) {
+    var h = (H - T - B) * d[1] / top, x = L + step * k + (step - bw) / 2, y = H - B - h, dt = new Date(d[0] + "T00:00:00");
+    var label = dt.toLocaleDateString("ru-RU", {day: "numeric", month: "short"});
+    if (d[1]) s.appendChild(svg("path", {d: "M" + x + " " + (H - B) + "V" + (y + 3) + "q0-3 3-3h" + (bw - 6) + "q3 0 3 3V" + (H - B) + "z", fill: "#2a78d6"}));
+    if (k % 2 === (n - 1) % 2) { var t = svg("text", {x: x + bw / 2, y: H - 8, "text-anchor": "middle", "font-size": 10, fill: "#6b6b74"}); t.textContent = dt.getDate() + "." + ("0" + (dt.getMonth() + 1)).slice(-2); s.appendChild(t); }
+    var hit = svg("rect", {x: L + step * k, y: T, width: step, height: H - T - B, fill: "transparent"}); tip(hit, label + ": " + d[1]); s.appendChild(hit);
+  });
+  card.appendChild(s);
+}
+function verdictBar(card, v, total) {   // доли рекомендаций: одна полоса из трёх частей + подписи
+  var parts = [["QABUL", "Принять", "#0ca30c", "✓"], ["ZAXIRA", "Резерв", "#fab219", "●"], ["RAD", "Отказ", "#d03b3b", "✕"]];
+  var seg = el("div", "seg"), leg = el("div", "legend");
+  parts.forEach(function (p) {
+    var n = v[p[0]] || 0, pct = total ? Math.round(n * 100 / total) : 0;
+    if (n) { var i = el("i"); i.style.background = p[2]; i.style.flex = n + " 0 0"; tip(i, p[1] + ": " + n + " (" + pct + "%)"); seg.appendChild(i); }
+    var item = el("div", "lg"), dot = el("span", "dot", p[3]); dot.style.background = p[2]; if (p[0] === "ZAXIRA") dot.style.color = "#0b0b0b";
+    add(item, dot, el("span", null, p[1]), el("b", null, n + " · " + pct + "%")); leg.appendChild(item);
+  });
+  if (!total) seg.appendChild(el("i"));
+  add(card, seg, leg);
 }
 function overview(main) {
   add(main, el("h1", null, "Обзор подбора"), el("div", "sub", "Данные из базы анкет бота"));
   api("/api/summary").then(function (d) {
+    if (!d.storage.persistent) main.appendChild(el("div", "warnbox", "База кандидатов лежит во временном хранилище и обнулится при перезапуске сервера. Подключите в Railway постоянный диск (Volume) с путём /data, тогда данные будут сохраняться."));
     var k = el("div", "kpis");
-    [["Всего анкет", d.total, ""], ["Принять", d.verdicts.QABUL, "g"], ["Резерв", d.verdicts.ZAXIRA, "a"], ["Отказ", d.verdicts.RAD, "r"], ["Средний балл", d.avg + "%", ""]].forEach(function (x) {
-      var c = el("div", "card kpi " + x[2]); add(c, el("div", "l", x[0]), el("div", "v", String(x[1]))); k.appendChild(c);
+    [["Всего анкет", d.total, d.storage.persistent ? "база на постоянном диске" : "временное хранилище"],
+     ["За 7 дней", d.week, "предыдущие 7 дней: " + d.prev_week],
+     ["Средний балл", d.avg + "%", Object.keys(d.pos_avg).map(function (p) { return p + " " + d.pos_avg[p] + "%"; }).join(" · ")],
+     ["Приглашено", d.invited_pct + "%", "доля анкет со статусом «Приглашён» или «Принят»"],
+     ["Принято на работу", d.hired, "статус «Принят»"],
+     ["С красными флагами", d.red_pct + "%", "доля анкет с серьёзным риском"]].forEach(function (x) {
+      var c = el("div", "card kpi"); add(c, el("div", "l", x[0]), el("div", "v", String(x[1])), el("div", "n", x[2] || "")); k.appendChild(c);
     });
     main.appendChild(k);
+    var g0 = el("div", "grid2"), a1 = el("div", "card"), a2 = el("div", "card");
+    a1.appendChild(el("h3", null, "Анкеты по дням, последние 14 дней")); dayChart(a1, d.daily);
+    a2.appendChild(el("h3", null, "Рекомендации системы")); verdictBar(a2, d.verdicts, d.total);
+    a2.appendChild(el("h3", "mt", "Распределение по баллу"));
+    bars(a2, Object.keys(d.buckets).map(function (b) { return [b + "%", d.buckets[b]]; }), d.total);
+    add(g0, a1, a2); main.appendChild(g0);
     var g = el("div", "grid2"), c1 = el("div", "card"), c2 = el("div", "card");
     c1.appendChild(el("h3", null, "Воронка по статусам"));
     bars(c1, Object.keys(d.statuses).map(function (s) { return [META.statuses[s] || s, d.statuses[s]]; }), d.total);
-    c2.appendChild(el("h3", null, "Распределение по баллу"));
-    bars(c2, Object.keys(d.buckets).map(function (b) { return [b + "%", d.buckets[b]]; }), d.total);
+    c1.appendChild(el("h3", "mt", "По должностям"));
+    bars(c1, Object.keys(d.positions).map(function (p) { return [p, d.positions[p], "средний балл " + d.pos_avg[p] + "%"]; }), d.total);
+    if (!d.total) c1.appendChild(el("div", "minor", "Анкет пока нет"));
+    c2.appendChild(el("h3", null, "Средняя оценка по компетенциям (1–5), слабые сверху"));
+    if (!d.competencies.length) c2.appendChild(el("div", "minor", "Анкет пока нет"));
+    bars(c2, d.competencies.map(function (x) { return [x[0], x[1], "анкет: " + x[2]]; }), 5, function (v) { return v.toFixed(1); });
     add(g, c1, c2); main.appendChild(g);
-    var g2 = el("div", "grid2"), c3 = el("div", "card"), c4 = el("div", "card");
-    c3.appendChild(el("h3", null, "По должностям"));
-    bars(c3, Object.keys(d.positions).map(function (p) { return [p, d.positions[p]]; }), d.total);
-    if (!d.total) c3.appendChild(el("div", "minor", "Анкет пока нет"));
+    var c4 = el("div", "card"); c4.style.marginBottom = "14px";
     c4.appendChild(el("h3", null, "Частые риски"));
     if (!d.top_risks.length) c4.appendChild(el("div", "minor", "Флагов пока нет"));
     d.top_risks.forEach(function (r) { var row = el("div", "risk"); add(row, el("span", null, r[0]), el("b", null, String(r[1]))); c4.appendChild(row); });
-    add(g2, c3, c4); main.appendChild(g2);
+    main.appendChild(c4);
     main.appendChild(el("div", "sec", "Последние анкеты"));
     main.appendChild(table(d.recent));
   }).catch(function (e) { if (e.message !== "auth") main.appendChild(el("div", "err", e.message)); });

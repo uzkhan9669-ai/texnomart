@@ -322,6 +322,24 @@ Q = {
                 "I am looking for another job, this is temporary"])},
 }
 
+# Варианты текста для конкретной должности (1 = кассир). Порядок и число вариантов ответа те же.
+Q_POS = {
+    "health": {1: {
+        "uz": ("Kassir ishi o'tirib ishlanadi: kun bo'yi kompyuter va kassa oldida, muddatli to'lovlarni rasmiylashtirish va to'lovlarni qabul qilish. Sog'lig'ingiz shunday tartibda ishlashga imkon beradimi?",
+               ["Ha, cheklovlar yo'q", "Ba'zi cheklovlar bor", "Yo'q, bunday ish menga to'g'ri kelmaydi"]),
+        "ru": ("Работа кассира сидячая: весь день за компьютером и кассой, оформление рассрочек и приём оплат. Позволяет ли вам здоровье работать в таком режиме?",
+               ["Да, ограничений нет", "Есть некоторые ограничения", "Нет, такая работа мне не подходит"]),
+        "en": ("A cashier's work is sedentary: the whole day at a computer and till, arranging installment plans and accepting payments. Does your health allow you to work this way?",
+               ["Yes, no restrictions", "I have some restrictions", "No, this kind of work does not suit me"])}},
+    "workload": {1: {
+        "uz": ("Ish hajmi katta: muddatli to'lovlarni rasmiylashtirish, to'lovlarni qabul qilish, hujjatlar va kassa bilan ishlash, kun davomida ko'p mijoz. Shunday hajm sizga to'g'ri keladimi?",
+               ["Ha, ko'p ishlashga tayyorman", "Tayyorman, lekin sharoit va yordam muhim", "Menga qiyin bo'ladi"]),
+        "ru": ("Объём работы большой: оформление рассрочек, приём оплат, работа с документами и кассой, много клиентов в течение дня. Подходит ли вам такой объём?",
+               ["Да, готов(а) много работать", "Готов(а), но важны условия и помощь", "Мне будет тяжело"]),
+        "en": ("The workload is large: arranging installment plans, accepting payments, working with documents and the till, many customers during the day. Does this suit you?",
+               ["Yes, I am ready to work a lot", "I am ready, but conditions and support matter", "It will be hard for me"])}},
+}
+
 UI = {
     "choose_lang": {l: "Tilni tanlang · Выберите язык · Choose language" for l in LANGS},
     "greeting": {
@@ -427,12 +445,16 @@ def ui(key, lang):
     return UI[key][lang_ok(lang)]
 
 
-def q_text(key, lang):
-    return Q[key][lang_ok(lang)][0]
+def _q(key, lang, pos=0):
+    return Q_POS.get(key, {}).get(pos, Q[key])[lang_ok(lang)]
 
 
-def q_options(key, lang):
-    return Q[key][lang_ok(lang)][1]
+def q_text(key, lang, pos=0):
+    return _q(key, lang, pos)[0]
+
+
+def q_options(key, lang, pos=0):
+    return _q(key, lang, pos)[1]
 
 
 def block(bid, lang):

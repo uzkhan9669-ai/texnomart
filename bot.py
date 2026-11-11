@@ -137,11 +137,11 @@ async def send_question(chat_id, context):
         await context.bot.send_message(chat_id, "— %s —" % i18n.block(q["block"], lang))
     active = [n for n, x in enumerate(QUESTIONS) if applies(x, a)]
     num = active.index(st["i"]) + 1 if st["i"] in active else st["i"] + 1
-    text = "(%d/%d) %s" % (num, len(active), i18n.q_text(q["key"], lang))
+    text = "(%d/%d) %s" % (num, len(active), i18n.q_text(q["key"], lang, a.get("position_i", 0)))
     markup = None
     if q["type"] == "choice":
         markup = InlineKeyboardMarkup([[InlineKeyboardButton(o, callback_data="a:%d:%d" % (st["i"], n))]
-                                       for n, o in enumerate(i18n.q_options(q["key"], lang))])
+                                       for n, o in enumerate(i18n.q_options(q["key"], lang, a.get("position_i", 0)))])
     await context.bot.send_message(chat_id, text, reply_markup=markup)
 
 
@@ -446,7 +446,7 @@ def main():
         if not WEBAPP_URL:
             log.warning("WEBAPP_URL пуст: кнопка Mini App не показывается (только режим чата).")
 
-    persistence = PicklePersistence(filepath=os.environ.get("STATE_PATH", "state.pkl"))
+    persistence = PicklePersistence(filepath=os.environ.get("STATE_PATH") or os.path.join(store.data_dir(), "state.pkl"))
     app = Application.builder().token(TOKEN).persistence(persistence).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("anketa", anketa))

@@ -93,8 +93,9 @@ var state = {i: -1, a: {}, slot: "", photo: "", sid: "", lang: ""};
 var stream = null;
 
 function T(k) { var u = UI[k] || {}; return u[state.lang] || u.uz || k; }
-function qText(q) { return (q.t[state.lang] || q.t.uz)[0]; }
-function qOpts(q) { return (q.t[state.lang] || q.t.uz)[1]; }
+function qT(q) { var t = (q.tp && q.tp[String(state.a.position_i === 1 ? 1 : 0)]) || q.t; return t[state.lang] || t.uz; }
+function qText(q) { return qT(q)[0]; }
+function qOpts(q) { return qT(q)[1]; }
 function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function clear() { stopCam(); while (main.firstChild) main.removeChild(main.firstChild); }
 function newSid() { var s = "", c = "abcdefghijklmnopqrstuvwxyz0123456789"; for (var i = 0; i < 20; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
