@@ -22,6 +22,7 @@ import urllib.request
 
 import notices
 import store
+import stores
 from scoring import VERDICT_RU, build_profile, evaluate, position_name
 
 log = logging.getLogger("texnomart-bot.dashboard")
@@ -153,7 +154,8 @@ class Dashboard:
         if p == "/api/me" and method == "GET":
             return self._json(200, {"ok": True, "user": user, "statuses": STATUS_RU, "verdicts": VERDICT_RU,
                                     "stages": list(notices.ORDER), "fields": {k: [list(v[0]), list(v[1])] for k, v in notices.FIELDS.items()},
-                                    "field_ru": notices.FIELD_RU, "reasons": notices.REASONS, "contact": notices.contact()})
+                                    "field_ru": notices.FIELD_RU, "reasons": notices.REASONS, "contact": notices.contact(),
+                                    "stores": stores.public()})
         if p == "/api/board" and method == "GET":
             return self._board(query)
         if p == "/api/summary" and method == "GET":
@@ -269,6 +271,8 @@ class Dashboard:
                 continue
             if q.get("pos") and i["pos"] != q["pos"]:
                 continue
+            if q.get("branch") and i["branch"] != q["branch"]:
+                continue
             if text and not (text in i["fio"].lower() or text in i["branch"].lower() or text in i["district"].lower()
                              or (digits and digits in re.sub(r"\D", "", i["phone"]))):
                 continue
@@ -286,7 +290,10 @@ class Dashboard:
         if "status" in d:   # смена этапа идёт через /move (с подтверждением сообщения кандидату)
             return self._json(400, {"error": "Этап меняется через перемещение карточки"})
         if "branch" in d:
-            store.set_branch(row["id"], str(d["branch"]).strip()[:80])
+            b = str(d["branch"] or "").strip()
+            if b and b not in stores.LABELS:
+                return self._json(400, {"error": "Выберите магазин из списка"})
+            store.set_branch(row["id"], b)
         if self.on_change:
             try:
                 self.on_change(row["id"])
@@ -304,6 +311,8 @@ class Dashboard:
                 off[i["status"]] += 1
                 continue
             if q.get("pos") and i["pos"] != q["pos"]:
+                continue
+            if q.get("branch") and i["branch"] != q["branch"]:
                 continue
             if text and not (text in i["fio"].lower() or text in i["branch"].lower() or text in re.sub(r"\D", "", i["phone"])):
                 continue
@@ -340,7 +349,9 @@ class Dashboard:
                 log.exception("Не удалось отправить сообщение кандидату")
                 delivered = False
         reason = d.get("reason") if d.get("reason") in notices.REASONS else None
-        store.set_status(row["id"], stage, by=user, reason=reason, notified=delivered, note="; ".join(v for v in fields.values() if v))
+        store.set_status(row["id"], stage, by=user, reason=reason, notified=delivered, note=notices.note_of(fields))
+        if fields.get("store"):   # выбранный магазин становится филиалом кандидата
+            store.set_branch(row["id"], fields["store"])
         if self.on_change:
             try:
                 self.on_change(row["id"])

@@ -378,7 +378,7 @@ async def propose_move(message, context, cid, stage, fields):
     if row["status"] == stage:
         await message.reply_text("#%d уже на этапе «%s»." % (cid, notices.STAGE_RU[stage]))
         return
-    fields, missing = notices.clean_fields(stage, fields)
+    fields, missing = notices.clean_fields(stage, notices.with_branch(row, stage, fields))
     head = "#%d %s: %s → %s" % (cid, row["fio"] or "-", notices.STAGE_RU.get(row["status"], row["status"]), notices.STAGE_RU[stage])
     text = notices.build_text(dict(row), stage, fields)
     context.user_data["mv"] = {"cid": cid, "stage": stage, "fields": fields}
@@ -416,7 +416,9 @@ async def do_move(message, context, cid, stage, notify, by):
             await message.reply_text("Не хватает данных для сообщения. Повторите команду /holat с датой, временем и адресом.")
             return
         delivered = await send_notice(context.bot, row["tg_id"], text)
-    store.set_status(cid, stage, by="tg:%s" % by, notified=delivered, note="; ".join(v for v in fields.values() if v))
+    store.set_status(cid, stage, by="tg:%s" % by, notified=delivered, note=notices.note_of(fields))
+    if fields.get("store"):   # магазин из списка становится филиалом кандидата
+        store.set_branch(cid, fields["store"])
     tail = {True: "Сообщение кандидату доставлено.", False: "Сообщение НЕ доставлено (кандидат мог заблокировать бота). Свяжитесь по телефону %s." % (row["phone"] or ""),
             None: "Сообщение кандидату не отправлялось."}[delivered]
     await message.reply_text("#%d этап: %s. %s" % (cid, notices.STAGE_RU[stage], tail))
@@ -534,7 +536,8 @@ async def open_profile(update, context):
 
 @only_rec
 async def holat(update, context):
-    hint = ("Например: /holat 12 sozvon\nСобеседование: /holat 12 sobes 15.11.2026; 14:00; адрес\nСтажировка: /holat 12 staj 20.11.2026; адрес\n"
+    hint = ("Например: /holat 12 sozvon\nСобеседование: /holat 12 sobes 15.11.2026; 14:00; 07\nСтажировка: /holat 12 staj 20.11.2026; 07\n"
+            "Вместо адреса можно указать номер магазина (07) или его название (Чиланзар): адрес подставится сам.\n"
             "Этапы: " + ", ".join("%s (%s)" % (k, v) for k, v in STATUS_RU.items()))
     args = context.args or []
     stage = notices.parse_stage(args[1]) if len(args) >= 2 else None
@@ -549,6 +552,8 @@ async def holat(update, context):
         fields = {"date": parts[0], "time": parts[1], "place": "; ".join(parts[2:])}
     elif stage == "staj" and len(parts) == 2:
         fields = {"date": parts[0], "place": parts[1]}
+    elif stage == "staj" and len(parts) == 1:   # магазин возьмётся из филиала кандидата
+        fields = {"date": parts[0]}
     elif stage == "sozvon" and parts:
         fields = {"time": parts[0]}
     elif stage == "offer" and parts:

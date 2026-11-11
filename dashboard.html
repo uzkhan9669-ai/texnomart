@@ -311,9 +311,10 @@ function candidates(main) {
   var p = select("fp", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, filters.pos);
   var o = select("fo", "Сначала высокий балл", {"new": "Сначала новые"}, filters.sort);
   var csv = el("a", "btn alt", "Скачать CSV"); csv.href = "/api/export.csv"; csv.style.textDecoration = "none";
-  add(f, q, v, s, p, o, csv); count.style.margin = "0 0 8px"; add(main, f, count, holder);
+  var br = storeSelect("fb", "Все магазины", filters.branch || ""); br.onchange = function () { load(); };
+  add(f, q, v, s, p, br, o, csv); count.style.margin = "0 0 8px"; add(main, f, count, holder);
   function load() {
-    filters = {q: q.value, verdict: v.value, status: s.value, pos: p.value, sort: o.value};
+    filters = {q: q.value, verdict: v.value, status: s.value, pos: p.value, branch: br.value, sort: o.value};
     var qs = Object.keys(filters).filter(function (k) { return filters[k]; }).map(function (k) { return k + "=" + encodeURIComponent(filters[k]); }).join("&");
     api("/api/candidates" + (qs ? "?" + qs : "")).then(function (d) {
       holder.textContent = ""; count.textContent = "Найдено: " + d.count; holder.appendChild(table(d.items));
@@ -330,6 +331,7 @@ function kcard(c, reload) {
   var k = el("div", "kc"); k.setAttribute("data-id", c.id); k.draggable = true;
   var ph; if (c.photo) { ph = el("img"); ph.alt = ""; ph.loading = "lazy"; ph.src = "/api/candidates/" + c.id + "/photo"; ph.draggable = false; ph.onerror = function () { ph.replaceWith(el("div", "noimg")); }; } else ph = el("div", "noimg");
   var info = el("div"); add(info, el("div", "name", c.fio || "-"), el("div", "minor", c.phone || ""));
+  if (c.branch) info.appendChild(el("div", "minor kbranch", "🏬 " + c.branch));
   var r2 = el("div", "row2"), mv = el("button", "mv", "→"); mv.title = "Переместить"; mv.setAttribute("aria-label", "Переместить на другой этап");
   add(r2, el("span", "minor", c.pos), el("b", null, c.pct + "%"), tag(c.verdict, c.verdict_ru));
   if (c.red || c.yellow) r2.appendChild(el("span", "minor", "🔴" + c.red + " 🟡" + c.yellow));
@@ -351,12 +353,19 @@ function dropTarget(node, stage, find, reload) {
     var c = find(dragId || parseInt(e.dataTransfer.getData("text/plain"), 10)); if (c && c.status !== stage) moveDialog(c, stage, reload);
   });
 }
+function storeSelect(id, first, value) {   // список магазинов; значение: подпись вида «07 Чиланзар»
+  var s = el("select"); s.id = id; s.appendChild(new Option(first, ""));
+  (META.stores || []).forEach(function (x) { var o = new Option(x.label, x.label); o.title = x.address; s.appendChild(o); });
+  if (value && !(META.stores || []).some(function (x) { return x.label === value; })) s.appendChild(new Option(value + " (старое значение)", value));
+  s.value = value || ""; return s;
+}
 function board(main) {
   add(main, el("h1", null, "Воронка"), el("div", "sub", "Перетащите карточку на следующий этап. Перед отправкой сообщения кандидату вы увидите его текст."));
   var f = el("div", "filters"), q = el("input"), p = select("bp", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, ""), holder = el("div");
-  q.id = "bq"; q.placeholder = "Поиск: имя, телефон, филиал"; add(f, q, p); add(main, f, holder);
+  var bs = storeSelect("bstore", "Все магазины", "");
+  q.id = "bq"; q.placeholder = "Поиск: имя, телефон, филиал"; add(f, q, p, bs); add(main, f, holder); bs.onchange = function () { load(); };
   function load() {
-    var qs = [q.value ? "q=" + encodeURIComponent(q.value) : "", p.value ? "pos=" + encodeURIComponent(p.value) : ""].filter(Boolean).join("&");
+    var qs = [q.value ? "q=" + encodeURIComponent(q.value) : "", p.value ? "pos=" + encodeURIComponent(p.value) : "", bs.value ? "branch=" + encodeURIComponent(bs.value) : ""].filter(Boolean).join("&");
     api("/api/board" + (qs ? "?" + qs : "")).then(function (d) {
       var all = {}; holder.textContent = "";
       var b = el("div", "board");
@@ -388,14 +397,24 @@ function pickStage(c, done) {   // для телефона и клавиатур
 }
 function moveDialog(c, stage, done) {   // подтверждение: что уйдёт кандидату
   closeDlg();
-  var w = el("div", "dlg"), box = el("div", "box"), fields = {}, inputs = {}, t = null;
+  var w = el("div", "dlg"), box = el("div", "box"), fields = {}, inputs = {}, t = null, storeSel = null;
   var req = (META.fields[stage] || [[], []])[0], opt = (META.fields[stage] || [[], []])[1];
   add(box, el("h3", null, (c.fio || "-")), el("div", "minor", (META.statuses[c.status] || c.status) + " → " + META.statuses[stage]));
   req.concat(opt).forEach(function (k) {
     var inp = el("input"); inp.type = k === "date" ? "date" : k === "time" ? "time" : "text"; inp.id = "f-" + k; inp.maxLength = 120;
-    if (k === "place") { inp.value = c.branch || ""; inp.placeholder = "Например: Чиланзар, ул. Катартал, 1"; }
     if (stage === "sozvon" && k === "time") { inp.type = "text"; inp.placeholder = "Например: сегодня после 15:00"; }
     inputs[k] = inp; inp.oninput = function () { err.textContent = ""; clearTimeout(t); t = setTimeout(preview, 250); };
+    if (k === "place") {   // магазин из списка; адрес подставится в сообщение, магазин станет филиалом кандидата
+      var need = req.indexOf(k) >= 0, sel = el("select"); sel.id = "f-store";
+      sel.appendChild(new Option(need ? "Выберите магазин" : "Не указывать", need ? "" : "-"));
+      (META.stores || []).forEach(function (s) { var o = new Option(s.label, s.code); o.title = s.address; if (s.label === c.branch) o.selected = true; sel.appendChild(o); });
+      sel.appendChild(new Option("Другой адрес (ввести вручную)", "other"));
+      inp.placeholder = "Адрес с ориентиром"; inp.classList.add("hidden");
+      storeSel = sel; sel.onchange = function () { inp.classList.toggle("hidden", sel.value !== "other"); if (sel.value === "other") inp.focus(); err.textContent = ""; preview(); };
+      add(box, el("label", null, META.field_ru[k] + (need ? "" : " (необязательно)")), sel, inp);
+      if (c.branch && sel.value && sel.value !== "-") box.appendChild(el("div", "minor", "Подставлен филиал кандидата: " + c.branch + ". Можно выбрать другой."));
+      return;
+    }
     add(box, el("label", null, META.field_ru[k] + (req.indexOf(k) < 0 ? " (необязательно)" : "")), inp);
   });
   var reason = null;
@@ -406,7 +425,11 @@ function moveDialog(c, stage, done) {   // подтверждение: что у
   ok.id = "moveOk"; no.id = "moveNo"; note.style.marginTop = "6px";
   add(btns, no, ok); add(box, chk, msg, note, err, btns); w.appendChild(box); document.body.appendChild(w);
   no.onclick = closeDlg;
-  function vals() { Object.keys(inputs).forEach(function (k) { fields[k] = inputs[k].value; }); return fields; }
+  function vals() {
+    Object.keys(inputs).forEach(function (k) { fields[k] = inputs[k].value; });
+    if (storeSel) { var other = storeSel.value === "other"; fields.store = other ? "-" : storeSel.value; if (!other) fields.place = ""; }
+    return fields;
+  }
   var first = true;
   function preview() {
     api("/api/candidates/" + c.id + "/preview", {status: stage, fields: vals()}).then(function (p) {
@@ -457,8 +480,8 @@ function openCandidate(id) {
     d.appendChild(acts);
 
     d.appendChild(el("div", "sec", "Филиал"));
-    var rf = el("div", "rowf"), bi = el("input", "field"), bs = el("button", "btn alt", "Сохранить");
-    bi.id = "branch"; bi.maxLength = 80; bi.placeholder = "Например: Чиланзар"; bi.value = c.branch;
+    var rf = el("div", "rowf"), bi = storeSelect("branch", "Не назначен", c.branch), bs = el("button", "btn alt", "Сохранить");
+    bi.className = "field"; bi.style.flex = "1";
     bs.onclick = function () { api("/api/candidates/" + id, {branch: bi.value}).then(function () { toast("Филиал сохранён"); }).catch(function (e) { toast(e.message); }); };
     add(rf, bi, bs); d.appendChild(rf);
 

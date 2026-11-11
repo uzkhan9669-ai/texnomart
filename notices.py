@@ -10,13 +10,14 @@ import re
 
 import i18n
 import store
+import stores
 
 STAGE_RU = store.STAGE_RU
 ORDER = ("yangi", "sozvon", "sobes", "staj", "offer")
 # Поля, которые рекрутер заполняет перед отправкой: обязательные и необязательные
 FIELDS = {"sozvon": ((), ("time",)), "sobes": (("date", "time", "place"), ()), "staj": (("date", "place"), ("time",)),
-          "offer": ((), ("date",)), "zaxira": ((), ()), "rad": ((), ())}
-FIELD_RU = {"date": "Дата", "time": "Время", "place": "Адрес или филиал"}
+          "offer": ((), ("date", "place")), "zaxira": ((), ()), "rad": ((), ())}
+FIELD_RU = {"date": "Дата", "time": "Время", "place": "Магазин"}
 REASONS = ["Не подошёл график", "Не вышел на связь", "Отказался сам", "Не прошёл собеседование", "Не прошёл стажировку", "Другое"]
 ALIASES = dict({v.lower(): k for k, v in STAGE_RU.items()}, **{k: k for k in STAGE_RU},
                **{"новый": "yangi", "новая": "yangi", "собес": "sobes", "стаж": "staj", "chaqirildi": "sobes", "qabul": "offer"})
@@ -35,9 +36,9 @@ TEXT = {
         "ru": "Здравствуйте, {name}! Вы успешно прошли собеседование. Приглашаем вас на стажировку в Texnomart.\nНачало: {date}[[, {time}]]\nАдрес: {place}\nВозьмите с собой паспорт.",
         "en": "Hello, {name}! You have passed the interview. We invite you to an internship at Texnomart.\nStart: {date}[[, {time}]]\nAddress: {place}\nPlease bring your passport."},
     "offer": {
-        "uz": "Assalomu alaykum, {name}! Tabriklaymiz: sizga Texnomart kompaniyasida «{position}» lavozimida ishlashni taklif qilamiz.[[\nIshga chiqish sanasi: {date}]]\nRekruter siz bilan bog'lanib, keyingi qadamlar va hujjatlar haqida aytib beradi.",
-        "ru": "Здравствуйте, {name}! Поздравляем: мы рады предложить вам работу в Texnomart на должности «{position}».[[\nДата выхода: {date}]]\nРекрутер свяжется с вами и расскажет о следующих шагах и документах.",
-        "en": "Hello, {name}! Congratulations: we are pleased to offer you the “{position}” position at Texnomart.[[\nStart date: {date}]]\nA recruiter will contact you about the next steps and documents."},
+        "uz": "Assalomu alaykum, {name}! Tabriklaymiz: sizga Texnomart kompaniyasida «{position}» lavozimida ishlashni taklif qilamiz.[[\nIshga chiqish sanasi: {date}]][[\nIsh joyi: {place}]]\nRekruter siz bilan bog'lanib, keyingi qadamlar va hujjatlar haqida aytib beradi.",
+        "ru": "Здравствуйте, {name}! Поздравляем: мы рады предложить вам работу в Texnomart на должности «{position}».[[\nДата выхода: {date}]][[\nМесто работы: {place}]]\nРекрутер свяжется с вами и расскажет о следующих шагах и документах.",
+        "en": "Hello, {name}! Congratulations: we are pleased to offer you the “{position}” position at Texnomart.[[\nStart date: {date}]][[\nWorkplace: {place}]]\nA recruiter will contact you about the next steps and documents."},
     "zaxira": {
         "uz": "Assalomu alaykum, {name}! Texnomartga qiziqish bildirganingiz uchun rahmat. Hozircha mos bo'sh o'rin yo'q, lekin anketangizni saqlab qo'ydik va o'rin paydo bo'lganda siz bilan bog'lanamiz.",
         "ru": "Здравствуйте, {name}! Спасибо за интерес к Texnomart. Сейчас подходящих мест нет, но мы сохранили вашу анкету и свяжемся с вами, когда появится вакансия.",
@@ -71,7 +72,28 @@ def clean_fields(stage, fields):
             except ValueError:
                 v = ""
         out[k] = v
+    # магазин из списка: адрес подставляется в сообщение, а магазин становится филиалом кандидата
+    code = stores.resolve((fields or {}).get("store")) or stores.resolve(out.get("place"))
+    if code and "place" in out:
+        out["place"] = stores.place(code)
+        out["store"] = stores.label(code)
     return out, [k for k in req if not out[k]]
+
+
+def with_branch(row, stage, fields):
+    """Если магазин не указан, для стажировки и оффера берётся филиал кандидата (тот же, что на собеседовании)."""
+    f = dict(fields or {})
+    if stage in ("staj", "offer") and "store" not in f and not f.get("place") and stores.resolve(row["branch"]):
+        f["store"] = row["branch"]
+    return f
+
+
+def note_of(fields):
+    """Короткая запись для истории: дата, время, магазин (или адрес, введённый вручную)."""
+    f = dict(fields or {})
+    if f.get("store"):
+        f["place"] = f.pop("store")
+    return "; ".join(v for k, v in f.items() if v and k != "store")
 
 
 def answers_of(row):
