@@ -290,6 +290,8 @@ function openCandidate(id) {
     var line = el("div"); line.style.marginTop = "8px"; add(line, el("span", "pct", c.pct + "%  "), tag(c.verdict, c.verdict_ru)); info.appendChild(line);
     add(who, info); d.appendChild(who);
     if (c.slot) d.appendChild(el("div", "minor", "Удобное время для собеседования: " + c.slot));
+    var pdf = el("a", "btn", "Скачать анкету в PDF"); pdf.id = "pdfBtn"; pdf.href = "/api/candidates/" + id + "/pdf"; pdf.setAttribute("download", "");
+    pdf.style.cssText = "display:inline-block;text-decoration:none;margin-top:12px;color:inherit"; d.appendChild(pdf);
 
     d.appendChild(el("div", "sec", "Статус"));
     var acts = el("div", "acts");

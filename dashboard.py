@@ -148,11 +148,13 @@ class Dashboard:
         if p == "/api/export.csv" and method == "GET":
             return 200, {"Content-Type": "text/csv; charset=utf-8", "Cache-Control": "no-store",
                          "Content-Disposition": 'attachment; filename="kandidaty.csv"'}, store.export_csv()
-        m = re.fullmatch(r"/api/candidates/(\d{1,9})(/photo)?", p)
+        m = re.fullmatch(r"/api/candidates/(\d{1,9})(/photo|/pdf)?", p)
         if m:
             row = store.get(int(m.group(1)))
             if not row:
                 return self._json(404, {"error": "Кандидат не найден"})
+            if m.group(2) == "/pdf":
+                return self._pdf(row) if method == "GET" else self._json(405, {"error": "method"})
             if m.group(2):
                 return self._photo(row) if method == "GET" else self._json(405, {"error": "method"})
             if method == "GET":
@@ -272,6 +274,24 @@ class Dashboard:
             except Exception:
                 log.exception("Синхронизация после изменения не удалась")
         return self._json(200, {"ok": True, "item": self._item(store.get(row["id"]))})
+
+    def _pdf(self, row):
+        try:
+            import pdfgen
+        except ImportError:
+            return self._json(501, {"error": "PDF недоступен: не установлена библиотека reportlab"})
+        a = self._answers(row)
+        photo = self.fetch_photo(self.token, row["photo_file_id"]) if row["photo_file_id"] else None
+        try:
+            raw = pdfgen.make_pdf(a, row["ts"], row["id"], STATUS_RU.get(row["status"], row["status"]), row["username"] or "",
+                                  row["branch"] or "", photo)
+        except Exception:
+            log.exception("Не удалось собрать PDF")
+            return self._json(500, {"error": "Не удалось собрать PDF"})
+        name = pdfgen.filename(a, row["id"])
+        disp = "attachment; filename=\"anketa_%d.pdf\"; filename*=UTF-8''%s" % (row["id"], urllib.parse.quote(name))
+        return 200, {"Content-Type": "application/pdf", "Cache-Control": "no-store", "Content-Disposition": disp,
+                     "X-Content-Type-Options": "nosniff"}, raw
 
     def _photo(self, row):
         if not row["photo_file_id"]:

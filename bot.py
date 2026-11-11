@@ -47,6 +47,7 @@ HELP = (
     "/stat - общая статистика\n"
     "/csv - таблица всех кандидатов (для Excel)\n"
     "/nomzod 12 или /n_12 - полный профиль\n"
+    "/pdf_12 - анкета кандидата файлом PDF\n"
     "/holat 12 chaqirildi - сменить статус (%s)\n"
     "/anketa - пройти анкету самому"
 ) % ", ".join("%s = %s" % (k, v) for k, v in STATUS_RU.items())
@@ -107,7 +108,8 @@ async def sync_sheet(cid):
 def status_markup(cid, with_profile=False):
     rows = []
     if with_profile:
-        rows.append([InlineKeyboardButton("Полный профиль", callback_data="p:%d" % cid)])
+        rows.append([InlineKeyboardButton("Полный профиль", callback_data="p:%d" % cid),
+                     InlineKeyboardButton("📄 PDF", callback_data="f:%d" % cid)])
     rows.append([InlineKeyboardButton("✅ Пригласить", callback_data="s:%d:chaqirildi" % cid),
                  InlineKeyboardButton("⭐ Резерв", callback_data="s:%d:zaxira" % cid),
                  InlineKeyboardButton("❌ Отказ", callback_data="s:%d:rad" % cid)])
@@ -247,7 +249,7 @@ async def accept_web(bot, user, answers, photo):
 async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cq = update.callback_query
     data = cq.data or ""
-    if data.startswith(("p:", "s:")):
+    if data.startswith(("p:", "s:", "f:")):
         await rec_button(update, context)
         return
     await cq.answer()
@@ -323,6 +325,37 @@ async def send_profile(bot, chat_id, cid):
     await send_long(bot, chat_id, text, markup=status_markup(cid))
 
 
+async def send_pdf(bot, chat_id, cid):
+    """Отправляет рекрутеру анкету кандидата файлом PDF (с селфи, если оно есть)."""
+    row = store.get(cid)
+    if not row:
+        await bot.send_message(chat_id, "Кандидат #%d не найден." % cid)
+        return
+    try:
+        import pdfgen
+        a = json.loads(row["answers"])
+        photo = None
+        if row["photo_file_id"]:
+            try:
+                f = await bot.get_file(row["photo_file_id"])
+                photo = bytes(await f.download_as_bytearray())
+            except Exception:
+                log.exception("Не удалось скачать селфи для PDF")
+        raw = await asyncio.to_thread(pdfgen.make_pdf, a, row["ts"], cid, STATUS_RU.get(row["status"], row["status"]),
+                                      row["username"] or "", row["branch"] or "", photo)
+        await bot.send_document(chat_id, document=raw, filename=pdfgen.filename(a, cid), caption="Анкета #%d" % cid)
+    except Exception:
+        log.exception("Не удалось собрать PDF")
+        await bot.send_message(chat_id, "Не удалось собрать PDF для #%d." % cid)
+
+
+@only_rec
+async def pdf_cmd(update, context):
+    m = re.match(r"^/pdf_(\d+)", update.effective_message.text or "")
+    if m:
+        await send_pdf(context.bot, update.effective_chat.id, int(m.group(1)))
+
+
 async def rec_button(update, context):
     cq = update.callback_query
     if not is_rec(update):
@@ -332,6 +365,8 @@ async def rec_button(update, context):
     parts = cq.data.split(":")
     if parts[0] == "p" and len(parts) == 2 and parts[1].isdigit():
         await send_profile(context.bot, cq.message.chat_id, int(parts[1]))
+    elif parts[0] == "f" and len(parts) == 2 and parts[1].isdigit():
+        await send_pdf(context.bot, cq.message.chat_id, int(parts[1]))
     elif parts[0] == "s" and len(parts) == 3 and parts[1].isdigit():
         ok = store.set_status(int(parts[1]), parts[2])
         await cq.message.reply_text("#%s статус: %s" % (parts[1], STATUS_RU.get(parts[2], parts[2])) if ok
@@ -458,6 +493,7 @@ def main():
     app.add_handler(CommandHandler("nomzod", nomzod))
     app.add_handler(CommandHandler("holat", holat))
     app.add_handler(MessageHandler(filters.Regex(r"^/n_\d+"), open_profile))
+    app.add_handler(MessageHandler(filters.Regex(r"^/pdf_\d+"), pdf_cmd))
     app.add_handler(CallbackQueryHandler(on_button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
     app.add_error_handler(on_error)
