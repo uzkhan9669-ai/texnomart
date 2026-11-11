@@ -18,6 +18,17 @@ BLOCKS = {
 }
 
 JOB_TR = {
+    # Что предлагает компания (по странице работодателя Texnomart на hh.uz)
+    "perks": {
+        "uz": ["Tajribasiz karyera boshlash: o'qitish va ustoz", "Karyera o'sishi va turli hududlarda ishlash imkoniyati",
+               "Barqaror, o'z vaqtida to'lanadigan oylik", "Rasmiy ishga joylashish", "21 kalendar kunlik haq to'lanadigan ta'til",
+               "Texnomart do'konlarida xodimlar uchun chegirmalar", "Korporativ tadbirlar va bayram sovg'alari"],
+        "ru": ["Старт карьеры без опыта: обучение и наставник", "Карьерный рост и возможность работать в разных регионах",
+               "Стабильная зарплата без задержек", "Официальное трудоустройство", "21 календарный день оплачиваемого отпуска",
+               "Скидки для сотрудников в магазинах Texnomart", "Корпоративные мероприятия и подарки к праздникам"],
+        "en": ["Start your career with no experience: training and a mentor", "Career growth and the chance to work in different regions",
+               "Stable salary paid on time", "Official employment", "21 calendar days of paid leave",
+               "Employee discounts in Texnomart stores", "Corporate events and holiday gifts"]},
     "training": {"uz": "14 kunlik o'qish (kompaniya hisobidan)", "ru": "14 дней обучения (за счёт компании)",
                  "en": "14-day training (paid by the company)"},
     "schedule": {"uz": "6/1, suzuvchi smenalar: 1-smena 09:00-18:00, 2-smena 13:00-22:00",
@@ -343,9 +354,9 @@ Q_POS = {
 UI = {
     "choose_lang": {l: "Tilni tanlang · Выберите язык · Choose language" for l in LANGS},
     "greeting": {
-        "uz": "Assalomu alaykum! Bu %(company)s kompaniyasidagi vakansiyalar (sotuvchi-konsultant, kassir) uchun anketa.\n\nShartlar:\n- %(training)s\n- Grafik: %(schedule)s\n- Daromad: %(income)s\n- Tajriba shart emas, ustoz bilan o'rgatamiz.\n\nAnketa taxminan 15 daqiqa oladi. Iltimos, rost va o'z so'zlaringiz bilan javob bering. Chatda oldingi savolga qaytish uchun /orqaga ni yozing.\n\nAnketani boshlash tugmasini bosib, shaxsiy ma'lumotlaringiz, javoblaringiz va selfie suratingiz ishga qabul qilish maqsadida qayta ishlanishiga rozilik bildirasiz.",
-        "ru": "Здравствуйте! Это анкета на вакансии компании %(company)s (продавец-консультант, кассир).\n\nУсловия:\n- %(training)s\n- График: %(schedule)s\n- Доход: %(income)s\n- Опыт не обязателен, обучаем с наставником.\n\nАнкета занимает около 15 минут. Пожалуйста, отвечайте честно и своими словами. В чате вернуться к предыдущему вопросу можно командой /orqaga.\n\nНажимая кнопку начала анкеты, вы соглашаетесь на обработку ваших персональных данных, ответов и селфи в целях трудоустройства.",
-        "en": "Hello! This is the application form for vacancies at %(company)s (sales consultant, cashier).\n\nTerms:\n- %(training)s\n- Schedule: %(schedule)s\n- Income: %(income)s\n- No experience required, we train you with a mentor.\n\nThe form takes about 15 minutes. Please answer honestly and in your own words. In chat, send /orqaga to go back to the previous question.\n\nBy pressing the start button you consent to the processing of your personal data, answers and selfie for hiring purposes."},
+        "uz": "Assalomu alaykum! Bu %(company)s kompaniyasidagi vakansiyalar (sotuvchi-konsultant, kassir) uchun anketa.\n\nBiz taklif qilamiz:\n%(perks)s\n\nShartlar:\n- %(training)s\n- Grafik: %(schedule)s\n\nAnketa taxminan 15 daqiqa oladi. Iltimos, rost va o'z so'zlaringiz bilan javob bering. Chatda oldingi savolga qaytish uchun /orqaga ni yozing.\n\nAnketani boshlash tugmasini bosib, shaxsiy ma'lumotlaringiz, javoblaringiz va selfie suratingiz ishga qabul qilish maqsadida qayta ishlanishiga rozilik bildirasiz.",
+        "ru": "Здравствуйте! Это анкета на вакансии компании %(company)s (продавец-консультант, кассир).\n\nМы предлагаем:\n%(perks)s\n\nУсловия:\n- %(training)s\n- График: %(schedule)s\n\nАнкета занимает около 15 минут. Пожалуйста, отвечайте честно и своими словами. В чате вернуться к предыдущему вопросу можно командой /orqaga.\n\nНажимая кнопку начала анкеты, вы соглашаетесь на обработку ваших персональных данных, ответов и селфи в целях трудоустройства.",
+        "en": "Hello! This is the application form for vacancies at %(company)s (sales consultant, cashier).\n\nWe offer:\n%(perks)s\n\nTerms:\n- %(training)s\n- Schedule: %(schedule)s\n\nThe form takes about 15 minutes. Please answer honestly and in your own words. In chat, send /orqaga to go back to the previous question.\n\nBy pressing the start button you consent to the processing of your personal data, answers and selfie for hiring purposes."},
     "btn_web": {"uz": "📝 Anketani to'ldirish", "ru": "📝 Заполнить анкету", "en": "📝 Fill in the form"},
     "btn_chat": {"uz": "💬 Chatda to'ldirish", "ru": "💬 Заполнить в чате", "en": "💬 Fill in here in chat"},
     "thanks": {"uz": "Rahmat! Anketa yuborildi. Rekruter siz ko'rsatgan raqam orqali bog'lanadi.",
@@ -367,7 +378,8 @@ UI = {
     "st_year": {"uz": "yildan beri", "ru": "работаем с", "en": "since"},
     "st_store": {"uz": "do'kon", "ru": "магазинов", "en": "stores"},
     "st_staff": {"uz": "xodim", "ru": "сотрудников", "en": "employees"},
-    "terms": {"uz": "Vakansiya shartlari", "ru": "Условия работы", "en": "Job terms"},
+    "terms": {"uz": "Ish tartibi", "ru": "Условия работы", "en": "Job terms"},
+    "perks": {"uz": "Biz taklif qilamiz", "ru": "Мы предлагаем", "en": "We offer"},
     "t_schedule": {"uz": "Grafik", "ru": "График", "en": "Schedule"},
     "t_income": {"uz": "Daromad", "ru": "Доход", "en": "Income"},
     "t_noexp": {"uz": "Tajriba shart emas, ustoz bilan o'rgatamiz", "ru": "Опыт не обязателен, обучаем с наставником",
@@ -464,4 +476,4 @@ def block(bid, lang):
 def greeting(lang, company):
     lang = lang_ok(lang)
     return UI["greeting"][lang] % {"company": company, "training": JOB_TR["training"][lang],
-                                   "schedule": JOB_TR["schedule"][lang], "income": JOB_TR["income"][lang]}
+                                   "schedule": JOB_TR["schedule"][lang], "perks": "\n".join("- " + p for p in JOB_TR["perks"][lang])}

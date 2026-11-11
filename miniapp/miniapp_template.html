@@ -167,10 +167,12 @@ function welcome() {
   main.appendChild(st);
   if (!(tg && tg.initData)) main.appendChild(el("div", "warn", T("warn_tg")));
   else if (API_URL.indexOf("PASTE_") === 0) main.appendChild(el("div", "warn", T("warn_api")));
-  var c = el("div", "card"); c.appendChild(el("h3", null, T("terms")));
-  var ul = document.createElement("ul"), L = state.lang;
-  [JOB_TR.training[L], T("t_schedule") + ": " + JOB_TR.schedule[L], T("t_income") + ": " + JOB_TR.income_pos[pos][L], T("t_noexp")].forEach(function (t) { ul.appendChild(el("li", null, t)); });
-  c.appendChild(ul); main.appendChild(c);
+  var L = state.lang;
+  [[T("perks"), JOB_TR.perks[L]], [T("terms"), [JOB_TR.training[L], T("t_schedule") + ": " + JOB_TR.schedule[L]]]].forEach(function (blk, n) {
+    var c = el("div", "card"); c.id = n ? "termsCard" : "perksCard"; c.appendChild(el("h3", null, blk[0]));
+    var ul = document.createElement("ul"); blk[1].forEach(function (t) { ul.appendChild(el("li", null, t)); });
+    c.appendChild(ul); main.appendChild(c);
+  });
   main.appendChild(el("div", "hint", T("hint_time")));
   var lab = el("label", "consent"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "consent";
   lab.appendChild(cb); lab.appendChild(el("span", null, T("consent"))); main.appendChild(lab);
