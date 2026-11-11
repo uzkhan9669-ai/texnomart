@@ -160,6 +160,8 @@ class Dashboard:
             return self._summary()
         if p == "/api/candidates" and method == "GET":
             return self._list(query)
+        if p == "/api/report.xlsx" and method == "GET":
+            return self._report(query)
         if p == "/api/export.csv" and method == "GET":
             return 200, {"Content-Type": "text/csv; charset=utf-8", "Cache-Control": "no-store",
                          "Content-Disposition": 'attachment; filename="kandidaty.csv"'}, store.export_csv()
@@ -345,6 +347,33 @@ class Dashboard:
             except Exception:
                 log.exception("Синхронизация после изменения не удалась")
         return self._json(200, {"ok": True, "delivered": delivered, "item": self._item(store.get(row["id"]))})
+
+    def _report(self, q):
+        """Отчёт для руководства в Excel за период (по умолчанию текущий месяц)."""
+        try:
+            import report
+        except ImportError:
+            return self._json(501, {"error": "Отчёт недоступен: не установлена библиотека XlsxWriter"})
+        d_from, d_to = report.default_period()
+        try:
+            if q.get("from"):
+                d_from = datetime.date.fromisoformat(q["from"])
+            if q.get("to"):
+                d_to = datetime.date.fromisoformat(q["to"])
+        except ValueError:
+            return self._json(400, {"error": "Неверная дата. Формат: ГГГГ-ММ-ДД"})
+        if d_to < d_from:
+            d_from, d_to = d_to, d_from
+        if (d_to - d_from).days > 3 * 366:
+            return self._json(400, {"error": "Период не может быть длиннее трёх лет"})
+        try:
+            raw = report.make_xlsx(d_from, d_to, q.get("pos") or None)
+        except Exception:
+            log.exception("Не удалось собрать отчёт")
+            return self._json(500, {"error": "Не удалось собрать отчёт"})
+        return 200, {"Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Cache-Control": "no-store",
+                     "Content-Disposition": 'attachment; filename="%s"' % report.filename(d_from, d_to),
+                     "X-Content-Type-Options": "nosniff"}, raw
 
     def _pdf(self, row):
         try:

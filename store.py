@@ -143,6 +143,11 @@ def history(cid):
                 (cid,), "all")
 
 
+def history_all():
+    """Вся история этапов (для отчётов): когда кандидат попал на этап."""
+    return _run("SELECT candidate_id, new_status, ts FROM status_history ORDER BY id", (), "all")
+
+
 def all_rows():
     return _run("SELECT * FROM candidates ORDER BY pct DESC, id ASC", (), "all")
 

@@ -46,6 +46,7 @@ HELP = (
     "/songgi - последние анкеты\n"
     "/stat - общая статистика\n"
     "/csv - таблица всех кандидатов (для Excel)\n"
+    "/otchet - отчёт для руководства в Excel за месяц (/otchet 30 - за последние 30 дней)\n"
     "/nomzod 12 или /n_12 - полный профиль\n"
     "/pdf_12 - анкета кандидата файлом PDF\n"
     "/holat 12 sozvon - перевести на этап (%s). Кандидату уйдёт сообщение после вашего подтверждения.\n"
@@ -494,6 +495,24 @@ async def stat(update, context):
 
 
 @only_rec
+async def otchet(update, context):
+    """Отчёт для руководства в Excel: /otchet (текущий месяц) или /otchet 30 (последние N дней)."""
+    import datetime
+    import report
+    d_from, d_to = report.default_period()
+    if context.args and context.args[0].isdigit() and 1 <= int(context.args[0]) <= 1000:
+        d_from = d_to - datetime.timedelta(days=int(context.args[0]) - 1)
+    try:
+        raw = await asyncio.to_thread(report.make_xlsx, d_from, d_to)
+    except Exception:
+        log.exception("Не удалось собрать отчёт")
+        await update.effective_message.reply_text("Не удалось собрать отчёт.")
+        return
+    await update.effective_message.reply_document(document=raw, filename=report.filename(d_from, d_to),
+                                                  caption="Отчёт по подбору: %s – %s" % (d_from.strftime("%d.%m.%Y"), d_to.strftime("%d.%m.%Y")))
+
+
+@only_rec
 async def csv_export(update, context):
     await update.effective_message.reply_document(document=store.export_csv(), filename="kandidaty.csv")
 
@@ -570,6 +589,7 @@ def main():
     app.add_handler(CommandHandler("songgi", songgi))
     app.add_handler(CommandHandler("stat", stat))
     app.add_handler(CommandHandler("csv", csv_export))
+    app.add_handler(CommandHandler("otchet", otchet))
     app.add_handler(CommandHandler("nomzod", nomzod))
     app.add_handler(CommandHandler("holat", holat))
     app.add_handler(MessageHandler(filters.Regex(r"^/n_\d+"), open_profile))

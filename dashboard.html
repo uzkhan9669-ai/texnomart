@@ -33,6 +33,8 @@ h1{font-size:22px;margin:0 0 4px;font-weight:800}
 .dot{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700}
 h3.mt{margin-top:20px}
 .tip{position:fixed;z-index:30;background:var(--ink);color:#fff;font-size:12px;font-weight:600;padding:5px 9px;border-radius:7px;pointer-events:none;white-space:nowrap}
+.repbar{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}.repbar b{display:block;margin-bottom:2px}
+.repctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.repctl select,.repctl input{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px}.repctl input:disabled{color:var(--mut);background:#fafafb}.repctl .btn{text-decoration:none;color:inherit;white-space:nowrap}
 .warnbox{background:var(--amberbg);border:1px solid #f0cf7a;color:#5c4300;border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-weight:500}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
 .card h3{margin:0 0 12px;font-size:14px;font-weight:700}
@@ -212,8 +214,31 @@ function verdictBar(card, v, total) {   // доли рекомендаций: о
   if (!total) seg.appendChild(el("i"));
   add(card, seg, leg);
 }
+function iso(d) { return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+function reportBar() {   // отчёт для руководства в Excel за выбранный период
+  var box = el("div", "card repbar"), now = new Date();
+  var per = select("repPeriod", "Этот месяц", {prev: "Прошлый месяц", d7: "Последние 7 дней", d30: "Последние 30 дней", q: "Последние 90 дней", custom: "Свои даты"}, "");
+  var f = el("input", "field"), t = el("input", "field"), pos = select("repPos", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, "");
+  var btn = el("a", "btn", "Скачать отчёт (Excel)"); btn.id = "repBtn"; btn.setAttribute("download", "");
+  f.type = t.type = "date"; f.id = "repFrom"; t.id = "repTo";
+  function range() {
+    var a = new Date(now.getFullYear(), now.getMonth(), 1), b = new Date(now), v = per.value;
+    if (v === "prev") { a = new Date(now.getFullYear(), now.getMonth() - 1, 1); b = new Date(now.getFullYear(), now.getMonth(), 0); }
+    else if (v === "d7") a = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    else if (v === "d30") a = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+    else if (v === "q") a = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 89);
+    if (v !== "custom") { f.value = iso(a); t.value = iso(b); }
+    f.disabled = t.disabled = v !== "custom";
+    btn.href = "/api/report.xlsx?from=" + encodeURIComponent(f.value) + "&to=" + encodeURIComponent(t.value) + (pos.value ? "&pos=" + encodeURIComponent(pos.value) : "");
+  }
+  per.onchange = f.onchange = t.onchange = pos.onchange = range; range();
+  var left = el("div"); add(left, el("b", null, "Отчёт для руководства"), el("div", "minor", "Дашборд с показателями и диаграммами, воронка, кандидаты, отказы, филиалы. Без телефонов и личных сведений."));
+  var ctr = el("div", "repctl"); add(ctr, per, f, t, pos, btn);
+  add(box, left, ctr); return box;
+}
 function overview(main) {
   add(main, el("h1", null, "Обзор подбора"), el("div", "sub", "Данные из базы анкет бота"));
+  main.appendChild(reportBar());
   api("/api/summary").then(function (d) {
     if (!d.storage.persistent) main.appendChild(el("div", "warnbox", "База кандидатов лежит во временном хранилище и обнулится при перезапуске сервера. Подключите в Railway постоянный диск (Volume) с путём /data, тогда данные будут сохраняться."));
     var k = el("div", "kpis");
