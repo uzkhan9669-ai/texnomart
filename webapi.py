@@ -31,6 +31,8 @@ RATE_SECONDS = 5           # bir foydalanuvchidan ketma-ket yuborish oralig'i
 KEEP_SECONDS = 3600        # takroriy sid larni eslab qolish muddati
 SLOT_RE = re.compile(r"^\d{2}:\d{2} - \d{2}:\d{2}$")
 SID_RE = re.compile(r"^[A-Za-z0-9]{6,40}$")
+# Свой домен веб-панели (например hr.texnomart.uz): на нём панель открывается с главной страницы.
+DASHBOARD_HOST = os.environ.get("DASHBOARD_HOST", "").strip().lower()
 
 
 def verify_init_data(init_data, token, max_age=86400, now=None):
@@ -216,6 +218,9 @@ def make_handler(gate, dash=None):
             self.wfile.write(out)
 
         def do_GET(self):
+            host = (self.headers.get("Host") or "").split(":")[0].strip().lower()
+            if dash and DASHBOARD_HOST and host == DASHBOARD_HOST and self.path.split("?")[0] == "/":
+                self.path = "/dashboard"   # на своём домене панель открывается с главной страницы
             if dash and dash.match(self.path):
                 self._dash("GET")
             elif self.path.split("?")[0] in ("/", "/health"):
