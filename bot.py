@@ -21,6 +21,7 @@ from telegram.ext import (Application, CallbackQueryHandler, CommandHandler, Con
 
 import dashboard
 import i18n
+import notices
 import sheets
 import store
 import webapi
@@ -37,8 +38,7 @@ WEBAPP_URL = os.environ.get("WEBAPP_URL", "")
 EMOJI = {"QABUL": "🟢", "ZAXIRA": "🟡", "RAD": "🔴"}
 VERDICT_ARGS = {"qabul": "QABUL", "zaxira": "ZAXIRA", "rad": "RAD", "принять": "QABUL", "резерв": "ZAXIRA", "отказ": "RAD"}
 POS_ARGS = {"konsultant": 0, "консультант": 0, "kassir": 1, "кассир": 1}
-STATUS_RU = {"yangi": "новая", "chaqirildi": "приглашён", "zaxira": "резерв", "rad": "отказ", "qabul": "принят"}
-STATUS_ARGS = dict({v: k for k, v in STATUS_RU.items()}, **{k: k for k in STATUS_RU})
+STATUS_RU = {k: v.lower() for k, v in notices.STAGE_RU.items()}
 
 HELP = (
     "Команды рекрутера:\n"
@@ -48,7 +48,9 @@ HELP = (
     "/csv - таблица всех кандидатов (для Excel)\n"
     "/nomzod 12 или /n_12 - полный профиль\n"
     "/pdf_12 - анкета кандидата файлом PDF\n"
-    "/holat 12 chaqirildi - сменить статус (%s)\n"
+    "/holat 12 sozvon - перевести на этап (%s). Кандидату уйдёт сообщение после вашего подтверждения.\n"
+    "   собеседование: /holat 12 sobes 15.11.2026; 14:00; адрес\n"
+    "   стажировка: /holat 12 staj 20.11.2026; адрес\n"
     "/anketa - пройти анкету самому"
 ) % ", ".join("%s = %s" % (k, v) for k, v in STATUS_RU.items())
 
@@ -110,7 +112,7 @@ def status_markup(cid, with_profile=False):
     if with_profile:
         rows.append([InlineKeyboardButton("Полный профиль", callback_data="p:%d" % cid),
                      InlineKeyboardButton("📄 PDF", callback_data="f:%d" % cid)])
-    rows.append([InlineKeyboardButton("✅ Пригласить", callback_data="s:%d:chaqirildi" % cid),
+    rows.append([InlineKeyboardButton("📞 Созвон", callback_data="s:%d:sozvon" % cid),
                  InlineKeyboardButton("⭐ Резерв", callback_data="s:%d:zaxira" % cid),
                  InlineKeyboardButton("❌ Отказ", callback_data="s:%d:rad" % cid)])
     return InlineKeyboardMarkup(rows)
@@ -249,7 +251,7 @@ async def accept_web(bot, user, answers, photo):
 async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cq = update.callback_query
     data = cq.data or ""
-    if data.startswith(("p:", "s:", "f:")):
+    if data.startswith(("p:", "s:", "f:", "m:")):
         await rec_button(update, context)
         return
     await cq.answer()
@@ -356,6 +358,70 @@ async def pdf_cmd(update, context):
         await send_pdf(context.bot, update.effective_chat.id, int(m.group(1)))
 
 
+async def send_notice(bot, tg_id, text):
+    """Сообщение кандидату. True, если доставлено (кандидат мог заблокировать бота)."""
+    try:
+        await bot.send_message(tg_id, text)
+        return True
+    except Exception:
+        log.warning("Сообщение кандидату %s не доставлено", tg_id, exc_info=True)
+        return False
+
+
+async def propose_move(message, context, cid, stage, fields):
+    """Показывает рекрутеру, что уйдёт кандидату, и просит подтвердить. Сам этап здесь не меняется."""
+    row = store.get(cid)
+    if not row or stage not in store.STATUSES:
+        await message.reply_text("Кандидат или этап указан неверно.")
+        return
+    if row["status"] == stage:
+        await message.reply_text("#%d уже на этапе «%s»." % (cid, notices.STAGE_RU[stage]))
+        return
+    fields, missing = notices.clean_fields(stage, fields)
+    head = "#%d %s: %s → %s" % (cid, row["fio"] or "-", notices.STAGE_RU.get(row["status"], row["status"]), notices.STAGE_RU[stage])
+    text = notices.build_text(dict(row), stage, fields)
+    context.user_data["mv"] = {"cid": cid, "stage": stage, "fields": fields}
+    if not text:   # возврат в «Новые»: сообщения нет
+        kb = [[InlineKeyboardButton("Переместить", callback_data="m:%d:%s:0" % (cid, stage)),
+               InlineKeyboardButton("Отмена", callback_data="m:%d:%s:x" % (cid, stage))]]
+        await message.reply_text(head, reply_markup=InlineKeyboardMarkup(kb))
+        return
+    kb = [[InlineKeyboardButton("Без сообщения", callback_data="m:%d:%s:0" % (cid, stage)),
+           InlineKeyboardButton("Отмена", callback_data="m:%d:%s:x" % (cid, stage))]]
+    if missing:
+        example = {"sobes": "/holat %d sobes 15.11.2026; 14:00; адрес", "staj": "/holat %d staj 20.11.2026; адрес"}.get(stage, "/holat %d " + stage) % cid
+        body = "Чтобы отправить кандидату сообщение, укажите: %s.\nНапример: %s" % (
+            ", ".join(notices.FIELD_RU[k].lower() for k in missing), example)
+    else:
+        kb.insert(0, [InlineKeyboardButton("✉️ Отправить и переместить", callback_data="m:%d:%s:1" % (cid, stage))])
+        body = "Сообщение кандидату:\n\n%s" % text
+    await message.reply_text(head + "\n\n" + body, reply_markup=InlineKeyboardMarkup(kb))
+
+
+async def do_move(message, context, cid, stage, notify, by):
+    row = store.get(cid)
+    if not row or stage not in store.STATUSES:
+        await message.reply_text("Кандидат или этап указан неверно.")
+        return
+    if row["status"] == stage:   # повторное нажатие: второе сообщение кандидату не уходит
+        await message.reply_text("#%d уже на этапе «%s»." % (cid, notices.STAGE_RU[stage]))
+        return
+    mv = context.user_data.pop("mv", None) or {}
+    fields, missing = notices.clean_fields(stage, mv.get("fields") if mv.get("cid") == cid and mv.get("stage") == stage else {})
+    text = notices.build_text(dict(row), stage, fields)
+    delivered = None
+    if notify:
+        if not text or missing:
+            await message.reply_text("Не хватает данных для сообщения. Повторите команду /holat с датой, временем и адресом.")
+            return
+        delivered = await send_notice(context.bot, row["tg_id"], text)
+    store.set_status(cid, stage, by="tg:%s" % by, notified=delivered, note="; ".join(v for v in fields.values() if v))
+    tail = {True: "Сообщение кандидату доставлено.", False: "Сообщение НЕ доставлено (кандидат мог заблокировать бота). Свяжитесь по телефону %s." % (row["phone"] or ""),
+            None: "Сообщение кандидату не отправлялось."}[delivered]
+    await message.reply_text("#%d этап: %s. %s" % (cid, notices.STAGE_RU[stage], tail))
+    await sync_sheet(cid)
+
+
 async def rec_button(update, context):
     cq = update.callback_query
     if not is_rec(update):
@@ -368,11 +434,13 @@ async def rec_button(update, context):
     elif parts[0] == "f" and len(parts) == 2 and parts[1].isdigit():
         await send_pdf(context.bot, cq.message.chat_id, int(parts[1]))
     elif parts[0] == "s" and len(parts) == 3 and parts[1].isdigit():
-        ok = store.set_status(int(parts[1]), parts[2])
-        await cq.message.reply_text("#%s статус: %s" % (parts[1], STATUS_RU.get(parts[2], parts[2])) if ok
-                                    else "Не удалось сменить статус.")
-        if ok:
-            await sync_sheet(int(parts[1]))
+        await propose_move(cq.message, context, int(parts[1]), parts[2], {})
+    elif parts[0] == "m" and len(parts) == 4 and parts[1].isdigit():
+        if parts[3] == "x":
+            context.user_data.pop("mv", None)
+            await cq.message.reply_text("Отменено, этап не изменён.")
+        else:
+            await do_move(cq.message, context, int(parts[1]), parts[2], parts[3] == "1", update.effective_user.id)
 
 
 def row_pos(r):
@@ -447,16 +515,26 @@ async def open_profile(update, context):
 
 @only_rec
 async def holat(update, context):
-    hint = "Например: /holat 12 chaqirildi\nСтатусы: " + ", ".join("%s (%s)" % (k, v) for k, v in STATUS_RU.items())
-    if len(context.args) != 2 or not context.args[0].isdigit():
+    hint = ("Например: /holat 12 sozvon\nСобеседование: /holat 12 sobes 15.11.2026; 14:00; адрес\nСтажировка: /holat 12 staj 20.11.2026; адрес\n"
+            "Этапы: " + ", ".join("%s (%s)" % (k, v) for k, v in STATUS_RU.items()))
+    args = context.args or []
+    stage = notices.parse_stage(args[1]) if len(args) >= 2 else None
+    if len(args) < 2 or not args[0].isdigit() or not stage:
         await update.effective_message.reply_text(hint)
         return
-    status = STATUS_ARGS.get(context.args[1].lower(), context.args[1].lower())
-    ok = store.set_status(int(context.args[0]), status)
-    await update.effective_message.reply_text("Статус изменён: %s." % STATUS_RU[status] if ok
-                                              else "Кандидат или статус указан неверно.\n" + hint)
-    if ok:
-        await sync_sheet(int(context.args[0]))
+    parts = [x.strip() for x in " ".join(args[2:]).split(";") if x.strip()]
+    fields = {}
+    if stage == "sobes" and len(parts) >= 3:
+        fields = {"date": parts[0], "time": parts[1], "place": "; ".join(parts[2:])}
+    elif stage == "staj" and len(parts) >= 3:
+        fields = {"date": parts[0], "time": parts[1], "place": "; ".join(parts[2:])}
+    elif stage == "staj" and len(parts) == 2:
+        fields = {"date": parts[0], "place": parts[1]}
+    elif stage == "sozvon" and parts:
+        fields = {"time": parts[0]}
+    elif stage == "offer" and parts:
+        fields = {"date": parts[0]}
+    await propose_move(update.effective_message, context, int(args[0]), stage, fields)
 
 
 async def on_error(update, context):
@@ -473,7 +551,9 @@ def main():
     async def post_init(application):
         port = int(os.environ.get("PORT", "8080"))
         loop = asyncio.get_running_loop()
-        dash = dashboard.Dashboard(TOKEN, on_change=lambda cid: asyncio.run_coroutine_threadsafe(sync_sheet(cid), loop))
+        dash = dashboard.Dashboard(
+            TOKEN, on_change=lambda cid: asyncio.run_coroutine_threadsafe(sync_sheet(cid), loop),
+            notify=lambda tg_id, text: asyncio.run_coroutine_threadsafe(send_notice(application.bot, tg_id, text), loop).result(timeout=25))
         if not dash.enabled:
             log.warning("Веб-панель выключена: задайте DASHBOARD_PASSWORD (не короче 8 символов).")
         webapi.start_server(loop, lambda user, answers, photo: accept_web(application.bot, user, answers, photo),

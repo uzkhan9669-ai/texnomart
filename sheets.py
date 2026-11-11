@@ -7,6 +7,8 @@ Agar SHEETS_URL bo'sh bo'lsa, sinxronlash o'chiq turadi va bot odatdagidek ishla
 Jadvaldagi kalit: Telegram ID. Nomzod qayta to'ldirsa yoki holati o'zgarsa, qator yangilanadi.
 """
 import json
+
+import store
 import logging
 import os
 import urllib.request
@@ -42,7 +44,7 @@ def build_payload(row):
         "verdict": row["verdict"],
         "red": row["red"],
         "yellow": row["yellow"],
-        "status": row["status"],
+        "status": store.STAGE_RU.get(row["status"], row["status"]),
         "flags": row["flags"] or "",
         "answers": json.dumps(public, ensure_ascii=False),
     }

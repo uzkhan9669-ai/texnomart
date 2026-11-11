@@ -20,13 +20,14 @@ import time
 import urllib.parse
 import urllib.request
 
+import notices
 import store
 from scoring import VERDICT_RU, build_profile, evaluate, position_name
 
 log = logging.getLogger("texnomart-bot.dashboard")
 SESSION_SECONDS = 8 * 3600
 MAX_FAILS, FAIL_WINDOW = 5, 15 * 60
-STATUS_RU = {"yangi": "Новая", "chaqirildi": "Приглашён", "zaxira": "Резерв", "rad": "Отказ", "qabul": "Принят"}
+STATUS_RU = notices.STAGE_RU
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
        "font-src https://fonts.gstatic.com; img-src 'self' data: blob:; frame-ancestors 'none'; base-uri 'none'")
@@ -46,7 +47,8 @@ def telegram_photo(token, file_id, timeout=15):
 
 
 class Dashboard:
-    def __init__(self, token, username=None, password=None, secret=None, on_change=None, fetch_photo=telegram_photo):
+    def __init__(self, token, username=None, password=None, secret=None, on_change=None, fetch_photo=telegram_photo, notify=None):
+        self.notify = notify   # notify(tg_id, текст) -> bool: сообщение кандидату через бота
         self.token = token
         self.username = (username if username is not None else os.environ.get("DASHBOARD_USERNAME", "hr")).strip() or "hr"
         self.password = (password if password is not None else os.environ.get("DASHBOARD_PASSWORD", "")).strip()
@@ -114,7 +116,16 @@ class Dashboard:
                 "pct": row["pct"], "verdict": row["verdict"], "verdict_ru": VERDICT_RU.get(row["verdict"], row["verdict"]),
                 "red": row["red"], "yellow": row["yellow"], "status": row["status"],
                 "status_ru": STATUS_RU.get(row["status"], row["status"]), "branch": row["branch"] or "",
-                "ts": row["ts"], "photo": bool(row["photo_file_id"]), "slot": a.get("slot", "")}
+                "ts": row["ts"], "photo": bool(row["photo_file_id"]), "slot": a.get("slot", ""),
+                "days": self._days(row["stage_ts"] or row["ts"]), "notice": row["notice"] or "",
+                "reason": row["reject_reason"] or ""}
+
+    @staticmethod
+    def _days(ts):
+        try:
+            return max(0, (datetime.datetime.now() - datetime.datetime.fromisoformat(ts)).days)
+        except (TypeError, ValueError):
+            return 0
 
     # ---------- маршруты
     def handle(self, method, path, headers, body=b"", ip="", now=None):
@@ -140,7 +151,11 @@ class Dashboard:
         if not user:
             return self._json(401, {"error": "Требуется вход"})
         if p == "/api/me" and method == "GET":
-            return self._json(200, {"ok": True, "user": user, "statuses": STATUS_RU, "verdicts": VERDICT_RU})
+            return self._json(200, {"ok": True, "user": user, "statuses": STATUS_RU, "verdicts": VERDICT_RU,
+                                    "stages": list(notices.ORDER), "fields": {k: [list(v[0]), list(v[1])] for k, v in notices.FIELDS.items()},
+                                    "field_ru": notices.FIELD_RU, "reasons": notices.REASONS, "contact": notices.contact()})
+        if p == "/api/board" and method == "GET":
+            return self._board(query)
         if p == "/api/summary" and method == "GET":
             return self._summary()
         if p == "/api/candidates" and method == "GET":
@@ -148,11 +163,13 @@ class Dashboard:
         if p == "/api/export.csv" and method == "GET":
             return 200, {"Content-Type": "text/csv; charset=utf-8", "Cache-Control": "no-store",
                          "Content-Disposition": 'attachment; filename="kandidaty.csv"'}, store.export_csv()
-        m = re.fullmatch(r"/api/candidates/(\d{1,9})(/photo|/pdf)?", p)
+        m = re.fullmatch(r"/api/candidates/(\d{1,9})(/photo|/pdf|/move|/preview)?", p)
         if m:
             row = store.get(int(m.group(1)))
             if not row:
                 return self._json(404, {"error": "Кандидат не найден"})
+            if m.group(2) in ("/move", "/preview"):
+                return self._move(row, body, user, preview=m.group(2) == "/preview") if method == "POST" else self._json(405, {"error": "method"})
             if m.group(2) == "/pdf":
                 return self._pdf(row) if method == "GET" else self._json(405, {"error": "method"})
             if m.group(2):
@@ -221,10 +238,12 @@ class Dashboard:
                 comp.setdefault(k, []).append(v)
             by_pos.setdefault(i["pos"], []).append(i["pct"])
         share = lambda n: round(n * 100 / len(items)) if items else 0
+        reach = store.reached()
         return self._json(200, {
             "daily": [[d, per_day[d]] for d in days], "week": week, "prev_week": prev_week,
-            "invited_pct": share(sum(1 for i in items if i["status"] in ("chaqirildi", "qabul"))),
-            "hired": sum(1 for i in items if i["status"] == "qabul"),
+            "invited_pct": share(sum(1 for v in reach.values() if v >= 2)),
+            "hired": sum(1 for i in items if i["status"] == "offer"),
+            "funnel": [[STATUS_RU[s], sum(1 for v in reach.values() if v >= n)] for n, s in enumerate(notices.ORDER)],
             "red_pct": share(sum(1 for i in items if i["red"])),
             "competencies": sorted(([k, round(sum(v) / len(v), 1), len(v)] for k, v in comp.items()), key=lambda x: x[1]),
             "pos_avg": {k: round(sum(v) / len(v)) for k, v in by_pos.items()},
@@ -262,10 +281,8 @@ class Dashboard:
                 raise ValueError
         except (ValueError, UnicodeDecodeError):
             return self._json(400, {"error": "data"})
-        if "status" in d:
-            if d["status"] not in store.STATUSES:
-                return self._json(400, {"error": "Недопустимый статус"})
-            store.set_status(row["id"], d["status"], by=user)
+        if "status" in d:   # смена этапа идёт через /move (с подтверждением сообщения кандидату)
+            return self._json(400, {"error": "Этап меняется через перемещение карточки"})
         if "branch" in d:
             store.set_branch(row["id"], str(d["branch"]).strip()[:80])
         if self.on_change:
@@ -274,6 +291,60 @@ class Dashboard:
             except Exception:
                 log.exception("Синхронизация после изменения не удалась")
         return self._json(200, {"ok": True, "item": self._item(store.get(row["id"]))})
+
+    def _board(self, q):
+        text = (q.get("q") or "").strip().lower()[:80]
+        cols = {s: [] for s in notices.ORDER}
+        off = {"zaxira": 0, "rad": 0}
+        for r in store.all_rows():
+            i = self._item(r)
+            if i["status"] in off:
+                off[i["status"]] += 1
+                continue
+            if q.get("pos") and i["pos"] != q["pos"]:
+                continue
+            if text and not (text in i["fio"].lower() or text in i["branch"].lower() or text in re.sub(r"\D", "", i["phone"])):
+                continue
+            cols.setdefault(i["status"], []).append(i)
+        return self._json(200, {"columns": [{"key": s, "label": STATUS_RU[s], "count": len(cols[s]), "items": cols[s][:150]} for s in notices.ORDER],
+                                "off": off})
+
+    def _move(self, row, body, user, preview=False):
+        try:
+            d = json.loads(body.decode("utf-8"))
+            if not isinstance(d, dict):
+                raise ValueError
+        except (ValueError, UnicodeDecodeError):
+            return self._json(400, {"error": "data"})
+        stage = d.get("status")
+        if stage not in store.STATUSES:
+            return self._json(400, {"error": "Недопустимый этап"})
+        fields, missing = notices.clean_fields(stage, d.get("fields") if isinstance(d.get("fields"), dict) else {})
+        text = notices.build_text(dict(row), stage, fields)
+        if preview:
+            return self._json(200, {"text": text or "", "missing": missing, "same": row["status"] == stage,
+                                    "forward": notices.is_forward(row["status"], stage), "from": STATUS_RU.get(row["status"], row["status"]),
+                                    "to": STATUS_RU[stage], "lang": notices.answers_of(row).get("ui_lang", "uz")})
+        if row["status"] == stage:   # повторный запрос: второе сообщение кандидату не уходит
+            return self._json(409, {"error": "Кандидат уже на этом этапе"})
+        want = bool(d.get("notify")) and bool(text)
+        if want and missing:
+            return self._json(400, {"error": "Заполните: " + ", ".join(notices.FIELD_RU[k].lower() for k in missing)})
+        delivered = None
+        if want:
+            try:
+                delivered = bool(self.notify and self.notify(row["tg_id"], text))
+            except Exception:
+                log.exception("Не удалось отправить сообщение кандидату")
+                delivered = False
+        reason = d.get("reason") if d.get("reason") in notices.REASONS else None
+        store.set_status(row["id"], stage, by=user, reason=reason, notified=delivered, note="; ".join(v for v in fields.values() if v))
+        if self.on_change:
+            try:
+                self.on_change(row["id"])
+            except Exception:
+                log.exception("Синхронизация после изменения не удалась")
+        return self._json(200, {"ok": True, "delivered": delivered, "item": self._item(store.get(row["id"]))})
 
     def _pdf(self, row):
         try:
@@ -296,7 +367,32 @@ class Dashboard:
     def _photo(self, row):
         if not row["photo_file_id"]:
             return self._json(404, {"error": "Фото нет"})
-        raw = self.fetch_photo(self.token, row["photo_file_id"])
-        if not raw or raw[:3] != b"\xff\xd8\xff":
-            return self._json(502, {"error": "Не удалось получить фото"})
+        # уменьшенная копия хранится на диске, чтобы доска с десятками карточек не ходила в Telegram за каждым фото
+        folder = os.path.join(store.data_dir(), "photos")
+        cache = os.path.join(folder, hashlib.sha1(row["photo_file_id"].encode()).hexdigest()[:20] + ".jpg")
+        raw = None
+        try:
+            raw = open(cache, "rb").read()
+        except OSError:
+            pass
+        if not raw:
+            raw = self.fetch_photo(self.token, row["photo_file_id"])
+            if not raw or raw[:3] != b"\xff\xd8\xff":
+                return self._json(502, {"error": "Не удалось получить фото"})
+            try:
+                import io
+                from PIL import Image
+                im = Image.open(io.BytesIO(raw)).convert("RGB")
+                im.thumbnail((480, 480))
+                buf = io.BytesIO()
+                im.save(buf, "JPEG", quality=82)
+                raw = buf.getvalue()
+            except Exception:   # нет Pillow или битый файл: отдаём как есть
+                pass
+            try:
+                os.makedirs(folder, exist_ok=True)
+                with open(cache, "wb") as f:
+                    f.write(raw)
+            except OSError:
+                pass
         return 200, {"Content-Type": "image/jpeg", "Cache-Control": "private, max-age=600", "X-Content-Type-Options": "nosniff"}, raw

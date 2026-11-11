@@ -7,7 +7,12 @@ import os
 import sqlite3
 from contextlib import closing
 
-STATUSES = ("yangi", "chaqirildi", "zaxira", "rad", "qabul")
+# Этапы воронки по порядку, затем «вне воронки»: резерв и отказ
+STAGES = ("yangi", "sozvon", "sobes", "staj", "offer")
+STATUSES = STAGES + ("zaxira", "rad")
+STAGE_RU = {"yangi": "Новые", "sozvon": "Созвон", "sobes": "Собеседование", "staj": "Стажировка", "offer": "Оффер",
+            "zaxira": "Резерв", "rad": "Отказ"}
+_OLD_STATUS = {"chaqirildi": "sobes", "qabul": "offer"}   # статусы прежней версии
 
 
 def data_dir():
@@ -54,22 +59,32 @@ def init():
         _run("ALTER TABLE candidates ADD COLUMN photo_file_id TEXT")
     if "branch" not in cols:   # veb-panel: filial
         _run("ALTER TABLE candidates ADD COLUMN branch TEXT DEFAULT ''")
+    for name, ddl in (("reject_reason", "TEXT"), ("stage_ts", "TEXT"), ("notice", "TEXT DEFAULT ''")):
+        if name not in cols:
+            _run("ALTER TABLE candidates ADD COLUMN %s %s" % (name, ddl))
     _run("""CREATE TABLE IF NOT EXISTS status_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT, candidate_id INTEGER, old_status TEXT, new_status TEXT,
         changed_by TEXT, ts TEXT)""")
+    hcols = {r["name"] for r in _run("PRAGMA table_info(status_history)", (), "all")}
+    for name, ddl in (("notified", "INTEGER"), ("note", "TEXT DEFAULT ''")):
+        if name not in hcols:
+            _run("ALTER TABLE status_history ADD COLUMN %s %s" % (name, ddl))
+    for old, new in _OLD_STATUS.items():   # перенос статусов прежней версии на новые этапы
+        _run("UPDATE candidates SET status=? WHERE status=?", (new, old))
 
 
 def save(tg_id, username, answers_json, fio, phone, pct, verdict, red, yellow, flags, photo_file_id=None):
     """Nomzodni saqlaydi. Qayta to'ldirsa, eski yozuv yangilanadi va holat 'yangi' ga qaytadi.
     Yangi selfie berilmasa, eski selfie saqlanib qoladi."""
     ts = datetime.datetime.now().isoformat(timespec="seconds")
-    _run("""INSERT INTO candidates (tg_id, username, ts, fio, phone, pct, verdict, red, yellow, flags, status, answers, photo_file_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?, 'yangi', ?, ?)
+    _run("""INSERT INTO candidates (tg_id, username, ts, fio, phone, pct, verdict, red, yellow, flags, status, answers, photo_file_id, stage_ts)
+            VALUES (?,?,?,?,?,?,?,?,?,?, 'yangi', ?, ?, ?)
             ON CONFLICT(tg_id) DO UPDATE SET username=excluded.username, ts=excluded.ts, fio=excluded.fio,
               phone=excluded.phone, pct=excluded.pct, verdict=excluded.verdict, red=excluded.red,
               yellow=excluded.yellow, flags=excluded.flags, status='yangi', answers=excluded.answers,
+              stage_ts=excluded.ts, notice='', reject_reason=NULL,
               photo_file_id=COALESCE(excluded.photo_file_id, candidates.photo_file_id)""",
-         (tg_id, username, ts, fio, phone, pct, verdict, red, yellow, flags, answers_json, photo_file_id))
+         (tg_id, username, ts, fio, phone, pct, verdict, red, yellow, flags, answers_json, photo_file_id, ts))
     return _run("SELECT id FROM candidates WHERE tg_id=?", (tg_id,), "one")["id"]
 
 
@@ -91,16 +106,32 @@ def listing(verdict=None, newest=False, limit=20):
     return _run("SELECT * FROM candidates %s ORDER BY %s LIMIT ?" % (where, order), tuple(args), "all")
 
 
-def set_status(cid, status, by="telegram"):
-    """Holatni o'zgartiradi va tarixga yozadi (kim, qachon)."""
+def set_status(cid, status, by="telegram", reason=None, notified=None, note=""):
+    """Меняет этап и пишет в историю: кто, когда, было ли отправлено сообщение кандидату
+    (notified: True доставлено, False не доставлено, None не отправляли)."""
     row = get(cid)
     if status not in STATUSES or not row:
         return False
-    _run("UPDATE candidates SET status=? WHERE id=?", (status, cid))
-    if row["status"] != status:
-        _run("INSERT INTO status_history (candidate_id, old_status, new_status, changed_by, ts) VALUES (?,?,?,?,?)",
-             (cid, row["status"], status, by, datetime.datetime.now().isoformat(timespec="seconds")))
+    if row["status"] == status:
+        return True
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+    notice = {True: "sent", False: "failed"}.get(notified, "")
+    _run("UPDATE candidates SET status=?, stage_ts=?, notice=?, reject_reason=? WHERE id=?",
+         (status, now, notice, (reason or None) if status == "rad" else None, cid))
+    _run("INSERT INTO status_history (candidate_id, old_status, new_status, changed_by, ts, notified, note) VALUES (?,?,?,?,?,?,?)",
+         (cid, row["status"], status, by, now, None if notified is None else int(bool(notified)), note or ""))
     return True
+
+
+def reached():
+    """Для конверсии: {id кандидата: самый дальний этап воронки, до которого он доходил}."""
+    best = {}
+    for r in _run("SELECT id, status FROM candidates", (), "all"):
+        best[r["id"]] = STAGES.index(r["status"]) if r["status"] in STAGES else 0
+    for h in _run("SELECT candidate_id, new_status FROM status_history", (), "all"):
+        if h["new_status"] in STAGES and h["candidate_id"] in best:
+            best[h["candidate_id"]] = max(best[h["candidate_id"]], STAGES.index(h["new_status"]))
+    return best
 
 
 def set_branch(cid, branch):
@@ -108,7 +139,7 @@ def set_branch(cid, branch):
 
 
 def history(cid):
-    return _run("SELECT old_status, new_status, changed_by, ts FROM status_history WHERE candidate_id=? ORDER BY id DESC LIMIT 20",
+    return _run("SELECT old_status, new_status, changed_by, ts, notified, note FROM status_history WHERE candidate_id=? ORDER BY id DESC LIMIT 20",
                 (cid,), "all")
 
 
@@ -134,5 +165,5 @@ def export_csv():
         except (ValueError, IndexError, TypeError):
             pos = ""
         w.writerow([r["id"], r["ts"], r["fio"], pos, r["phone"], ("@" + r["username"]) if r["username"] else "",
-                    r["pct"], r["verdict"], r["red"], r["yellow"], r["status"], r["flags"]])
+                    r["pct"], r["verdict"], r["red"], r["yellow"], STAGE_RU.get(r["status"], r["status"]), r["flags"]])
     return ("﻿" + buf.getvalue()).encode("utf-8")
