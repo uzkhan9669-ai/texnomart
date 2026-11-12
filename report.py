@@ -119,19 +119,22 @@ def make_xlsx(d_from=None, d_to=None, pos=None):
             ws_f.write_formula(r, 2, "=IF(B%d=0,0,B%d/B%d)" % (r, r + 1, r), prc, pct(reach[n], reach[n - 1]))
         ws_f.write_formula(r, 3, "=IF($B$4=0,0,B%d/$B$4)" % (r + 1), prc, pct(reach[n], total))
         ws_f.write_number(r, 4, now_on[s], num)
-    ws_f.write("A10", "Вне воронки", F(bold=True))
-    ws_f.write_row("A11", ["Статус", "Кандидатов", "Доля от анкет"], head)
+    ns = len(store.STAGES)
+    off0 = 5 + ns   # строка (с нуля) заголовка блока «Вне воронки»
+    ws_f.write(off0, 0, "Вне воронки", F(bold=True))
+    ws_f.write_row(off0 + 1, 0, ["Статус", "Кандидатов", "Доля от анкет"], head)
     for n, s in enumerate(("zaxira", "rad")):
-        ws_f.write(11 + n, 0, STAGE_RU[s], cell)
-        ws_f.write_number(11 + n, 1, now_on[s], num)
-        ws_f.write_formula(11 + n, 2, "=IF($B$4=0,0,B%d/$B$4)" % (12 + n), prc, pct(now_on[s], total))
-    ws_f.write("A15", "По должностям: сколько дошло до этапа", F(bold=True))
-    ws_f.write_row("A16", ["Этап"] + list(POSITIONS), head)
+        ws_f.write(off0 + 2 + n, 0, STAGE_RU[s], cell)
+        ws_f.write_number(off0 + 2 + n, 1, now_on[s], num)
+        ws_f.write_formula(off0 + 2 + n, 2, "=IF($B$4=0,0,B%d/$B$4)" % (off0 + 3 + n), prc, pct(now_on[s], total))
+    pos0 = off0 + 5   # строка (с нуля) заголовка блока по должностям
+    ws_f.write(pos0, 0, "По должностям: сколько дошло до этапа", F(bold=True))
+    ws_f.write_row(pos0 + 1, 0, ["Этап"] + list(POSITIONS), head)
     for n, s in enumerate(store.STAGES):
-        ws_f.write(16 + n, 0, STAGE_RU[s], cell)
+        ws_f.write(pos0 + 2 + n, 0, STAGE_RU[s], cell)
         for k, p in enumerate(POSITIONS):
-            ws_f.write_number(16 + n, 1 + k, sum(1 for i in items if i["pos"] == p and i["reach"] >= n), num)
-    ws_f.write("A23", "«Дошло до этапа» считает кандидата на всех этапах, которые он прошёл, даже если потом он получил отказ или ушёл в резерв.", note)
+            ws_f.write_number(pos0 + 2 + n, 1 + k, sum(1 for i in items if i["pos"] == p and i["reach"] >= n), num)
+    ws_f.write(pos0 + 3 + ns, 0, "«Дошло до этапа» считает кандидата на всех этапах, которые он прошёл, даже если потом он получил отказ или ушёл в резерв.", note)
 
     # ---------------------------------------------------------------- Динамика
     ws_d.hide_gridlines(2)
@@ -177,18 +180,18 @@ def make_xlsx(d_from=None, d_to=None, pos=None):
     # ---------------------------------------------------------------- Филиалы
     ws_b.hide_gridlines(2)
     ws_b.set_column("A:A", 30)
-    ws_b.set_column("B:F", 17)
+    ws_b.set_column("B:G", 17)
     ws_b.write("A1", "По филиалам", title)
-    ws_b.write_row("A3", ["Филиал", "Кандидатов", "До собеседования", "До стажировки", "Офферов", "Средний балл"], head)
+    ws_b.write_row("A3", ["Филиал", "Кандидатов", "До собеседования", "До стажировки", "Офферов", "Принято", "Средний балл"], head)
     branches = {}
     for i in items:
         branches.setdefault(i["branch"] or "Не назначен", []).append(i)
     for n, (b, lst) in enumerate(sorted(branches.items(), key=lambda kv: (-len(kv[1]), kv[0])) or [("Данных нет", [])]):
         ws_b.write(3 + n, 0, b, cell)
         ws_b.write_row(3 + n, 1, [len(lst), sum(1 for i in lst if i["reach"] >= 2), sum(1 for i in lst if i["reach"] >= 3),
-                                  sum(1 for i in lst if i["reach"] >= 4)], num)
-        ws_b.write_number(3 + n, 5, round(sum(i["pct"] for i in lst) / len(lst)) if lst else 0, num)
-    ws_b.autofilter(2, 0, 2 + max(1, len(branches)), 5)
+                                  sum(1 for i in lst if i["reach"] >= 4), sum(1 for i in lst if i["reach"] >= 5)], num)
+        ws_b.write_number(3 + n, 6, round(sum(i["pct"] for i in lst) / len(lst)) if lst else 0, num)
+    ws_b.autofilter(2, 0, 2 + max(1, len(branches)), 6)
 
     # ---------------------------------------------------------------- Кандидаты
     cols = [("№", 6), ("Дата анкеты", 13), ("Ф.И.О.", 30), ("Должность", 14), ("Балл, %", 9), ("Рекомендация", 15), ("Красных флагов", 10),
@@ -250,7 +253,7 @@ def make_xlsx(d_from=None, d_to=None, pos=None):
         ("ОТ АНКЕТЫ ДО ОФФЕРА", (sum(to_offer) / len(to_offer)) if to_offer else None, k_days,
          "в среднем, по %d офферам" % len(to_offer) if to_offer else "офферов за период ещё нет"),
         ("ДОЛЯ ОТКАЗОВ", pct(rejected, total), k_pct, ("главная причина: %s" % reasons[0][0].lower()) if reasons else "отказов за период нет"),
-        ("В РЕЗЕРВЕ", reserve, k_value, "кандидаты, к которым можно вернуться"),
+        ("ПРИНЯТО НА РАБОТУ", reach[5], k_value, "%d%% от анкет · в резерве: %d" % (round(pct(reach[5], total) * 100), reserve)),
     ]
     for n, (label, value, fmt, sub) in enumerate(tiles):
         r, c = 5 + (n // 4) * 5, 1 + (n % 4) * 3
@@ -288,11 +291,12 @@ def make_xlsx(d_from=None, d_to=None, pos=None):
         ch.set_plotarea({"fill": {"color": "#FFFFFF"}})
         return ch
 
-    c1 = chart("bar", "Дошло до этапа", "=Воронка!$A$4:$A$8", "=Воронка!$B$4:$B$8", reverse=True, title_text="Воронка: сколько кандидатов дошло до этапа")
+    c1 = chart("bar", "Дошло до этапа", "=Воронка!$A$4:$A$%d" % (3 + ns), "=Воронка!$B$4:$B$%d" % (3 + ns), reverse=True, title_text="Воронка: сколько кандидатов дошло до этапа")
     c2 = chart("column", "Анкет", ["Динамика", 3, 0, 2 + len(days), 0], ["Динамика", 3, 1, 2 + len(days), 1], labels=len(days) <= 16,
                title_text="Анкеты по неделям" if weekly else "Анкеты по дням")
-    c3 = chart("column", POSITIONS[0], "=Воронка!$A$17:$A$21", "=Воронка!$B$17:$B$21", title_text="Консультанты и кассиры по этапам")
-    c3.add_series({"name": POSITIONS[1], "categories": "=Воронка!$A$17:$A$21", "values": "=Воронка!$C$17:$C$21", "fill": {"color": ORANGE},
+    p1, p2 = pos0 + 3, pos0 + 2 + ns   # строки Excel блока по должностям
+    c3 = chart("column", POSITIONS[0], "=Воронка!$A$%d:$A$%d" % (p1, p2), "=Воронка!$B$%d:$B$%d" % (p1, p2), title_text="Консультанты и кассиры по этапам")
+    c3.add_series({"name": POSITIONS[1], "categories": "=Воронка!$A$%d:$A$%d" % (p1, p2), "values": "=Воронка!$C$%d:$C$%d" % (p1, p2), "fill": {"color": ORANGE},
                    "border": {"none": True}, "data_labels": {"value": True, "font": {"name": "Arial", "size": 9, "color": INK}}})
     c3.set_legend({"position": "bottom", "font": {"name": "Arial", "size": 9, "color": INK}})
     c4 = chart("bar", "Отказов", ["Отказы и риски", 3, 0, 2 + len(rr), 0], ["Отказы и риски", 3, 1, 2 + len(rr), 1], reverse=True,

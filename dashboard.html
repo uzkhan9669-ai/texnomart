@@ -58,8 +58,8 @@ tr:last-child td{border-bottom:0}
 tbody tr{cursor:pointer}
 tbody tr:hover{background:#fffbe6}
 .name{font-weight:700}.minor{font-size:12px;color:var(--mut)}
-.tag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#eef0f3;white-space:nowrap}
-.tag.QABUL,.tag.offer,.tag.staj{background:var(--greenbg);color:var(--green)}
+.tag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#eef0f3;white-space:nowrap;color:var(--txt)}
+.tag.QABUL,.tag.offer,.tag.staj,.tag.ishda{background:var(--greenbg);color:var(--green)}
 .tag.ZAXIRA,.tag.zaxira{background:var(--amberbg);color:var(--amber)}
 .tag.RAD,.tag.rad{background:var(--redbg);color:var(--red)}
 .pct{font-weight:800;font-size:15px}
@@ -70,12 +70,37 @@ tbody tr:hover{background:#fffbe6}
 .login input{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px}
 .login .btn{width:100%;margin-top:18px;padding:12px}
 .err{color:var(--red);font-weight:600;font-size:13px;min-height:18px;margin-top:10px}
-.shade{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:8}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:#fff;z-index:9;overflow:auto;padding:20px;box-shadow:-8px 0 30px rgba(0,0,0,.12)}
-.drawer .x{float:right;background:none;border:0;font-size:22px;line-height:1;color:var(--mut)}
-.who{display:flex;gap:14px;align-items:center;margin:6px 0 14px}
-.who img,.who .noimg{width:84px;height:84px;border-radius:14px;object-fit:cover;background:#eef0f3;flex:none}
-.who h2{margin:0 0 4px;font-size:19px}
+.cwin{position:fixed;left:0;top:0;width:min(700px,calc(100vw - 16px));max-height:min(820px,calc(100vh - 24px));background:#fff;z-index:9;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);display:flex;flex-direction:column;overflow:hidden}
+.cwin.moving{box-shadow:0 28px 80px rgba(0,0,0,.36),0 0 0 2px var(--y);user-select:none}
+.who{display:flex;gap:14px;align-items:center;background:var(--ink);color:#fff;padding:16px 18px;cursor:grab;touch-action:none;flex:none}
+.cwin.moving .who{cursor:grabbing}
+.who img,.who .noimg{width:76px;height:76px;border-radius:14px;object-fit:cover;background:#3a3a3e;flex:none;-webkit-user-drag:none}
+.who h2{margin:0 0 3px;font-size:18px;line-height:1.2;overflow-wrap:anywhere}
+.who .inf{flex:1;min-width:0}.who .minor{color:#c9c9cf}.who .minor a{color:#fff;text-decoration:none;border-bottom:1px dotted #8a8a92}
+.who .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.who .score{text-align:right;flex:none}.who .score b{display:block;font-size:30px;font-weight:800;color:var(--y);line-height:1}.who .score .tag{margin-top:6px}
+.who .x{align-self:flex-start;background:var(--soft);border:0;color:#fff;width:30px;height:30px;border-radius:50%;font-size:18px;line-height:1;flex:none}
+.grip{font-size:11px;color:#8a8a92;margin-top:6px}
+.wtabs{display:flex;gap:2px;padding:0 14px;border-bottom:1px solid var(--line);flex:none}
+.wtabs button{background:none;border:0;border-bottom:3px solid transparent;padding:11px 12px 8px;font-weight:700;color:var(--mut)}
+.wtabs button.on{color:var(--txt);border-bottom-color:var(--y)}
+.wbody{padding:4px 18px 18px;overflow:auto;flex:1;min-height:120px}
+.wfoot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 14px;border-top:1px solid var(--line);background:#fafafb;flex:none}
+.wfoot button,.wfoot a{border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 13px;font-weight:700;text-decoration:none;color:inherit}
+.wfoot .go{background:var(--y);border-color:var(--y)}
+.wfoot .ok{color:var(--green);border-color:#9fd3b6}.wfoot .res{color:var(--amber);border-color:#ecd08a}.wfoot .no{color:var(--red);border-color:#f0b4b4}
+.wfoot .ok.on{background:var(--green);color:#fff;border-color:var(--green)}.wfoot .res.on{background:var(--amber);color:#fff;border-color:var(--amber)}.wfoot .no.on{background:var(--red);color:#fff;border-color:var(--red)}
+.wfoot button:disabled{cursor:default}
+.wfoot .sp{flex:1}
+.qa{display:grid;grid-template-columns:minmax(120px,38%) 1fr;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}.qa:last-child{border:0}.qa span{color:var(--mut)}.qa b{font-weight:600;overflow-wrap:anywhere}.qa.one{display:block}
+.hist{padding:9px 0 9px 16px;border-left:2px solid var(--line);margin-left:6px;position:relative;font-size:13px}.hist:before{content:"";position:absolute;left:-6px;top:14px;width:10px;height:10px;border-radius:50%;background:var(--y);border:2px solid #fff}
+.stline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.segs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.segs button{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-weight:700;display:flex;gap:8px;align-items:center}
+.segs button span{background:#eef0f3;border-radius:999px;padding:1px 9px;font-size:12px}
+.segs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}.segs button.on span{background:var(--y);color:var(--ink)}
+td .btn.alt{padding:6px 10px;font-size:12px;white-space:nowrap}
+@media(max-width:640px){.cwin{left:0!important;top:0!important;width:100vw;max-height:none;height:100%;border-radius:0}.who{cursor:default;padding:12px}.who img,.who .noimg{width:56px;height:56px}.who .score b{font-size:22px}.grip{display:none}.wfoot button,.wfoot a{flex:1 1 30%;text-align:center;padding:10px 6px}.wfoot .sp{display:none}}
 .flags div{padding:6px 0;font-size:13px;border-bottom:1px solid var(--line)}
 .flags div:last-child{border:0}
 .sec{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);font-weight:700;margin:18px 0 8px}
@@ -88,7 +113,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#fafafb;border:1px sol
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:20}
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.bar{grid-template-columns:110px 1fr 34px}}
-.board{display:grid;grid-template-columns:repeat(5,minmax(210px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.board{display:grid;grid-template-columns:repeat(6,minmax(190px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px;align-items:start}
 .col{background:#eceef2;border-radius:var(--r);padding:10px;min-height:220px}
 .col.over,.zone.over{outline:2px dashed #2a78d6;outline-offset:-2px;background:#e3edfb}
 .col h4{margin:2px 4px 10px;font-size:13px;display:flex;justify-content:space-between}.col h4 span{color:var(--mut)}
@@ -157,7 +182,7 @@ function showLogin(msg) {
 function shell() {
   app.textContent = "";
   var top = el("div", "top"), tabs = el("div", "tabs"), out = el("button", "out", "Выйти");
-  [["overview", "Обзор"], ["board", "Воронка"], ["candidates", "Кандидаты"]].forEach(function (t) {
+  [["overview", "Обзор"], ["board", "Воронка"], ["candidates", "Кандидаты"], ["archive", "Архив"]].forEach(function (t) {
     var b = el("button", page === t[0] ? "on" : "", t[1]); b.id = "tab-" + t[0];
     b.onclick = function () { page = t[0]; shell(); }; tabs.appendChild(b);
   });
@@ -165,7 +190,7 @@ function shell() {
   add(top, logo(), tabs, out);
   var main = el("main"); main.id = "main";
   add(app, top, main);
-  if (page === "overview") overview(main); else if (page === "board") board(main); else candidates(main);
+  if (page === "overview") overview(main); else if (page === "board") board(main); else if (page === "archive") archive(main); else candidates(main);
 }
 
 // ---------- обзор
@@ -247,7 +272,7 @@ function overview(main) {
      ["За 7 дней", d.week, "предыдущие 7 дней: " + d.prev_week],
      ["Средний балл", d.avg + "%", Object.keys(d.pos_avg).map(function (p) { return p + " " + d.pos_avg[p] + "%"; }).join(" · ")],
      ["Дошли до собеседования", d.invited_pct + "%", "доля анкет, дошедших до этапа «Собеседование» и дальше"],
-     ["Оффер", d.hired, "кандидатов на этапе «Оффер»"],
+     ["Принято на работу", d.hired, d.hired_pct + "% от анкет · офферов: " + d.offers],
      ["С красными флагами", d.red_pct + "%", "доля анкет с серьёзным риском"]].forEach(function (x) {
       var c = el("div", "card kpi"); add(c, el("div", "l", x[0]), el("div", "v", String(x[1])), el("div", "n", x[2] || "")); k.appendChild(c);
     });
@@ -334,9 +359,10 @@ function kcard(c, reload) {
   var info = el("div"); add(info, el("div", "name", c.fio || "-"), el("div", "minor", c.phone || ""));
   if (c.branch) info.appendChild(el("div", "minor kbranch", "🏬 " + c.branch));
   var r2 = el("div", "row2"), mv = el("button", "mv", "→"); mv.title = "Переместить"; mv.setAttribute("aria-label", "Переместить на другой этап");
-  add(r2, el("span", "minor", c.pos), el("b", null, c.pct + "%"), tag(c.verdict, c.verdict_ru));
+  var vt = tag(c.verdict, "Система: " + c.verdict_ru.toLowerCase()); vt.title = "Рекомендация системы по анкете. Решение принимает рекрутер.";
+  add(r2, el("span", "minor", c.pos), el("b", null, c.pct + "%"), vt);
   if (c.red || c.yellow) r2.appendChild(el("span", "minor", "🔴" + c.red + " 🟡" + c.yellow));
-  r2.appendChild(el("span", c.days >= 5 ? "old" : "minor", c.days + " дн."));
+  r2.appendChild(el("span", c.days >= 5 && c.status !== "ishda" ? "old" : "minor", c.days + " дн."));
   if (c.notice === "failed") r2.appendChild(el("span", "old", "не доставлено"));
   r2.appendChild(mv);
   add(k, ph, info, r2);
@@ -378,11 +404,12 @@ function board(main) {
       });
       var z = el("div", "zones");
       [["zaxira", "Резерв"], ["rad", "Отказ"]].forEach(function (x) {
-        var zone = el("div", "zone", x[1] + " · " + d.off[x[0]] + " — перетащите сюда"); zone.setAttribute("data-stage", x[0]);
-        zone.onclick = function () { filters = {q: "", verdict: "", status: x[0], pos: "", sort: ""}; page = "candidates"; shell(); };
+        var zone = el("div", "zone", x[1] + " · " + d.off[x[0]] + " — перетащите сюда"); zone.setAttribute("data-stage", x[0]); zone.title = "Нажмите, чтобы открыть архив";
+        zone.onclick = function () { arch.kind = x[0]; page = "archive"; shell(); };
         dropTarget(zone, x[0], function (id) { return all[id]; }, load); z.appendChild(zone);
       });
-      add(holder, b, z);
+      add(holder, b, z, el("div", "minor", "Принятые видны на доске 7 дней, потом хранятся во вкладке «Архив» вместе с резервом и отказами."));
+      holder.lastChild.style.marginTop = "10px";
     }).catch(function (e) { if (e.message !== "auth") { holder.textContent = ""; holder.appendChild(el("div", "err", e.message)); } });
   }
   q.oninput = function () { clearTimeout(timer); timer = setTimeout(load, 250); }; p.onchange = load;
@@ -451,56 +478,158 @@ function moveDialog(c, stage, done) {   // подтверждение: что у
   };
 }
 
-// ---------- карточка кандидата
-function closeDrawer() { Array.prototype.forEach.call(document.querySelectorAll(".drawer,.shade"), function (e) { e.remove(); }); }
+// ---------- архив: принятые, резерв, отказы
+var arch = {kind: "ishda", q: "", pos: "", branch: ""};
+function archive(main) {
+  add(main, el("h1", null, "Архив"), el("div", "sub", "Кандидаты, по которым решение принято: приняты на работу, оставлены в резерве или получили отказ."));
+  var seg = el("div", "segs"), f = el("div", "filters"), q = el("input"), holder = el("div"), count = el("div", "minor");
+  var p = select("ap", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, arch.pos), bs = storeSelect("astore", "Все магазины", arch.branch);
+  q.id = "aq"; q.placeholder = "Поиск: имя, телефон, филиал"; q.value = arch.q; count.style.margin = "0 0 8px";
+  add(f, q, p, bs); add(main, seg, f, count, holder);
+  var KINDS = [["ishda", "Принятые", "Принят"], ["zaxira", "Резерв", "В резерве с"], ["rad", "Отказы", "Отказ"]];
+  function load() {
+    arch.q = q.value; arch.pos = p.value; arch.branch = bs.value;
+    var qs = Object.keys(arch).filter(function (k) { return arch[k]; }).map(function (k) { return k + "=" + encodeURIComponent(arch[k]); }).join("&");
+    api("/api/archive?" + qs).then(function (d) {
+      seg.textContent = ""; holder.textContent = "";
+      KINDS.forEach(function (x) {
+        var b = el("button", d.kind === x[0] ? "on" : "", x[1]); b.id = "arch-" + x[0]; b.appendChild(el("span", null, String(d.counts[x[0]])));
+        b.onclick = function () { arch.kind = x[0]; load(); }; seg.appendChild(b);
+      });
+      count.textContent = "Найдено: " + d.count;
+      var wrap = el("div", "tablewrap"); holder.appendChild(wrap);
+      if (!d.items.length) { wrap.appendChild(el("div", "empty", d.kind === "ishda" ? "Принятых пока нет. Откройте карточку кандидата и нажмите «Принят»." : "Здесь пока пусто")); return; }
+      var t = el("table"), th = el("tr"), tb = el("tbody"), kind = KINDS.filter(function (x) { return x[0] === d.kind; })[0];
+      ["Кандидат", "Должность", "Балл", "Филиал", kind[2]].concat(d.kind === "rad" ? ["Причина"] : []).concat([""]).forEach(function (h) { th.appendChild(el("th", null, h)); });
+      add(t, add(el("thead"), th), tb);
+      d.items.forEach(function (c) {
+        var tr = el("tr"); tr.setAttribute("data-id", c.id);
+        var who = el("td"); add(who, el("div", "name", c.fio || "-"), el("div", "minor", [c.age ? c.age + " лет" : "", c.phone].filter(Boolean).join(" · ")));
+        var act = el("td"), back = el("button", "btn alt", "Вернуть в воронку"); back.onclick = function (e) { e.stopPropagation(); pickStage(c, load); }; act.appendChild(back);
+        add(tr, who, el("td", null, c.pos), el("td", "pct", c.pct + "%"), el("td", null, c.branch || "-"), el("td", "minor", fmtDate(c.decided)));
+        if (d.kind === "rad") tr.appendChild(el("td", "minor", c.reason || "не указана"));
+        tr.appendChild(act); tr.onclick = function () { openCandidate(c.id); }; tb.appendChild(tr);
+      });
+      wrap.appendChild(t);
+    }).catch(function (e) { if (e.message !== "auth") { holder.textContent = ""; holder.appendChild(el("div", "err", e.message)); } });
+  }
+  q.oninput = function () { clearTimeout(timer); timer = setTimeout(load, 250); }; p.onchange = bs.onchange = load;
+  load();
+}
+
+// ---------- карточка кандидата: окно, которое можно двигать по экрану
+var winPos = null, winTab = "main";
+function closeWin() { Array.prototype.forEach.call(document.querySelectorAll(".cwin"), function (e) { e.remove(); }); }
+document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !document.querySelector(".dlg")) closeWin(); });
+function dragWin(w, handle) {
+  var on = false, sx, sy, ox, oy;
+  function place(x, y) {
+    x = Math.max(120 - w.offsetWidth, Math.min(window.innerWidth - 120, x)); y = Math.max(0, Math.min(window.innerHeight - 70, y));
+    w.style.left = x + "px"; w.style.top = y + "px"; winPos = [x, y];
+  }
+  handle.addEventListener("pointerdown", function (e) {
+    if (e.button || e.target.closest("button,a,select,input") || window.innerWidth <= 640) return;
+    var r = w.getBoundingClientRect(); on = true; sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+    try { handle.setPointerCapture(e.pointerId); } catch (x) {}
+    w.classList.add("moving"); e.preventDefault();
+  });
+  handle.addEventListener("pointermove", function (e) { if (on) place(ox + e.clientX - sx, oy + e.clientY - sy); });
+  ["pointerup", "pointercancel"].forEach(function (n) { handle.addEventListener(n, function () { on = false; w.classList.remove("moving"); }); });
+  if (winPos) place(winPos[0], winPos[1]); else place(Math.round((window.innerWidth - w.offsetWidth) / 2), Math.max(12, Math.round((window.innerHeight - w.offsetHeight) / 2)));
+}
 function openCandidate(id) {
   api("/api/candidates/" + id).then(function (c) {
-    closeDrawer();
-    var shade = el("div", "shade"), d = el("div", "drawer"), x = el("button", "x", "×");
-    shade.onclick = x.onclick = function () { closeDrawer(); shell(); };
-    d.appendChild(x);
-    var who = el("div", "who"), info = el("div");
-    if (c.photo) { var im = el("img"); im.alt = "Селфи"; im.src = "/api/candidates/" + id + "/photo"; im.onerror = function () { im.replaceWith(el("div", "noimg")); }; who.appendChild(im); }
+    closeWin();
+    var w = el("div", "cwin"), who = el("div", "who"), info = el("div", "inf"), x = el("button", "x", "×"), body = el("div", "wbody"), tabs = el("div", "wtabs"), foot = el("div", "wfoot");
+    w.setAttribute("role", "dialog"); w.setAttribute("aria-label", "Карточка кандидата"); x.setAttribute("aria-label", "Закрыть"); x.onclick = closeWin;
+    function again() { shell(); openCandidate(id); }
+
+    // шапка: за неё окно перетаскивают
+    if (c.photo) { var im = el("img"); im.alt = "Селфи"; im.draggable = false; im.src = "/api/candidates/" + id + "/photo"; im.onerror = function () { im.replaceWith(el("div", "noimg")); }; who.appendChild(im); }
     else who.appendChild(el("div", "noimg"));
-    add(info, el("h2", null, c.fio || "-"), el("div", "minor", [c.pos, c.age ? c.age + " лет" : "", c.phone, c.username ? "@" + c.username : ""].filter(Boolean).join(" · ")));
-    var line = el("div"); line.style.marginTop = "8px"; add(line, el("span", "pct", c.pct + "%  "), tag(c.verdict, c.verdict_ru)); info.appendChild(line);
-    add(who, info); d.appendChild(who);
-    if (c.slot) d.appendChild(el("div", "minor", "Удобное время для собеседования: " + c.slot));
-    var pdf = el("a", "btn", "Скачать анкету в PDF"); pdf.id = "pdfBtn"; pdf.href = "/api/candidates/" + id + "/pdf"; pdf.setAttribute("download", "");
-    pdf.style.cssText = "display:inline-block;text-decoration:none;margin-top:12px;color:inherit"; d.appendChild(pdf);
+    var meta = el("div", "minor"); meta.appendChild(document.createTextNode([c.pos, c.age ? c.age + " лет" : ""].filter(Boolean).join(" · ")));
+    if (c.phone) { var tel = el("a", null, c.phone); tel.href = "tel:" + c.phone.replace(/[^\d+]/g, ""); add(meta, document.createTextNode(" · "), tel); }
+    if (c.username) { var tg = el("a", null, "@" + c.username); tg.href = "https://t.me/" + encodeURIComponent(c.username); tg.target = "_blank"; tg.rel = "noopener"; add(meta, document.createTextNode(" · "), tg); }
+    var chips = el("div", "chips"); chips.appendChild(tag(c.status, c.status_ru));
+    if (c.branch) chips.appendChild(el("span", "tag", "🏬 " + c.branch));
+    add(info, el("h2", null, c.fio || "-"), meta, chips, el("div", "grip", "Окно можно перетаскивать за эту шапку"));
+    var score = el("div", "score"), vt = tag(c.verdict, "Система: " + c.verdict_ru.toLowerCase()); vt.title = "Рекомендация системы по анкете. Решение принимает рекрутер.";
+    add(score, el("b", null, c.pct + "%"), vt);
+    add(who, info, score, x);
 
-    d.appendChild(el("div", "sec", "Этап"));
-    if (c.notice === "failed") d.appendChild(el("div", "warnbox", "Последнее сообщение кандидату не доставлено (возможно, он заблокировал бота). Свяжитесь по телефону."));
-    if (c.reason) d.appendChild(el("div", "minor", "Причина отказа: " + c.reason));
-    var acts = el("div", "acts");
-    Object.keys(META.statuses).forEach(function (s) {
-      var b = el("button", c.status === s ? "on" : "", META.statuses[s]); b.setAttribute("data-status", s);
-      b.onclick = function () { if (c.status !== s) moveDialog(c, s, function () { openCandidate(id); }); };
-      acts.appendChild(b);
-    });
-    d.appendChild(acts);
-
-    d.appendChild(el("div", "sec", "Филиал"));
-    var rf = el("div", "rowf"), bi = storeSelect("branch", "Не назначен", c.branch), bs = el("button", "btn alt", "Сохранить");
-    bi.className = "field"; bi.style.flex = "1";
-    bs.onclick = function () { api("/api/candidates/" + id, {branch: bi.value}).then(function () { toast("Филиал сохранён"); }).catch(function (e) { toast(e.message); }); };
-    add(rf, bi, bs); d.appendChild(rf);
-
-    d.appendChild(el("div", "sec", "Риски и флаги"));
-    var fl = el("div", "flags");
-    if (!c.flags.length) fl.appendChild(el("div", null, "По анкете серьёзных рисков не выявлено"));
-    c.flags.forEach(function (f) { fl.appendChild(el("div", null, f[0] + " " + f[1])); });
-    d.appendChild(fl);
-
-    d.appendChild(el("div", "sec", "Полный профиль"));
-    d.appendChild(el("pre", null, c.profile));
-    if (c.history.length) {
-      d.appendChild(el("div", "sec", "История статусов"));
-      c.history.forEach(function (h) {
-        d.appendChild(el("div", "minor", fmtDate(h.ts) + ": " + (META.statuses[h.old_status] || h.old_status) + " → " + (META.statuses[h.new_status] || h.new_status) + " (" + h.changed_by + ")" + (h.notified === 1 ? ", сообщение доставлено" : h.notified === 0 ? ", сообщение НЕ доставлено" : ", без сообщения") + (h.note ? " · " + h.note : "")));
-      });
+    // вкладки
+    var panes = {
+      main: function () {
+        if (c.notice === "failed") { var wb = el("div", "warnbox", "Последнее сообщение кандидату не доставлено (возможно, он заблокировал бота). Свяжитесь по телефону."); wb.style.marginTop = "14px"; body.appendChild(wb); }
+        body.appendChild(el("div", "sec", "Этап"));
+        var st = el("div", "stline"); add(st, tag(c.status, c.status_ru), el("span", "minor", "на этапе " + c.days + " дн."));
+        if (c.reason) st.appendChild(el("span", "minor", "· причина отказа: " + c.reason));
+        body.appendChild(st);
+        if (c.slot) { var sl = el("div", "minor", "Удобное время для собеседования: " + c.slot); sl.style.marginTop = "8px"; body.appendChild(sl); }
+        body.appendChild(el("div", "sec", "Филиал"));
+        var rf = el("div", "rowf"), bi = storeSelect("branch", "Не назначен", c.branch), bs = el("button", "btn alt", "Сохранить");
+        bi.className = "field"; bi.style.flex = "1";
+        bs.onclick = function () { api("/api/candidates/" + id, {branch: bi.value}).then(function () { toast("Филиал сохранён"); c.branch = bi.value; }).catch(function (e) { toast(e.message); }); };
+        add(rf, bi, bs); body.appendChild(rf);
+        body.appendChild(el("div", "sec", "Риски и флаги"));
+        var fl = el("div", "flags");
+        if (!c.flags.length) fl.appendChild(el("div", null, "По анкете серьёзных рисков не выявлено"));
+        c.flags.forEach(function (f) { fl.appendChild(el("div", null, f[0] + " " + f[1])); });
+        body.appendChild(fl);
+        (c.scores || []).forEach(function (g) {
+          if (!g[1].length) return;
+          body.appendChild(el("div", "sec", g[0] + ": оценка от 1 до 5"));
+          bars(body, g[1].map(function (p) { return [p[0], p[1]]; }), 5, function (v) { return String(v); });
+        });
+      },
+      form: function () {
+        (c.sections || []).forEach(function (sec) {
+          body.appendChild(el("div", "sec", sec[0]));
+          sec[1].forEach(function (r) {
+            var row = el("div", r.length > 1 ? "qa" : "qa one");
+            if (r.length > 1) add(row, el("span", null, r[0]), el("b", null, r[1])); else row.textContent = r[0];
+            body.appendChild(row);
+          });
+        });
+        if (!(c.sections || []).length) body.appendChild(el("pre", null, c.profile));
+      },
+      hist: function () {
+        body.appendChild(el("div", "sec", "История этапов"));
+        c.history.forEach(function (h) {
+          var row = el("div", "hist");
+          add(row, el("b", null, (META.statuses[h.old_status] || h.old_status) + " → " + (META.statuses[h.new_status] || h.new_status)),
+            el("div", "minor", fmtDate(h.ts) + " · " + h.changed_by + (h.notified === 1 ? " · сообщение доставлено" : h.notified === 0 ? " · сообщение НЕ доставлено" : " · без сообщения")));
+          if (h.note) row.appendChild(el("div", "minor", h.note));
+          body.appendChild(row);
+        });
+        var first = el("div", "hist"); add(first, el("b", null, "Анкета получена"), el("div", "minor", fmtDate(c.ts))); body.appendChild(first);
+      }
+    };
+    function show(name) {
+      winTab = name; body.textContent = ""; body.scrollTop = 0; panes[name]();
+      Array.prototype.forEach.call(tabs.children, function (b) { b.classList.toggle("on", b.getAttribute("data-tab") === name); });
     }
-    add(document.body, shade, d);
+    [["main", "Главное"], ["form", "Анкета"], ["hist", "История" + (c.history.length ? " · " + c.history.length : "")]].forEach(function (t) {
+      var b = el("button", null, t[1]); b.setAttribute("data-tab", t[0]); b.onclick = function () { show(t[0]); }; tabs.appendChild(b);
+    });
+
+    // кнопки решения
+    function btn(stage, text, cls) {
+      var b = el("button", cls + (c.status === stage ? " on" : ""), text); b.setAttribute("data-status", stage); b.disabled = c.status === stage;
+      b.onclick = function () { moveDialog(c, stage, again); }; foot.appendChild(b); return b;
+    }
+    var at = META.stages.indexOf(c.status), next = at >= 0 && at < META.stages.length - 1 ? META.stages[at + 1] : null;
+    if (next && next !== "ishda") btn(next, "→ " + META.statuses[next], "go");
+    btn("ishda", c.status === "ishda" ? "✓ Принят" : "Принят", "ok");
+    btn("zaxira", "Резерв", "res");
+    btn("rad", "Отказ", "no");
+    var other = el("button", null, at < 0 ? "Вернуть в воронку" : "Другой этап"); other.id = "otherStage"; other.onclick = function () { pickStage(c, again); }; foot.appendChild(other);
+    foot.appendChild(el("span", "sp"));
+    var pdf = el("a", null, "PDF"); pdf.id = "pdfBtn"; pdf.title = "Скачать анкету в PDF"; pdf.href = "/api/candidates/" + id + "/pdf"; pdf.setAttribute("download", ""); foot.appendChild(pdf);
+
+    add(w, who, tabs, body, foot); document.body.appendChild(w);
+    show(panes[winTab] ? winTab : "main");
+    dragWin(w, who);
   }).catch(function (e) { if (e.message !== "auth") toast(e.message); });
 }
 

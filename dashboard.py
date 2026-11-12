@@ -156,6 +156,8 @@ class Dashboard:
                                     "stages": list(notices.ORDER), "fields": {k: [list(v[0]), list(v[1])] for k, v in notices.FIELDS.items()},
                                     "field_ru": notices.FIELD_RU, "reasons": notices.REASONS, "contact": notices.contact(),
                                     "stores": stores.public()})
+        if p == "/api/archive" and method == "GET":
+            return self._archive(query)
         if p == "/api/board" and method == "GET":
             return self._board(query)
         if p == "/api/summary" and method == "GET":
@@ -184,6 +186,9 @@ class Dashboard:
                 item["profile"] = build_profile(a, row["ts"])
                 item["flags"] = [[f[0], f[1]] for f in evaluate(a)["flags"]]
                 item["history"] = [dict(h) for h in store.history(row["id"])]
+                sc = evaluate(a)["scores"]
+                item["scores"] = [["Hard skills", list(sc["hard"].items())], ["Soft skills", list(sc["soft"].items())]]
+                item["sections"] = self._sections(item["profile"])
                 return self._json(200, item)
             if method == "POST":
                 return self._update(row, body, user)
@@ -246,7 +251,9 @@ class Dashboard:
         return self._json(200, {
             "daily": [[d, per_day[d]] for d in days], "week": week, "prev_week": prev_week,
             "invited_pct": share(sum(1 for v in reach.values() if v >= 2)),
-            "hired": sum(1 for i in items if i["status"] == "offer"),
+            "offers": sum(1 for v in reach.values() if v >= 4),
+            "hired": sum(1 for v in reach.values() if v >= 5),
+            "hired_pct": share(sum(1 for v in reach.values() if v >= 5)),
             "funnel": [[STATUS_RU[s], sum(1 for v in reach.values() if v >= n)] for n, s in enumerate(notices.ORDER)],
             "red_pct": share(sum(1 for i in items if i["red"])),
             "competencies": sorted(([k, round(sum(v) / len(v), 1), len(v)] for k, v in comp.items()), key=lambda x: x[1]),
@@ -301,6 +308,56 @@ class Dashboard:
                 log.exception("Синхронизация после изменения не удалась")
         return self._json(200, {"ok": True, "item": self._item(store.get(row["id"]))})
 
+    HIRED_ON_BOARD_DAYS = 7   # принятые видны на доске неделю, потом остаются только в архиве
+    SKIP_SECTIONS = ("ОЦЕНКА HARD SKILLS", "ОЦЕНКА SOFT SKILLS", "РИСКИ И ФЛАГИ")
+
+    @classmethod
+    def _sections(cls, profile):
+        """Делит текстовый профиль на разделы: [[заголовок, [[подпись, значение] или [строка]]]] для карточки."""
+        out, cur = [], None
+        for ln in profile.split("\n")[1:]:
+            s = ln.strip()
+            if not s:
+                continue
+            head = s.split(" (")[0]
+            if head.isupper() and len(head) > 3 and ":" not in head:
+                cur = None if head.startswith(cls.SKIP_SECTIONS) else [s, []]
+                if cur:
+                    out.append(cur)
+            elif cur is not None and not s.startswith(("ИТОГ:", "РЕКОМЕНДАЦИЯ:")):
+                depth, cut = 0, None
+                for n, ch in enumerate(s):
+                    depth += (ch == "(") - (ch == ")")
+                    if ch == ":" and depth == 0 and s[n + 1:n + 2] == " " and n <= 90:
+                        cut = n
+                        break
+                cur[1].append([s[2:]] if s.startswith("- ") else ([s[:cut], s[cut + 2:]] if cut else [s]))
+        return out
+
+    def _archive(self, q):
+        """Завершённые кандидаты: принятые, резерв, отказы."""
+        kind = q.get("kind") if q.get("kind") in ("ishda", "zaxira", "rad") else "ishda"
+        text = (q.get("q") or "").strip().lower()[:80]
+        counts = {"ishda": 0, "zaxira": 0, "rad": 0}
+        items = []
+        for r in store.all_rows():
+            if r["status"] not in counts:
+                continue
+            counts[r["status"]] += 1
+            if r["status"] != kind:
+                continue
+            i = self._item(r)
+            if q.get("pos") and i["pos"] != q["pos"]:
+                continue
+            if q.get("branch") and i["branch"] != q["branch"]:
+                continue
+            if text and not (text in i["fio"].lower() or text in i["branch"].lower() or text in re.sub(r"\D", "", i["phone"])):
+                continue
+            i["decided"] = r["stage_ts"] or r["ts"]
+            items.append(i)
+        items.sort(key=lambda i: i["decided"] or "", reverse=True)
+        return self._json(200, {"kind": kind, "counts": counts, "items": items[:500], "count": len(items)})
+
     def _board(self, q):
         text = (q.get("q") or "").strip().lower()[:80]
         cols = {s: [] for s in notices.ORDER}
@@ -316,6 +373,8 @@ class Dashboard:
                 continue
             if text and not (text in i["fio"].lower() or text in i["branch"].lower() or text in re.sub(r"\D", "", i["phone"])):
                 continue
+            if i["status"] == "ishda" and i["days"] >= self.HIRED_ON_BOARD_DAYS:
+                continue   # давно принятые лежат в архиве
             cols.setdefault(i["status"], []).append(i)
         return self._json(200, {"columns": [{"key": s, "label": STATUS_RU[s], "count": len(cols[s]), "items": cols[s][:150]} for s in notices.ORDER],
                                 "off": off})

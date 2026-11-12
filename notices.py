@@ -13,10 +13,10 @@ import store
 import stores
 
 STAGE_RU = store.STAGE_RU
-ORDER = ("yangi", "sozvon", "sobes", "staj", "offer")
+ORDER = store.STAGES
 # Поля, которые рекрутер заполняет перед отправкой: обязательные и необязательные
 FIELDS = {"sozvon": ((), ("time",)), "sobes": (("date", "time", "place"), ()), "staj": (("date", "place"), ("time",)),
-          "offer": ((), ("date", "place")), "zaxira": ((), ()), "rad": ((), ())}
+          "offer": ((), ("date", "place")), "ishda": ((), ("date", "place")), "zaxira": ((), ()), "rad": ((), ())}
 FIELD_RU = {"date": "Дата", "time": "Время", "place": "Магазин"}
 REASONS = ["Не подошёл график", "Не вышел на связь", "Отказался сам", "Не прошёл собеседование", "Не прошёл стажировку", "Другое"]
 ALIASES = dict({v.lower(): k for k, v in STAGE_RU.items()}, **{k: k for k in STAGE_RU},
@@ -39,6 +39,10 @@ TEXT = {
         "uz": "Assalomu alaykum, {name}! Tabriklaymiz: sizga Texnomart kompaniyasida «{position}» lavozimida ishlashni taklif qilamiz.[[\nIshga chiqish sanasi: {date}]][[\nIsh joyi: {place}]]\nRekruter siz bilan bog'lanib, keyingi qadamlar va hujjatlar haqida aytib beradi.",
         "ru": "Здравствуйте, {name}! Поздравляем: мы рады предложить вам работу в Texnomart на должности «{position}».[[\nДата выхода: {date}]][[\nМесто работы: {place}]]\nРекрутер свяжется с вами и расскажет о следующих шагах и документах.",
         "en": "Hello, {name}! Congratulations: we are pleased to offer you the “{position}” position at Texnomart.[[\nStart date: {date}]][[\nWorkplace: {place}]]\nA recruiter will contact you about the next steps and documents."},
+    "ishda": {
+        "uz": "Assalomu alaykum, {name}! Tabriklaymiz: siz Texnomart kompaniyasiga «{position}» lavozimiga ishga qabul qilindingiz. Jamoamizga xush kelibsiz![[\nBirinchi ish kuni: {date}]][[\nIsh joyi: {place}]]\nO'zingiz bilan pasportingizni oling.",
+        "ru": "Здравствуйте, {name}! Поздравляем: вы приняты на работу в Texnomart на должность «{position}». Добро пожаловать в команду![[\nПервый рабочий день: {date}]][[\nМесто работы: {place}]]\nВозьмите с собой паспорт.",
+        "en": "Hello, {name}! Congratulations: you have been hired at Texnomart as “{position}”. Welcome to the team![[\nFirst working day: {date}]][[\nWorkplace: {place}]]\nPlease bring your passport."},
     "zaxira": {
         "uz": "Assalomu alaykum, {name}! Texnomartga qiziqish bildirganingiz uchun rahmat. Hozircha mos bo'sh o'rin yo'q, lekin anketangizni saqlab qo'ydik va o'rin paydo bo'lganda siz bilan bog'lanamiz.",
         "ru": "Здравствуйте, {name}! Спасибо за интерес к Texnomart. Сейчас подходящих мест нет, но мы сохранили вашу анкету и свяжемся с вами, когда появится вакансия.",
@@ -83,7 +87,7 @@ def clean_fields(stage, fields):
 def with_branch(row, stage, fields):
     """Если магазин не указан, для стажировки и оффера берётся филиал кандидата (тот же, что на собеседовании)."""
     f = dict(fields or {})
-    if stage in ("staj", "offer") and "store" not in f and not f.get("place") and stores.resolve(row["branch"]):
+    if stage in ("staj", "offer", "ishda") and "store" not in f and not f.get("place") and stores.resolve(row["branch"]):
         f["store"] = row["branch"]
     return f
 

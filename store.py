@@ -8,10 +8,10 @@ import sqlite3
 from contextlib import closing
 
 # Этапы воронки по порядку, затем «вне воронки»: резерв и отказ
-STAGES = ("yangi", "sozvon", "sobes", "staj", "offer")
+STAGES = ("yangi", "sozvon", "sobes", "staj", "offer", "ishda")   # ishda: принят, вышел на работу
 STATUSES = STAGES + ("zaxira", "rad")
 STAGE_RU = {"yangi": "Новые", "sozvon": "Созвон", "sobes": "Собеседование", "staj": "Стажировка", "offer": "Оффер",
-            "zaxira": "Резерв", "rad": "Отказ"}
+            "ishda": "Принят", "zaxira": "Резерв", "rad": "Отказ"}
 _OLD_STATUS = {"chaqirildi": "sobes", "qabul": "offer"}   # статусы прежней версии
 
 

@@ -556,7 +556,7 @@ async def holat(update, context):
         fields = {"date": parts[0]}
     elif stage == "sozvon" and parts:
         fields = {"time": parts[0]}
-    elif stage == "offer" and parts:
+    elif stage in ("offer", "ishda") and parts:
         fields = {"date": parts[0]}
     await propose_move(update.effective_message, context, int(args[0]), stage, fields)
 
