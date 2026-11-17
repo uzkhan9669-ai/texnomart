@@ -22,6 +22,7 @@ button{cursor:pointer}
 .tabs button.on{background:var(--soft);color:#fff}
 .top .out{background:none;border:1px solid #55555c;color:#fff;border-radius:8px;padding:6px 12px;font-weight:600}
 main{max-width:1280px;margin:0 auto;padding:22px 20px 60px}
+main.wide{max-width:1760px;padding-bottom:16px}
 h1{font-size:22px;margin:0 0 4px;font-weight:800}
 .sub{color:var(--mut);margin-bottom:18px}
 .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:14px}
@@ -114,9 +115,12 @@ pre{white-space:pre-wrap;word-break:break-word;background:#fafafb;border:1px sol
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.bar{grid-template-columns:110px 1fr 34px}}
 .board{display:grid;grid-template-columns:repeat(6,minmax(190px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px;align-items:start}
-.col{background:#eceef2;border-radius:var(--r);padding:10px;min-height:220px}
+.col{background:#eceef2;border-radius:var(--r);padding:10px 4px 6px 10px;height:var(--colh,640px);display:flex;flex-direction:column;min-width:0}
+.col .cards{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:6px;scrollbar-width:thin;scrollbar-color:#c4c7cf transparent}
+.col .cards::-webkit-scrollbar{width:6px}.col .cards::-webkit-scrollbar-thumb{background:#c4c7cf;border-radius:3px}
+.col .more{flex:none;text-align:center;font-size:11px;font-weight:700;color:var(--mut);padding:5px 0 0}
 .col.over,.zone.over{outline:2px dashed #2a78d6;outline-offset:-2px;background:#e3edfb}
-.col h4{margin:2px 4px 10px;font-size:13px;display:flex;justify-content:space-between}.col h4 span{color:var(--mut)}
+.col h4{flex:none;margin:2px 10px 10px 4px;font-size:13px;display:flex;justify-content:space-between}.col h4 span{color:var(--mut)}
 .kc{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;cursor:grab;display:grid;grid-template-columns:44px 1fr;gap:10px}
 .kc.drag{opacity:.45}
 .kc img,.kc .noimg{width:44px;height:44px;border-radius:50%;object-fit:cover;background:#eef0f3}
@@ -124,8 +128,8 @@ pre{white-space:pre-wrap;word-break:break-word;background:#fafafb;border:1px sol
 .kc .row2{grid-column:1/-1;display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}
 .kc .mv{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:7px;padding:3px 9px;font-weight:700}
 .old{color:var(--red);font-weight:700}
-.zones{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.zone{border:2px dashed #c9cbd3;border-radius:var(--r);padding:16px;text-align:center;font-weight:700;color:var(--mut);background:#fff}
+.zones{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.zone{border:2px dashed #c9cbd3;border-radius:var(--r);padding:10px;cursor:pointer;text-align:center;font-weight:700;color:var(--mut);background:#fff}
 .dlg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:15;display:flex;align-items:center;justify-content:center;padding:14px}
 .dlg .box{background:#fff;border-radius:14px;padding:20px;width:min(520px,100%);max-height:92vh;overflow:auto}
 .dlg h3{margin:0 0 4px;font-size:17px}
@@ -188,7 +192,7 @@ function shell() {
   });
   out.onclick = function () { api("/api/logout", {}).then(function () { showLogin(); }, function () { showLogin(); }); };
   add(top, logo(), tabs, out);
-  var main = el("main"); main.id = "main";
+  var main = el("main", page === "board" ? "wide" : ""); main.id = "main";
   add(app, top, main);
   if (page === "overview") overview(main); else if (page === "board") board(main); else if (page === "archive") archive(main); else candidates(main);
 }
@@ -387,19 +391,23 @@ function storeSelect(id, first, value) {   // список магазинов; �
   s.value = value || ""; return s;
 }
 function board(main) {
-  add(main, el("h1", null, "Воронка"), el("div", "sub", "Перетащите карточку на следующий этап. Перед отправкой сообщения кандидату вы увидите его текст."));
+  add(main, el("h1", null, "Воронка"), el("div", "sub", "Перетащите карточку на следующий этап. Перед отправкой сообщения кандидату вы увидите его текст. Каждый этап прокручивается отдельно. Принятые видны 7 дней, потом хранятся в «Архиве»."));
   var f = el("div", "filters"), q = el("input"), p = select("bp", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, ""), holder = el("div");
   var bs = storeSelect("bstore", "Все магазины", "");
   q.id = "bq"; q.placeholder = "Поиск: имя, телефон, филиал"; add(f, q, p, bs); add(main, f, holder); bs.onchange = function () { load(); };
   function load() {
     var qs = [q.value ? "q=" + encodeURIComponent(q.value) : "", p.value ? "pos=" + encodeURIComponent(p.value) : "", bs.value ? "branch=" + encodeURIComponent(bs.value) : ""].filter(Boolean).join("&");
     api("/api/board" + (qs ? "?" + qs : "")).then(function (d) {
-      var all = {}; holder.textContent = "";
+      var all = {}, keep = {};
+      Array.prototype.forEach.call(holder.querySelectorAll(".col"), function (c) { keep[c.getAttribute("data-stage")] = c.querySelector(".cards").scrollTop; });
+      holder.textContent = "";
       var b = el("div", "board");
       d.columns.forEach(function (col) {
-        var c = el("div", "col"); c.setAttribute("data-stage", col.key); var h = el("h4"); add(h, document.createTextNode(col.label), el("span", null, String(col.count))); c.appendChild(h);
-        col.items.forEach(function (it) { all[it.id] = it; c.appendChild(kcard(it, load)); });
-        if (!col.items.length) c.appendChild(el("div", "minor", "Пусто"));
+        var c = el("div", "col"), list = el("div", "cards"); c.setAttribute("data-stage", col.key); var h = el("h4"); add(h, document.createTextNode(col.label), el("span", null, String(col.count))); c.appendChild(h);
+        col.items.forEach(function (it) { all[it.id] = it; list.appendChild(kcard(it, load)); });
+        if (!col.items.length) list.appendChild(el("div", "minor", "Пусто"));
+        c.appendChild(list);
+        if (col.count > col.items.length) c.appendChild(el("div", "more", "Показаны " + col.items.length + " из " + col.count + ": уточните поиск"));
         dropTarget(c, col.key, function (id) { return all[id]; }, load); b.appendChild(c);
       });
       var z = el("div", "zones");
@@ -408,13 +416,19 @@ function board(main) {
         zone.onclick = function () { arch.kind = x[0]; page = "archive"; shell(); };
         dropTarget(zone, x[0], function (id) { return all[id]; }, load); z.appendChild(zone);
       });
-      add(holder, b, z, el("div", "minor", "Принятые видны на доске 7 дней, потом хранятся во вкладке «Архив» вместе с резервом и отказами."));
-      holder.lastChild.style.marginTop = "10px";
+      add(holder, z, b); fitBoard();
+      Array.prototype.forEach.call(b.querySelectorAll(".col"), function (c) { var v = keep[c.getAttribute("data-stage")]; if (v) c.querySelector(".cards").scrollTop = v; });
     }).catch(function (e) { if (e.message !== "auth") { holder.textContent = ""; holder.appendChild(el("div", "err", e.message)); } });
   }
   q.oninput = function () { clearTimeout(timer); timer = setTimeout(load, 250); }; p.onchange = load;
   load();
 }
+function fitBoard() {   // колонки доски по высоте окна: карточки прокручиваются внутри этапа, страница не растягивается
+  var b = document.querySelector(".board"); if (!b) return;
+  var top = b.getBoundingClientRect().top + window.pageYOffset;
+  b.style.setProperty("--colh", Math.max(360, window.innerHeight - top - 24) + "px");
+}
+window.addEventListener("resize", function () { clearTimeout(fitBoard.t); fitBoard.t = setTimeout(fitBoard, 100); });
 function closeDlg() { Array.prototype.forEach.call(document.querySelectorAll(".dlg"), function (e) { e.remove(); }); }
 function pickStage(c, done) {   // для телефона и клавиатуры: выбор этапа кнопками вместо перетаскивания
   closeDlg(); var w = el("div", "dlg"), box = el("div", "box"); add(box, el("h3", null, c.fio || "-"), el("div", "minor", "Куда переместить?"));
