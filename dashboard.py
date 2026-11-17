@@ -179,7 +179,7 @@ class Dashboard:
             if m.group(2) == "/pdf":
                 return self._pdf(row) if method == "GET" else self._json(405, {"error": "method"})
             if m.group(2):
-                return self._photo(row) if method == "GET" else self._json(405, {"error": "method"})
+                return self._photo(row, full=query.get("full") == "1") if method == "GET" else self._json(405, {"error": "method"})
             if method == "GET":
                 a = self._answers(row)
                 item = self._item(row)
@@ -463,9 +463,14 @@ class Dashboard:
         return 200, {"Content-Type": "application/pdf", "Cache-Control": "no-store", "Content-Disposition": disp,
                      "X-Content-Type-Options": "nosniff"}, raw
 
-    def _photo(self, row):
+    def _photo(self, row, full=False):
         if not row["photo_file_id"]:
             return self._json(404, {"error": "Фото нет"})
+        if full:   # крупное фото для просмотра: берётся из Telegram, на диск не сохраняется
+            raw = self.fetch_photo(self.token, row["photo_file_id"])
+            if not raw or raw[:3] != b"\xff\xd8\xff":
+                return self._json(502, {"error": "Не удалось получить фото"})
+            return 200, {"Content-Type": "image/jpeg", "Cache-Control": "private, max-age=600", "X-Content-Type-Options": "nosniff"}, raw
         # уменьшенная копия хранится на диске, чтобы доска с десятками карточек не ходила в Telegram за каждым фото
         folder = os.path.join(store.data_dir(), "photos")
         cache = os.path.join(folder, hashlib.sha1(row["photo_file_id"].encode()).hexdigest()[:20] + ".jpg")

@@ -71,6 +71,13 @@ tbody tr:hover{background:#fffbe6}
 .login input{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px}
 .login .btn{width:100%;margin-top:18px;padding:12px}
 .err{color:var(--red);font-weight:600;font-size:13px;min-height:18px;margin-top:10px}
+.veil{position:fixed;inset:0;z-index:8;background:rgba(228,230,235,.62);-webkit-backdrop-filter:blur(3px) grayscale(.3);backdrop-filter:blur(3px) grayscale(.3);animation:fadein .18s ease-out}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.who img.zoom{cursor:zoom-in;transition:transform .15s}.who img.zoom:hover{transform:scale(1.04);box-shadow:0 0 0 2px var(--y)}
+.lightbox{position:fixed;inset:0;z-index:25;background:rgba(18,18,20,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;cursor:zoom-out;animation:fadein .15s ease-out}
+.lightbox img{max-width:min(92vw,900px);max-height:calc(100vh - 110px);border-radius:14px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#2c2c2e}
+.lightbox .cap{color:#fff;font-weight:700;text-align:center}.lightbox .cap span{display:block;color:#a8a8b0;font-weight:500;font-size:12px;margin-top:2px}
+.lightbox .x{position:absolute;top:14px;right:14px;background:#2c2c2e;border:0;color:#fff;width:38px;height:38px;border-radius:50%;font-size:22px;line-height:1}
 .cwin{position:fixed;left:0;top:0;width:min(700px,calc(100vw - 16px));max-height:min(820px,calc(100vh - 24px));background:#fff;z-index:9;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);display:flex;flex-direction:column;overflow:hidden}
 .cwin.moving{box-shadow:0 28px 80px rgba(0,0,0,.36),0 0 0 2px var(--y);user-select:none}
 .who{display:flex;gap:14px;align-items:center;background:var(--ink);color:#fff;padding:16px 18px;cursor:grab;touch-action:none;flex:none}
@@ -533,8 +540,18 @@ function archive(main) {
 
 // ---------- карточка кандидата: окно, которое можно двигать по экрану
 var winPos = null, winTab = "main";
-function closeWin() { Array.prototype.forEach.call(document.querySelectorAll(".cwin"), function (e) { e.remove(); }); }
-document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !document.querySelector(".dlg")) closeWin(); });
+function closeWin() { Array.prototype.forEach.call(document.querySelectorAll(".cwin,.veil,.lightbox"), function (e) { e.remove(); }); }
+function closeLightbox() { var l = document.querySelector(".lightbox"); if (l) { l.remove(); return true; } return false; }
+document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !document.querySelector(".dlg") && !closeLightbox()) closeWin(); });
+function openPhoto(id, name, sub) {   // фото кандидата крупно; пока грузится крупное, показывается уменьшенное
+  closeLightbox();
+  var lb = el("div", "lightbox"), im = el("img"), x = el("button", "x", "×"), cap = el("div", "cap", name || "");
+  lb.setAttribute("role", "dialog"); lb.setAttribute("aria-label", "Фото кандидата"); x.setAttribute("aria-label", "Закрыть фото");
+  im.alt = "Фото кандидата"; im.src = "/api/candidates/" + id + "/photo";
+  var big = new Image(); big.onload = function () { im.src = big.src; }; big.src = "/api/candidates/" + id + "/photo?full=1";
+  if (sub) cap.appendChild(el("span", null, sub));
+  add(lb, x, im, cap); lb.onclick = closeLightbox; document.body.appendChild(lb);
+}
 function dragWin(w, handle) {
   var on = false, sx, sy, ox, oy;
   function place(x, y) {
@@ -542,7 +559,7 @@ function dragWin(w, handle) {
     w.style.left = x + "px"; w.style.top = y + "px"; winPos = [x, y];
   }
   handle.addEventListener("pointerdown", function (e) {
-    if (e.button || e.target.closest("button,a,select,input") || window.innerWidth <= 640) return;
+    if (e.button || e.target.closest("button,a,select,input,img") || window.innerWidth <= 640) return;
     var r = w.getBoundingClientRect(); on = true; sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
     try { handle.setPointerCapture(e.pointerId); } catch (x) {}
     w.classList.add("moving"); e.preventDefault();
@@ -559,7 +576,10 @@ function openCandidate(id) {
     function again() { shell(); openCandidate(id); }
 
     // шапка: за неё окно перетаскивают
-    if (c.photo) { var im = el("img"); im.alt = "Селфи"; im.draggable = false; im.src = "/api/candidates/" + id + "/photo"; im.onerror = function () { im.replaceWith(el("div", "noimg")); }; who.appendChild(im); }
+    if (c.photo) { var im = el("img", "zoom"); im.alt = "Селфи"; im.title = "Открыть фото"; im.tabIndex = 0; im.draggable = false; im.src = "/api/candidates/" + id + "/photo"; im.onerror = function () { im.replaceWith(el("div", "noimg")); };
+      im.onclick = function () { openPhoto(id, c.fio, [c.pos, c.age ? c.age + " лет" : ""].filter(Boolean).join(" · ")); };
+      im.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); im.onclick(); } };
+      who.appendChild(im); }
     else who.appendChild(el("div", "noimg"));
     var meta = el("div", "minor"); meta.appendChild(document.createTextNode([c.pos, c.age ? c.age + " лет" : ""].filter(Boolean).join(" · ")));
     if (c.phone) { var tel = el("a", null, c.phone); tel.href = "tel:" + c.phone.replace(/[^\d+]/g, ""); add(meta, document.createTextNode(" · "), tel); }
@@ -641,7 +661,8 @@ function openCandidate(id) {
     foot.appendChild(el("span", "sp"));
     var pdf = el("a", null, "PDF"); pdf.id = "pdfBtn"; pdf.title = "Скачать анкету в PDF"; pdf.href = "/api/candidates/" + id + "/pdf"; pdf.setAttribute("download", ""); foot.appendChild(pdf);
 
-    add(w, who, tabs, body, foot); document.body.appendChild(w);
+    var veil = el("div", "veil"); veil.onclick = closeWin;
+    add(w, who, tabs, body, foot); add(document.body, veil, w);
     show(panes[winTab] ? winTab : "main");
     dragWin(w, who);
   }).catch(function (e) { if (e.message !== "auth") toast(e.message); });
