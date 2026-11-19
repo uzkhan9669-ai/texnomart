@@ -633,6 +633,12 @@ async def adapt_button(update, context):
     chat_id = getattr(chat, "id", None)
     # своё: нажал сам сотрудник или нажатие пришло из чата, куда бот прислал этот чек-лист
     mine = bool(row) and (str(cq.from_user.id) == str(row["tg_id"]) or str(chat_id) == str(row["tg_id"]))
+    if not mine:   # номер в кнопке не совпал: ищем адаптацию того, кто нажал (в личном чате он нажимает только свой чек-лист)
+        own = adaptation.find_by_tg(cq.from_user.id)
+        if own and adaptation.get(own["id"]):
+            log.warning("Адаптация: в кнопке #%s, нажал сотрудник #%s, берём его чек-лист", cid, own["id"])
+            row, cid, mine = own, own["id"], True
+            lang = adaptation.lang_of(row)
     if not row or (not mine and not is_rec(update)):
         log.warning("Адаптация: чужое нажатие cid=%s from=%s chat=%s owner=%r", cid, cq.from_user.id, chat_id, row["tg_id"] if row else None)
         await cq.answer("%s\n(#%s · %s · %s · %s)" % (adaptation.tx("not_yours", lang), cid, cq.from_user.id, chat_id,
