@@ -401,7 +401,7 @@ def undone(row, block):
 
 
 def find_by_tg(tg_id):
-    return store._run("SELECT * FROM candidates WHERE tg_id=?", (tg_id,), "one")
+    return store._run("SELECT * FROM candidates WHERE CAST(tg_id AS TEXT)=?", (str(tg_id),), "one")
 
 
 def who(row):

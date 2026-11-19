@@ -628,10 +628,13 @@ async def adapt_button(update, context):
     cid = int(parts[2])
     row = store.get(cid)
     lang = adaptation.lang_of(row) if row else "uz"
-    if not row or (cq.from_user.id != row["tg_id"] and not is_rec(update)):
+    # номер в базе бывает записан текстом (старая схема таблицы), поэтому сравниваем как строки
+    mine = bool(row) and str(cq.from_user.id) == str(row["tg_id"])
+    if not row or (not mine and not is_rec(update)):
+        log.warning("Адаптация: чужое нажатие cid=%s from=%s owner=%r", cid, cq.from_user.id, row["tg_id"] if row else None)
         await cq.answer(adaptation.tx("not_yours", lang), show_alert=True)
         return
-    who = "employee" if cq.from_user.id == row["tg_id"] else "tg:%s" % cq.from_user.id
+    who = "employee" if mine else "tg:%s" % cq.from_user.id
     if parts[1] == "t" and len(parts) == 4:
         item = parts[3]
         block = item.split(".")[0]
