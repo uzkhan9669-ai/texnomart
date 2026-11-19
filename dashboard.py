@@ -20,6 +20,7 @@ import time
 import urllib.parse
 import urllib.request
 
+import adaptation
 import notices
 import store
 import stores
@@ -48,8 +49,9 @@ def telegram_photo(token, file_id, timeout=15):
 
 
 class Dashboard:
-    def __init__(self, token, username=None, password=None, secret=None, on_change=None, fetch_photo=telegram_photo, notify=None):
+    def __init__(self, token, username=None, password=None, secret=None, on_change=None, fetch_photo=telegram_photo, notify=None, adapt_send=None):
         self.notify = notify   # notify(tg_id, текст) -> bool: сообщение кандидату через бота
+        self.adapt_send = adapt_send   # adapt_send(tg_id, текст, кнопки) -> bool: чек-лист адаптации через бота
         self.token = token
         self.username = (username if username is not None else os.environ.get("DASHBOARD_USERNAME", "hr")).strip() or "hr"
         self.password = (password if password is not None else os.environ.get("DASHBOARD_PASSWORD", "")).strip()
@@ -169,13 +171,17 @@ class Dashboard:
         if p == "/api/export.csv" and method == "GET":
             return 200, {"Content-Type": "text/csv; charset=utf-8", "Cache-Control": "no-store",
                          "Content-Disposition": 'attachment; filename="kandidaty.csv"'}, store.export_csv()
-        m = re.fullmatch(r"/api/candidates/(\d{1,9})(/photo|/pdf|/move|/preview)?", p)
+        if p == "/api/adaptation" and method == "GET":
+            return self._adapt_list(query)
+        m = re.fullmatch(r"/api/candidates/(\d{1,9})(/photo|/pdf|/move|/preview|/adapt)?", p)
         if m:
             row = store.get(int(m.group(1)))
             if not row:
                 return self._json(404, {"error": "Кандидат не найден"})
             if m.group(2) in ("/move", "/preview"):
                 return self._move(row, body, user, preview=m.group(2) == "/preview") if method == "POST" else self._json(405, {"error": "method"})
+            if m.group(2) == "/adapt":
+                return self._adapt_post(row, body, user) if method == "POST" else self._json(405, {"error": "method"})
             if m.group(2) == "/pdf":
                 return self._pdf(row) if method == "GET" else self._json(405, {"error": "method"})
             if m.group(2):
@@ -189,6 +195,7 @@ class Dashboard:
                 sc = evaluate(a)["scores"]
                 item["scores"] = [["Hard skills", list(sc["hard"].items())], ["Soft skills", list(sc["soft"].items())]]
                 item["sections"] = self._sections(item["profile"])
+                item["adapt"] = adaptation.view(row)
                 return self._json(200, item)
             if method == "POST":
                 return self._update(row, body, user)
@@ -359,6 +366,85 @@ class Dashboard:
                 cur[1].append([s[2:]] if s.startswith("- ") else ([s[:cut], s[cut + 2:]] if cut else [s]))
         return out
 
+    def _adapt_list(self, q):
+        """Все на адаптации: идёт / прошли / ушли, с прогрессом и просрочками."""
+        state = q.get("state") if q.get("state") in adaptation.RESULTS else "active"
+        text = (q.get("q") or "").strip().lower()[:80]
+        rows = adaptation.overview()
+        counts = {k: sum(1 for i in rows if i["state"] == k) for k in adaptation.RESULTS}
+        out = []
+        for i in rows:
+            if i["state"] != state or (q.get("pos") and i["pos"] != q["pos"]) or (q.get("branch") and i["branch"] != q["branch"]):
+                continue
+            if q.get("late") == "1" and not i["late"]:
+                continue
+            if text and not (text in i["fio"].lower() or text in i["branch"].lower() or text in i["mentor"].lower()
+                             or (re.sub(r"\D", "", text) and re.sub(r"\D", "", text) in re.sub(r"\D", "", i["phone"]))):
+                continue
+            i["since"] = i["ts"]
+            out.append(i)
+        how = q.get("sort") or "late"
+        out = sorted(out, key=lambda i: (-i["late"], i["ts"])) if how == "late" else self._sorted(out, how)
+        return self._json(200, {"state": state, "counts": counts, "items": out, "count": len(out), "reasons": adaptation.LEAVE_REASONS})
+
+    def _adapt_post(self, row, body, user):
+        """Действия рекрутера: отметка пункта, дата начала, наставник, итог, отправка чек-листа сейчас."""
+        try:
+            d = json.loads(body or b"{}")
+        except ValueError:
+            return self._json(400, {"error": "bad json"})
+        if not isinstance(d, dict):
+            return self._json(400, {"error": "bad json"})
+        op, cid = d.get("op"), row["id"]
+        if op == "start":
+            if not adaptation.parse_date(str(d.get("start") or "")):
+                return self._json(400, {"error": "Укажите дату первого рабочего дня"})
+            adaptation.start(cid, str(d["start"]), by=user)
+            return self._json(200, {"ok": True, "adapt": adaptation.view(store.get(cid))})
+        if not adaptation.get(cid):
+            return self._json(400, {"error": "Адаптация начинается после перевода на этап «Принят»"})
+        if op == "check":
+            item = str(d.get("item") or "")
+            if item not in {i[0] for i in adaptation.items(adaptation.pos_of(row))}:
+                return self._json(400, {"error": "Пункт не найден"})
+            adaptation.set_check(cid, item, bool(d.get("done")), user)
+        elif op == "mentor":
+            adaptation.set_mentor(cid, str(d.get("mentor") or ""), user)
+        elif op == "finish":
+            reason = d.get("reason") if d.get("reason") in adaptation.LEAVE_REASONS else ""
+            if d.get("result") == "left" and not reason:
+                return self._json(400, {"error": "Выберите причину ухода"})
+            if not adaptation.finish(cid, d.get("result"), reason, user):
+                return self._json(400, {"error": "Неизвестный итог"})
+        elif op == "send":
+            if adaptation.get(cid)["state"] != "active":
+                return self._json(400, {"error": "Адаптация завершена"})
+            blocks = adaptation.open_blocks(row)
+            if not blocks:
+                return self._json(400, {"error": "Сейчас нет открытого этапа: следующий придёт по расписанию"})
+            if not self.adapt_send:
+                return self._json(503, {"error": "Бот недоступен"})
+            if adaptation.waits_manual(cid):   # дальше этапы пойдут по расписанию
+                adaptation.event(cid, "auto", "", user)
+            ok = True
+            for b in blocks:
+                text, kb = adaptation.message(row, b)
+                try:
+                    sent = bool(self.adapt_send(row["tg_id"], text, kb))
+                except Exception:
+                    log.exception("Не удалось отправить чек-лист")
+                    sent = False
+                ok = ok and sent
+                adaptation.event(cid, "resend:" + b, "", user)
+                if not adaptation.has(cid, "sent:" + b):   # расписание не пришлёт этот этап второй раз
+                    adaptation.mark(cid, "sent:" + b, sent)
+                elif not sent:
+                    adaptation.event(cid, "fail", "resend:" + b)
+            return self._json(200, {"ok": True, "delivered": ok, "adapt": adaptation.view(store.get(cid))})
+        else:
+            return self._json(400, {"error": "Неизвестное действие"})
+        return self._json(200, {"ok": True, "adapt": adaptation.view(store.get(cid))})
+
     def _archive(self, q):
         """Завершённые кандидаты: принятые, резерв, отказы."""
         kind = q.get("kind") if q.get("kind") in ("ishda", "zaxira", "rad") else "ishda"
@@ -438,6 +524,8 @@ class Dashboard:
         store.set_status(row["id"], stage, by=user, reason=reason, notified=delivered, note=notices.note_of(fields))
         if fields.get("store"):   # выбранный магазин становится филиалом кандидата
             store.set_branch(row["id"], fields["store"])
+        if stage == "ishda":   # принят: начинается адаптация, день 1 = дата выхода (или сегодня)
+            adaptation.start(row["id"], fields.get("date") or None, by=user)
         if self.on_change:
             try:
                 self.on_change(row["id"])

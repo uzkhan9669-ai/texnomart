@@ -40,9 +40,9 @@ TEXT = {
         "ru": "Здравствуйте, {name}! Поздравляем: мы рады предложить вам работу в Texnomart на должности «{position}».[[\nДата выхода: {date}]][[\nМесто работы: {place}]]\nРекрутер свяжется с вами и расскажет о следующих шагах и документах.",
         "en": "Hello, {name}! Congratulations: we are pleased to offer you the “{position}” position at Texnomart.[[\nStart date: {date}]][[\nWorkplace: {place}]]\nA recruiter will contact you about the next steps and documents."},
     "ishda": {
-        "uz": "Assalomu alaykum, {name}! Tabriklaymiz: siz Texnomart kompaniyasiga «{position}» lavozimiga ishga qabul qilindingiz. Jamoamizga xush kelibsiz![[\nBirinchi ish kuni: {date}]][[\nIsh joyi: {place}]]\nO'zingiz bilan pasportingizni oling.",
-        "ru": "Здравствуйте, {name}! Поздравляем: вы приняты на работу в Texnomart на должность «{position}». Добро пожаловать в команду![[\nПервый рабочий день: {date}]][[\nМесто работы: {place}]]\nВозьмите с собой паспорт.",
-        "en": "Hello, {name}! Congratulations: you have been hired at Texnomart as “{position}”. Welcome to the team![[\nFirst working day: {date}]][[\nWorkplace: {place}]]\nPlease bring your passport."},
+        "uz": "Assalomu alaykum, {name}! Tabriklaymiz: siz Texnomart kompaniyasiga «{position}» lavozimiga ishga qabul qilindingiz. Jamoamizga xush kelibsiz![[\nBirinchi ish kuni: {date}]][[\nIsh joyi: {place}]]\nO'zingiz bilan pasportingizni oling. Birinchi ish kuni soat 9:00 da sizga shu yerga moslashuv chek-listini yuboraman.",
+        "ru": "Здравствуйте, {name}! Поздравляем: вы приняты на работу в Texnomart на должность «{position}». Добро пожаловать в команду![[\nПервый рабочий день: {date}]][[\nМесто работы: {place}]]\nВозьмите с собой паспорт. В первый рабочий день в 9:00 я пришлю сюда чек-лист адаптации.",
+        "en": "Hello, {name}! Congratulations: you have been hired at Texnomart as “{position}”. Welcome to the team![[\nFirst working day: {date}]][[\nWorkplace: {place}]]\nPlease bring your passport. On your first working day at 9:00 I will send your adaptation checklist here."},
     "zaxira": {
         "uz": "Assalomu alaykum, {name}! Texnomartga qiziqish bildirganingiz uchun rahmat. Hozircha mos bo'sh o'rin yo'q, lekin anketangizni saqlab qo'ydik va o'rin paydo bo'lganda siz bilan bog'lanamiz.",
         "ru": "Здравствуйте, {name}! Спасибо за интерес к Texnomart. Сейчас подходящих мест нет, но мы сохранили вашу анкету и свяжемся с вами, когда появится вакансия.",

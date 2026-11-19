@@ -63,6 +63,24 @@ tbody tr:hover{background:#fffbe6}
 .tag.QABUL,.tag.offer,.tag.staj,.tag.ishda{background:var(--greenbg);color:var(--green)}
 .tag.ZAXIRA,.tag.zaxira{background:var(--amberbg);color:var(--amber)}
 .tag.RAD,.tag.rad{background:var(--redbg);color:var(--red)}
+.ad-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px}
+.ad-sum>div{background:#f6f7f9;border-radius:10px;padding:10px 12px;font-size:12px;color:var(--mut)}.ad-sum b{display:block;font-size:17px;color:var(--txt);margin-bottom:2px}
+.ad-sum .bad b{color:var(--red)}
+.prog{height:8px;background:#e7e9ee;border-radius:4px;overflow:hidden;min-width:70px}.prog i{display:block;height:100%;background:var(--green);border-radius:4px}
+.ad-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ad-row .field{flex:1;min-width:160px}
+.ad-row label{font-size:12px;font-weight:600;color:var(--mut);width:100%;margin-bottom:-4px}
+.ad-act{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.ablk{border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}
+.ablk h5{margin:0;padding:10px 12px;background:#fafafb;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.ablk h5 .minor{margin-left:auto}
+.aitem{display:flex;gap:10px;padding:8px 12px;border-top:1px solid var(--line);font-size:13px;align-items:flex-start;cursor:pointer}
+.aitem input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--green);flex:none;cursor:pointer}
+.aitem.done .t{color:var(--mut)}.aitem.late .t{color:var(--red);font-weight:600}
+.aitem .who2{font-size:11px;color:var(--mut);margin-top:2px}
+.own{font-size:11px;font-weight:700;background:#eef0f3;border-radius:6px;padding:1px 6px;margin-left:6px;color:var(--mut);white-space:nowrap}
+.alog{padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.alog:last-child{border:0}.alog .minor{margin-bottom:2px}
+.latebadge{display:inline-block;min-width:22px;text-align:center;background:var(--redbg);color:var(--red);font-weight:800;border-radius:999px;padding:2px 8px;font-size:12px}
+@media(max-width:640px){.ad-sum{grid-template-columns:1fr 1fr}}
 .pct{font-weight:800;font-size:15px}
 .empty{padding:34px;text-align:center;color:var(--mut)}
 .login{max-width:380px;margin:9vh auto 0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px}
@@ -193,7 +211,7 @@ function showLogin(msg) {
 function shell() {
   app.textContent = "";
   var top = el("div", "top"), tabs = el("div", "tabs"), out = el("button", "out", "Выйти");
-  [["overview", "Обзор"], ["board", "Воронка"], ["candidates", "Кандидаты"], ["archive", "Архив"]].forEach(function (t) {
+  [["overview", "Обзор"], ["board", "Воронка"], ["candidates", "Кандидаты"], ["adaptation", "Адаптация"], ["archive", "Архив"]].forEach(function (t) {
     var b = el("button", page === t[0] ? "on" : "", t[1]); b.id = "tab-" + t[0];
     b.onclick = function () { page = t[0]; shell(); }; tabs.appendChild(b);
   });
@@ -201,7 +219,7 @@ function shell() {
   add(top, logo(), tabs, out);
   var main = el("main", page === "board" ? "wide" : ""); main.id = "main";
   add(app, top, main);
-  if (page === "overview") overview(main); else if (page === "board") board(main); else if (page === "archive") archive(main); else candidates(main);
+  if (page === "overview") overview(main); else if (page === "board") board(main); else if (page === "archive") archive(main); else if (page === "adaptation") adaptationPage(main); else candidates(main);
 }
 
 // ---------- обзор
@@ -549,6 +567,129 @@ function archive(main) {
   load();
 }
 
+// ---------- адаптация: 3 месяца после выхода на работу
+function prog(done, total) { var p = el("div", "prog"), i = el("i"); i.style.width = (total ? Math.round(done * 100 / total) : 0) + "%"; p.appendChild(i); return p; }
+var ADKIND = {q: "❓ Вопрос сотрудника", hard: "💬 Что было сложно", reply: "✉️ Ответ рекрутера", rating: "⭐ Оценка первой недели", result: "🏁 Итог",
+  fail: "⚠️ Сообщение не доставлено", start: "📅 Первый рабочий день", mentor: "👤 Наставник"};
+function adaptPane(body, c, done) {
+  var a = c.adapt, id = c.id;
+  function post(data, ok) { return api("/api/candidates/" + id + "/adapt", data).then(function (r) { if (ok) toast(ok); done(r.adapt); return r; }).catch(function (e) { toast(e.message); }); }
+  if (a.manual) { var mw = el("div", "warnbox", "Принят до запуска адаптации: бот пока ничего не присылал. Проверьте дату первого рабочего дня и нажмите «Отправить чек-лист сейчас», дальше этапы пойдут по расписанию."); mw.style.marginTop = "14px"; body.appendChild(mw); }
+  if (a.failed) { var w = el("div", "warnbox", "Бот не смог доставить сотруднику сообщение (возможно, он заблокировал бота). Свяжитесь по телефону."); w.style.marginTop = "14px"; body.appendChild(w); }
+  var sum = el("div", "ad-sum");
+  [[a.day < 1 ? "Скоро" : "День " + a.day, a.day < 1 ? "выход " + a.start_ru : "из " + a.days + " · с " + a.start_ru], [a.done + " из " + a.total, "пунктов отмечено"],
+   [String(a.late), "просрочено", a.late ? "bad" : ""], [a.rating ? a.rating + " из 5" : "—", "оценка первой недели", a.rating && a.rating <= 2 ? "bad" : ""]].forEach(function (x) {
+    var d = el("div", x[2] || ""); add(d, el("b", null, x[0]), document.createTextNode(x[1])); sum.appendChild(d);
+  });
+  body.appendChild(sum); body.appendChild(prog(a.done, a.total));
+  var st = el("div", "stline"); st.style.marginTop = "10px";
+  add(st, tag(a.state === "active" ? "ZAXIRA" : a.state === "done" ? "QABUL" : "RAD", a.state_ru + (a.reason ? ": " + a.reason : "")), el("span", "minor", a.state === "active" ? "Сейчас: " + a.current : ""));
+  if (a.last_seen) st.appendChild(el("span", "minor", "· последний раз в боте " + fmtDate(a.last_seen)));
+  body.appendChild(st);
+
+  var r1 = el("div", "ad-row"), dt = el("input"), sv = el("button", "btn alt", "Сохранить дату");
+  dt.type = "date"; dt.id = "adStart"; dt.className = "field"; dt.value = a.start;
+  sv.onclick = function () { post({op: "start", start: dt.value}, "Дата сохранена"); };
+  add(r1, el("label", null, "Первый рабочий день (день 1 адаптации)"), dt, sv);
+  var r2 = el("div", "ad-row"), mt = el("input"), ms = el("button", "btn alt", "Сохранить");
+  mt.id = "adMentor"; mt.className = "field"; mt.placeholder = "Имя наставника"; mt.value = a.mentor; mt.maxLength = 80;
+  ms.onclick = function () { post({op: "mentor", mentor: mt.value}, "Наставник сохранён"); };
+  add(r2, el("label", null, "Наставник"), mt, ms);
+  add(body, r1, r2);
+
+  var act = el("div", "ad-act");
+  if (a.state === "active") {
+    var snd = el("button", "btn alt", "📨 Отправить чек-лист сейчас"); snd.id = "adSend"; snd.title = "Пришлёт сотруднику в бот текущий этап с кнопками";
+    snd.onclick = function () { snd.disabled = true; post({op: "send"}).then(function (r) { if (r) toast(r.delivered ? "Чек-лист отправлен сотруднику" : "Не доставлено: сотрудник мог заблокировать бота"); }); };
+    var ok = el("button", "btn", "✓ Адаптацию прошёл"); ok.id = "adDone"; ok.onclick = function () { post({op: "finish", result: "done"}, "Отмечено: адаптацию прошёл"); };
+    var lf = el("button", "btn alt", "Ушёл"); lf.id = "adLeft"; lf.style.color = "var(--red)";
+    lf.onclick = function () {
+      closeDlg(); var w = el("div", "dlg"), box = el("div", "box"), sel = el("select"), go = el("button", "btn", "Сохранить"), no = el("button", "btn alt", "Отмена"), row = el("div", "rowf");
+      sel.id = "adReason"; sel.className = "field"; sel.appendChild(new Option("Выберите причину", "")); a.reasons.forEach(function (r) { sel.appendChild(new Option(r, r)); });
+      no.onclick = closeDlg; go.id = "adLeftOk";
+      go.onclick = function () { if (!sel.value) { toast("Выберите причину"); return; } closeDlg(); post({op: "finish", result: "left", reason: sel.value}, "Отмечено: ушёл"); };
+      add(row, go, no); add(box, el("h3", null, "Сотрудник ушёл"), el("div", "minor", "Причина нужна для статистики, сотрудник её не увидит. Бот перестанет присылать чек-лист."), sel, row);
+      sel.style.margin = "12px 0"; w.appendChild(box); w.onclick = function (e) { if (e.target === w) closeDlg(); }; document.body.appendChild(w);
+    };
+    add(act, snd, ok, lf);
+  } else {
+    var back = el("button", "btn alt", "Вернуть в адаптацию"); back.id = "adBack"; back.onclick = function () { post({op: "finish", result: "active"}, "Адаптация продолжается"); };
+    act.appendChild(back);
+  }
+  body.appendChild(act);
+
+  body.appendChild(el("div", "sec", "Чек-лист"));
+  a.blocks.forEach(function (b) {
+    var box = el("div", "ablk"), h = el("h5"), late = b.items.some(function (i) { return i.late; });
+    add(h, el("span", null, b.title), b.done === b.total ? tag("QABUL", "Готово") : late ? tag("RAD", "Просрочено") : b.open ? tag("ZAXIRA", "Идёт") : tag("", "Впереди"),
+      el("span", "minor", "дни " + b.from + (b.to !== b.from ? "–" + b.to : "") + " · срок " + b.due + " · " + b.done + "/" + b.total));
+    box.appendChild(h);
+    b.items.forEach(function (it) {
+      var row = el("label", "aitem" + (it.done ? " done" : "") + (it.late ? " late" : "")), cb = el("input"), txt = el("div");
+      cb.type = "checkbox"; cb.checked = it.done; cb.setAttribute("data-item", it.id);
+      cb.onchange = function () { post({op: "check", item: it.id, done: cb.checked}); };
+      var t = el("div", "t", it.text); if (it.owner) t.appendChild(el("span", "own", it.owner));
+      txt.appendChild(t);
+      if (it.done) txt.appendChild(el("div", "who2", "✓ " + it.by + " · " + fmtDate(it.ts)));
+      else if (it.late) txt.appendChild(el("div", "who2", "не отмечено в срок"));
+      add(row, cb, txt); box.appendChild(row);
+    });
+    body.appendChild(box);
+  });
+  var log = a.log.filter(function (e) { return ADKIND[e.kind]; });
+  if (log.length) {
+    body.appendChild(el("div", "sec", "Вопросы и события"));
+    log.slice().reverse().forEach(function (e) {
+      var r = el("div", "alog"); add(r, el("div", "minor", ADKIND[e.kind] + " · " + fmtDate(e.ts) + (e.by && e.by !== "employee" && e.by !== "system" ? " · " + e.by : "")));
+      if (e.text && e.kind !== "fail") r.appendChild(el("div", null, e.kind === "rating" ? e.text + " из 5" : e.text));
+      body.appendChild(r);
+    });
+    var hint = el("div", "minor", "Ответить на вопрос сотрудника: в Telegram командой /otvet " + id + " ваш текст"); hint.style.marginTop = "8px"; body.appendChild(hint);
+  }
+}
+var adf = {state: "active", q: "", pos: "", branch: "", late: "", sort: "late"};
+function adaptationPage(main) {
+  add(main, el("h1", null, "Адаптация"), el("div", "sub", "3 месяца после выхода на работу. Сотрудник получает чек-лист в боте и отмечает пункты, вы видите прогресс и просрочки. Сюда попадают все с этапа «Принят»."));
+  var seg = el("div", "segs"), f = el("div", "filters"), q = el("input"), holder = el("div"), count = el("div", "minor");
+  var p = select("adp", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, adf.pos), bs = storeSelect("adstore", "Все магазины", adf.branch);
+  var lt = select("adlate", "Все сотрудники", {"1": "Только с просрочками"}, adf.late);
+  var so = el("select"); so.id = "adsort";
+  [["late", "↕ Сначала с просрочками"], ["new", "↕ Сначала новые"], ["old", "↕ Сначала старые"], ["az", "↕ По имени А → Я"], ["za", "↕ По имени Я → А"]].forEach(function (o) { so.appendChild(new Option(o[1], o[0])); });
+  so.value = adf.sort;
+  q.id = "adq"; q.placeholder = "Поиск: имя, телефон, филиал, наставник"; q.value = adf.q; count.style.margin = "0 0 8px";
+  add(f, q, p, bs, lt, so); add(main, seg, f, count, holder);
+  function load() {
+    adf.q = q.value; adf.pos = p.value; adf.branch = bs.value; adf.late = lt.value; adf.sort = so.value;
+    var qs = Object.keys(adf).filter(function (k) { return adf[k]; }).map(function (k) { return k + "=" + encodeURIComponent(adf[k]); }).join("&");
+    api("/api/adaptation?" + qs).then(function (d) {
+      seg.textContent = ""; holder.textContent = "";
+      [["active", "Идёт"], ["done", "Прошли"], ["left", "Ушли"]].forEach(function (x) {
+        var b = el("button", d.state === x[0] ? "on" : "", x[1]); b.id = "ad-" + x[0]; b.appendChild(el("span", null, String(d.counts[x[0]])));
+        b.onclick = function () { adf.state = x[0]; load(); }; seg.appendChild(b);
+      });
+      count.textContent = "Найдено: " + d.count;
+      var wrap = el("div", "tablewrap"); holder.appendChild(wrap);
+      if (!d.items.length) { wrap.appendChild(el("div", "empty", d.state === "active" ? "Пока никого. Сотрудник появится здесь после перевода на этап «Принят»." : "Здесь пока пусто")); return; }
+      var t = el("table"), th = el("tr"), tb = el("tbody");
+      ["Сотрудник", "Должность", "Магазин", "Начало", "Сейчас", "Прогресс", "Просрочено", "Неделя"].concat(d.state === "left" ? ["Причина"] : ["Наставник"]).forEach(function (h) { th.appendChild(el("th", null, h)); });
+      add(t, add(el("thead"), th), tb);
+      d.items.forEach(function (c) {
+        var tr = el("tr"); tr.setAttribute("data-id", c.id);
+        var who = el("td"); add(who, el("div", "name", c.fio || "-"), el("div", "minor", c.phone + (c.failed ? " · ⚠ бот не доставил" : "")));
+        var pr = el("td"); add(pr, prog(c.done, c.total), el("div", "minor", c.done + " из " + c.total)); pr.style.minWidth = "110px";
+        var lt2 = el("td"); lt2.appendChild(c.late ? el("span", "latebadge", String(c.late)) : el("span", "minor", "—"));
+        var rt = el("td", c.rating && c.rating <= 2 ? "" : "minor", c.rating ? "★ " + c.rating + "/5" : "—"); if (c.rating && c.rating <= 2) rt.style.color = "var(--red)";
+        add(tr, who, el("td", null, c.pos), el("td", null, c.branch || "-"), add(el("td"), el("div", null, c.start), el("div", "minor", c.day < 1 ? "ещё не вышел" : "день " + c.day + " из 91")),
+          el("td", "minor", c.current), pr, lt2, rt, el("td", "minor", d.state === "left" ? (c.reason || "-") : (c.mentor || "—")));
+        tr.onclick = function () { openCandidate(c.id, "adapt"); }; tb.appendChild(tr);
+      });
+      wrap.appendChild(t);
+    }).catch(function (e) { if (e.message !== "auth") { holder.textContent = ""; holder.appendChild(el("div", "err", e.message)); } });
+  }
+  q.oninput = function () { clearTimeout(timer); timer = setTimeout(load, 250); }; p.onchange = bs.onchange = lt.onchange = so.onchange = load;
+  load();
+}
+
 // ---------- карточка кандидата: окно, которое можно двигать по экрану
 var winPos = null, winTab = "main";
 function closeWin() { Array.prototype.forEach.call(document.querySelectorAll(".cwin,.veil,.lightbox"), function (e) { e.remove(); }); }
@@ -579,7 +720,8 @@ function dragWin(w, handle) {
   ["pointerup", "pointercancel"].forEach(function (n) { handle.addEventListener(n, function () { on = false; w.classList.remove("moving"); }); });
   if (winPos) place(winPos[0], winPos[1]); else place(Math.round((window.innerWidth - w.offsetWidth) / 2), Math.max(12, Math.round((window.innerHeight - w.offsetHeight) / 2)));
 }
-function openCandidate(id) {
+function openCandidate(id, tab) {
+  if (tab) winTab = tab;
   api("/api/candidates/" + id).then(function (c) {
     closeWin();
     var w = el("div", "cwin"), who = el("div", "who"), info = el("div", "inf"), x = el("button", "x", "×"), body = el("div", "wbody"), tabs = el("div", "wtabs"), foot = el("div", "wfoot");
@@ -638,6 +780,7 @@ function openCandidate(id) {
         });
         if (!(c.sections || []).length) body.appendChild(el("pre", null, c.profile));
       },
+      adapt: function () { adaptPane(body, c, function (a) { c.adapt = a; show("adapt"); }); },
       hist: function () {
         body.appendChild(el("div", "sec", "История этапов"));
         c.history.forEach(function (h) {
@@ -654,7 +797,8 @@ function openCandidate(id) {
       winTab = name; body.textContent = ""; body.scrollTop = 0; panes[name]();
       Array.prototype.forEach.call(tabs.children, function (b) { b.classList.toggle("on", b.getAttribute("data-tab") === name); });
     }
-    [["main", "Главное"], ["form", "Анкета"], ["hist", "История" + (c.history.length ? " · " + c.history.length : "")]].forEach(function (t) {
+    [["main", "Главное"], ["form", "Анкета"]].concat(c.adapt ? [["adapt", "Адаптация" + (c.adapt.late ? " · ⚠ " + c.adapt.late : "")]] : [])
+      .concat([["hist", "История" + (c.history.length ? " · " + c.history.length : "")]]).forEach(function (t) {
       var b = el("button", null, t[1]); b.setAttribute("data-tab", t[0]); b.onclick = function () { show(t[0]); }; tabs.appendChild(b);
     });
 
@@ -674,7 +818,7 @@ function openCandidate(id) {
 
     var veil = el("div", "veil"); veil.onclick = closeWin;
     add(w, who, tabs, body, foot); add(document.body, veil, w);
-    show(panes[winTab] ? winTab : "main");
+    show(panes[winTab] && (winTab !== "adapt" || c.adapt) ? winTab : "main");
     dragWin(w, who);
   }).catch(function (e) { if (e.message !== "auth") toast(e.message); });
 }

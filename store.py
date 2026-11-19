@@ -69,6 +69,12 @@ def init():
     for name, ddl in (("notified", "INTEGER"), ("note", "TEXT DEFAULT ''")):
         if name not in hcols:
             _run("ALTER TABLE status_history ADD COLUMN %s %s" % (name, ddl))
+    # адаптация принятых (adaptation.py): состояние, отметки чек-листа, события (рассылка, вопросы, опрос)
+    _run("""CREATE TABLE IF NOT EXISTS adapt (cid INTEGER PRIMARY KEY, start TEXT, mentor TEXT DEFAULT '', state TEXT DEFAULT 'active',
+        reason TEXT DEFAULT '', created TEXT, closed TEXT, rating INTEGER, last_seen TEXT)""")
+    _run("CREATE TABLE IF NOT EXISTS adapt_check (cid INTEGER, item TEXT, ts TEXT, by TEXT, PRIMARY KEY (cid, item))")
+    _run("CREATE TABLE IF NOT EXISTS adapt_event (id INTEGER PRIMARY KEY AUTOINCREMENT, cid INTEGER, ts TEXT, kind TEXT, text TEXT DEFAULT '', by TEXT DEFAULT '')")
+    _run("CREATE INDEX IF NOT EXISTS adapt_event_cid ON adapt_event (cid, kind)")
     for old, new in _OLD_STATUS.items():   # перенос статусов прежней версии на новые этапы
         _run("UPDATE candidates SET status=? WHERE status=?", (new, old))
 

@@ -19,6 +19,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppI
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler, ContextTypes,
                           MessageHandler, PicklePersistence, filters)
 
+import adaptation
 import dashboard
 import i18n
 import notices
@@ -52,6 +53,7 @@ HELP = (
     "/holat 12 sozvon - перевести на этап (%s). Кандидату уйдёт сообщение после вашего подтверждения.\n"
     "   собеседование: /holat 12 sobes 15.11.2026; 14:00; адрес\n"
     "   стажировка: /holat 12 staj 20.11.2026; адрес\n"
+    "/otvet 12 текст - ответить сотруднику на вопрос по адаптации\n"
     "/anketa - пройти анкету самому"
 ) % ", ".join("%s = %s" % (k, v) for k, v in STATUS_RU.items())
 
@@ -255,6 +257,9 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith(("p:", "s:", "f:", "m:")):
         await rec_button(update, context)
         return
+    if data.startswith("ad:"):
+        await adapt_button(update, context)
+        return
     await cq.answer()
     st = context.user_data
     if "i" not in st:
@@ -288,6 +293,9 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     st = context.user_data
     msg = update.effective_message
+    if st.get("ad_ask"):   # сотрудник на адаптации пишет вопрос или ответ на опрос
+        await adapt_text(update, context, st.pop("ad_ask"))
+        return
     lang = lang_of(st)
     if "i" not in st or st["i"] < 0:
         await msg.reply_text(i18n.ui("press_start", lang))
@@ -417,6 +425,8 @@ async def do_move(message, context, cid, stage, notify, by):
             return
         delivered = await send_notice(context.bot, row["tg_id"], text)
     store.set_status(cid, stage, by="tg:%s" % by, notified=delivered, note=notices.note_of(fields))
+    if stage == "ishda":   # принят: начинается адаптация, день 1 = дата выхода из сообщения (или сегодня)
+        adaptation.start(cid, fields.get("date") or None, by="tg:%s" % by)
     if fields.get("store"):   # магазин из списка становится филиалом кандидата
         store.set_branch(cid, fields["store"])
     tail = {True: "Сообщение кандидату доставлено.", False: "Сообщение НЕ доставлено (кандидат мог заблокировать бота). Свяжитесь по телефону %s." % (row["phone"] or ""),
@@ -561,6 +571,150 @@ async def holat(update, context):
     await propose_move(update.effective_message, context, int(args[0]), stage, fields)
 
 
+# ---------------------------------------------------------------- адаптация принятых
+ADAPT_TASK = None
+def adapt_markup(kb):
+    return InlineKeyboardMarkup([[InlineKeyboardButton(label, callback_data=data) for label, data in row] for row in kb]) if kb else None
+
+
+async def notify_recruiters(bot, text, cid=None):
+    for chat in RECRUITERS:
+        try:
+            await send_long(bot, chat, text)
+        except Exception:
+            log.warning("Рекрутеру %s не доставлено", chat, exc_info=True)
+
+
+async def adapt_send(bot, chat, text, kb=None):
+    """Сообщение сотруднику с кнопками чек-листа. True, если доставлено."""
+    try:
+        await bot.send_message(chat, text, reply_markup=adapt_markup(kb))
+        return True
+    except Exception:
+        log.warning("Сообщение по адаптации %s не доставлено", chat, exc_info=True)
+        return False
+
+
+async def adapt_tick(bot, at=None):
+    """Один проход расписания: рассылка блоков, напоминания, опрос недели, уведомления рекрутерам."""
+    for act in adaptation.plan(at):
+        ok = True
+        if act["to"] == "emp":
+            ok = await adapt_send(bot, act["chat"], act["text"], act["kb"])
+        else:
+            await notify_recruiters(bot, act["text"])
+        adaptation.mark(act["cid"], act["key"], ok)
+        if not ok and act["key"].startswith("sent:"):
+            row = store.get(act["cid"])
+            await notify_recruiters(bot, "⚠️ Чек-лист адаптации не доставлен: %s (сотрудник мог заблокировать бота). Телефон: %s" % (
+                adaptation.who(row), row["phone"] or "-"))
+
+
+async def adapt_loop(bot):
+    while True:
+        try:
+            await adapt_tick(bot)
+        except Exception:
+            log.error("Ошибка рассылки адаптации", exc_info=True)
+        await asyncio.sleep(60)
+
+
+async def adapt_button(update, context):
+    cq = update.callback_query
+    parts = (cq.data or "").split(":")
+    if len(parts) < 3 or not parts[2].isdigit():
+        await cq.answer()
+        return
+    cid = int(parts[2])
+    row = store.get(cid)
+    lang = adaptation.lang_of(row) if row else "uz"
+    if not row or (cq.from_user.id != row["tg_id"] and not is_rec(update)):
+        await cq.answer(adaptation.tx("not_yours", lang), show_alert=True)
+        return
+    who = "employee" if cq.from_user.id == row["tg_id"] else "tg:%s" % cq.from_user.id
+    if parts[1] == "t" and len(parts) == 4:
+        item = parts[3]
+        block = item.split(".")[0]
+        if block not in adaptation.BLOCK:
+            await cq.answer()
+            return
+        adaptation.set_check(cid, item, item not in adaptation.checks(cid), who)
+        await cq.answer("✅" if item in adaptation.checks(cid) else "☐")
+        text, kb = adaptation.message(store.get(cid), block)
+        try:
+            await cq.edit_message_text(text, reply_markup=adapt_markup(kb))
+        except Exception:   # текст не изменился или сообщение слишком старое
+            pass
+        return
+    await cq.answer()
+    if parts[1] == "q":
+        context.user_data["ad_ask"] = ["q", cid]
+        await cq.message.reply_text(adaptation.tx("ask", lang))
+    elif parts[1] == "r" and len(parts) == 4 and parts[3] in "12345":
+        a = adaptation.get(cid)
+        if a and a["rating"]:
+            await cq.message.reply_text(adaptation.tx("thanks", lang))
+            return
+        score = int(parts[3])
+        adaptation.set_rating(cid, score)
+        if score <= 2:
+            await notify_recruiters(context.bot, "🔴 %s оценил первую неделю на %d из 5. Риск ухода: свяжитесь с сотрудником. /n_%d" % (
+                adaptation.who(row), score, cid))
+        context.user_data["ad_ask"] = ["hard", cid]
+        await cq.message.reply_text(adaptation.tx("hard", lang), reply_markup=adapt_markup([[(adaptation.tx("skip", lang), "ad:s:%d" % cid)]]))
+    elif parts[1] == "s":
+        context.user_data.pop("ad_ask", None)
+        await cq.message.reply_text(adaptation.tx("thanks", lang))
+
+
+async def adapt_text(update, context, ask):
+    kind, cid = ask
+    row = store.get(cid)
+    msg = update.effective_message
+    text = (msg.text or "").strip()[:1500]
+    if not row or not text:
+        return
+    lang = adaptation.lang_of(row)
+    adaptation.event(cid, kind, text, "employee")
+    a = adaptation.get(cid)
+    day = adaptation.day_of(a) + 1 if a else 0
+    if kind == "q":
+        await notify_recruiters(context.bot, "❓ Вопрос от сотрудника %s, день %d адаптации:\n«%s»\n\nОтветить: /otvet %d ваш текст" % (
+            adaptation.who(row), day, text, cid))
+        await msg.reply_text(adaptation.tx("asked", lang))
+    else:
+        await notify_recruiters(context.bot, "💬 %s о первой неделе (оценка %s из 5):\n«%s»" % (adaptation.who(row), a["rating"] if a else "-", text))
+        await msg.reply_text(adaptation.tx("thanks", lang))
+
+
+@only_rec
+async def otvet(update, context):
+    m = re.match(r"\s*#?(\d+)\s+(.+)", " ".join(context.args or []), re.S)
+    row = store.get(int(m.group(1))) if m else None
+    if not row:
+        await update.effective_message.reply_text("Пример: /otvet 12 Добрый день! Документы оформят в отделе кадров завтра в 10:00.")
+        return
+    text = m.group(2).strip()[:1500]
+    ok = await adapt_send(context.bot, row["tg_id"], adaptation.tx("reply", adaptation.lang_of(row), text=text))
+    adaptation.event(row["id"], "reply", text, "tg:%s" % update.effective_user.id)
+    await update.effective_message.reply_text("Ответ отправлен: %s" % adaptation.who(row) if ok else "Не доставлено: сотрудник мог заблокировать бота. Телефон: %s" % (row["phone"] or "-"))
+
+
+async def checklist(update, context):
+    """Сотрудник сам запрашивает текущий чек-лист."""
+    row = adaptation.find_by_tg(update.effective_user.id)
+    if not row or not adaptation.get(row["id"]):
+        await update.effective_message.reply_text(i18n.ui("press_start", lang_of(context.user_data)))
+        return
+    lang = adaptation.lang_of(row)
+    blocks = adaptation.open_blocks(row)
+    if not blocks:
+        await update.effective_message.reply_text(adaptation.tx("none", lang))
+    for b in blocks:
+        text, kb = adaptation.message(row, b)
+        await update.effective_message.reply_text(text, reply_markup=adapt_markup(kb))
+
+
 async def on_error(update, context):
     log.error("Ошибка", exc_info=context.error)
 
@@ -577,11 +731,14 @@ def main():
         loop = asyncio.get_running_loop()
         dash = dashboard.Dashboard(
             TOKEN, on_change=lambda cid: asyncio.run_coroutine_threadsafe(sync_sheet(cid), loop),
-            notify=lambda tg_id, text: asyncio.run_coroutine_threadsafe(send_notice(application.bot, tg_id, text), loop).result(timeout=25))
+            notify=lambda tg_id, text: asyncio.run_coroutine_threadsafe(send_notice(application.bot, tg_id, text), loop).result(timeout=25),
+            adapt_send=lambda tg_id, text, kb: asyncio.run_coroutine_threadsafe(adapt_send(application.bot, tg_id, text, kb), loop).result(timeout=25))
         if not dash.enabled:
             log.warning("Веб-панель выключена: задайте DASHBOARD_PASSWORD (не короче 8 символов).")
         webapi.start_server(loop, lambda user, answers, photo: accept_web(application.bot, user, answers, photo),
                             TOKEN, port, os.environ.get("WEBAPP_ORIGIN", ""), dash=dash)
+        global ADAPT_TASK   # расписание адаптации: проверка раз в минуту (ссылка хранится, чтобы задачу не убрал сборщик мусора)
+        ADAPT_TASK = loop.create_task(adapt_loop(application.bot))
         if not WEBAPP_URL:
             log.warning("WEBAPP_URL пуст: кнопка Mini App не показывается (только режим чата).")
 
@@ -597,6 +754,8 @@ def main():
     app.add_handler(CommandHandler("otchet", otchet))
     app.add_handler(CommandHandler("nomzod", nomzod))
     app.add_handler(CommandHandler("holat", holat))
+    app.add_handler(CommandHandler("otvet", otvet))
+    app.add_handler(CommandHandler("checklist", checklist))
     app.add_handler(MessageHandler(filters.Regex(r"^/n_\d+"), open_profile))
     app.add_handler(MessageHandler(filters.Regex(r"^/pdf_\d+"), pdf_cmd))
     app.add_handler(CallbackQueryHandler(on_button))
