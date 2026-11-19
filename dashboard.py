@@ -424,8 +424,6 @@ class Dashboard:
                 return self._json(400, {"error": "Сейчас нет открытого этапа: следующий придёт по расписанию"})
             if not self.adapt_send:
                 return self._json(503, {"error": "Бот недоступен"})
-            if adaptation.waits_manual(cid):   # дальше этапы пойдут по расписанию
-                adaptation.event(cid, "auto", "", user)
             ok = True
             for b in blocks:
                 text, kb = adaptation.message(row, b)

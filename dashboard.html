@@ -569,12 +569,13 @@ function archive(main) {
 
 // ---------- адаптация: 3 месяца после выхода на работу
 function prog(done, total) { var p = el("div", "prog"), i = el("i"); i.style.width = (total ? Math.round(done * 100 / total) : 0) + "%"; p.appendChild(i); return p; }
+var adPoll = null, adListPoll = null;
+function adSig(a) { return [a.done, a.late, a.log.length, a.state, a.rating, a.start].join("/"); }
 var ADKIND = {q: "❓ Вопрос сотрудника", hard: "💬 Что было сложно", reply: "✉️ Ответ рекрутера", rating: "⭐ Оценка первой недели", result: "🏁 Итог",
   fail: "⚠️ Сообщение не доставлено", start: "📅 Первый рабочий день", mentor: "👤 Наставник"};
 function adaptPane(body, c, done) {
   var a = c.adapt, id = c.id;
   function post(data, ok) { return api("/api/candidates/" + id + "/adapt", data).then(function (r) { if (ok) toast(ok); done(r.adapt); return r; }).catch(function (e) { toast(e.message); }); }
-  if (a.manual) { var mw = el("div", "warnbox", "Принят до запуска адаптации: бот пока ничего не присылал. Проверьте дату первого рабочего дня и нажмите «Отправить чек-лист сейчас», дальше этапы пойдут по расписанию."); mw.style.marginTop = "14px"; body.appendChild(mw); }
   if (a.failed) { var w = el("div", "warnbox", "Бот не смог доставить сотруднику сообщение (возможно, он заблокировал бота). Свяжитесь по телефону."); w.style.marginTop = "14px"; body.appendChild(w); }
   var sum = el("div", "ad-sum");
   [[a.day < 1 ? "Скоро" : "День " + a.day, a.day < 1 ? "выход " + a.start_ru : "из " + a.days + " · с " + a.start_ru], [a.done + " из " + a.total, "пунктов отмечено"],
@@ -646,6 +647,18 @@ function adaptPane(body, c, done) {
     });
     var hint = el("div", "minor", "Ответить на вопрос сотрудника: в Telegram командой /otvet " + id + " ваш текст"); hint.style.marginTop = "8px"; body.appendChild(hint);
   }
+  // сотрудник отмечает пункты в боте: карточка обновляется сама каждые 15 секунд
+  clearInterval(adPoll);
+  adPoll = setInterval(function () {
+    if (!document.body.contains(body) || winTab !== "adapt") { clearInterval(adPoll); return; }
+    var f = document.activeElement;
+    if (document.hidden || document.querySelector(".dlg") || (f && f.tagName === "INPUT" && f.type !== "checkbox" && body.contains(f))) return;
+    api("/api/candidates/" + id).then(function (n) {
+      if (!n.adapt || adSig(n.adapt) === adSig(c.adapt) || !document.body.contains(body)) return;
+      if (n.adapt.done > c.adapt.done) toast("✓ Сотрудник отметил пункт чек-листа");
+      done(n.adapt);
+    }).catch(function () {});
+  }, 15000);
 }
 var adf = {state: "active", q: "", pos: "", branch: "", late: "", sort: "late"};
 function adaptationPage(main) {
@@ -688,6 +701,11 @@ function adaptationPage(main) {
   }
   q.oninput = function () { clearTimeout(timer); timer = setTimeout(load, 250); }; p.onchange = bs.onchange = lt.onchange = so.onchange = load;
   load();
+  clearInterval(adListPoll);   // таблица обновляется сама раз в 30 секунд, пока открыта вкладка и нет окна кандидата
+  adListPoll = setInterval(function () {
+    if (!document.body.contains(holder)) { clearInterval(adListPoll); return; }
+    if (!document.hidden && !document.querySelector(".cwin,.dlg") && document.activeElement !== q) load();
+  }, 30000);
 }
 
 // ---------- карточка кандидата: окно, которое можно двигать по экрану
@@ -780,7 +798,7 @@ function openCandidate(id, tab) {
         });
         if (!(c.sections || []).length) body.appendChild(el("pre", null, c.profile));
       },
-      adapt: function () { adaptPane(body, c, function (a) { c.adapt = a; show("adapt"); }); },
+      adapt: function () { adaptPane(body, c, function (a) { var y = body.scrollTop; c.adapt = a; show("adapt"); body.scrollTop = y; }); },
       hist: function () {
         body.appendChild(el("div", "sec", "История этапов"));
         c.history.forEach(function (h) {
