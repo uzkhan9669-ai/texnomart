@@ -118,7 +118,7 @@ class Dashboard:
                 "red": row["red"], "yellow": row["yellow"], "status": row["status"],
                 "status_ru": STATUS_RU.get(row["status"], row["status"]), "branch": row["branch"] or "",
                 "ts": row["ts"], "photo": bool(row["photo_file_id"]), "slot": a.get("slot", ""),
-                "days": self._days(row["stage_ts"] or row["ts"]), "notice": row["notice"] or "",
+                "days": self._days(row["stage_ts"] or row["ts"]), "since": row["stage_ts"] or row["ts"] or "", "notice": row["notice"] or "",
                 "reason": row["reject_reason"] or ""}
 
     @staticmethod
@@ -284,7 +284,7 @@ class Dashboard:
                              or (digits and digits in re.sub(r"\D", "", i["phone"]))):
                 continue
             out.append(i)
-        out.sort(key=(lambda i: i["ts"] or "") if q.get("sort") == "new" else (lambda i: i["pct"]), reverse=True)
+        out = self._sorted(out, q.get("sort"))
         return self._json(200, {"items": out[:500], "count": len(out)})
 
     def _update(self, row, body, user):
@@ -307,6 +307,31 @@ class Dashboard:
             except Exception:
                 log.exception("Синхронизация после изменения не удалась")
         return self._json(200, {"ok": True, "item": self._item(store.get(row["id"]))})
+
+    # Сортировка списков: new (по умолчанию) новые анкеты сверху, old старые, stage дольше всего на этапе,
+    # az / za по имени, pct по баллу. Латиница идёт перед кириллицей; узбекские буквы стоят рядом с похожими русскими.
+    SORTS = ("new", "old", "stage", "az", "za", "pct")
+    _CYR = {ch: n for n, ch in enumerate("абвгғдеёжзийкқлмнопрстуўфхҳцчшщъыьэюя")}
+
+    @classmethod
+    def _name_key(cls, name):
+        out = []
+        for ch in (name or "").strip().casefold():
+            if ch.isalpha() or ch.isdigit():   # пробелы, апострофы (O'g'li) и знаки не влияют на порядок
+                out.append(0x10000 + cls._CYR[ch] if ch in cls._CYR else ord(ch))
+        return out
+
+    @classmethod
+    def _sorted(cls, items, how, date="ts"):
+        how = how if how in cls.SORTS else "new"
+        if how in ("az", "za"):
+            named = sorted((i for i in items if cls._name_key(i["fio"])), key=lambda i: (cls._name_key(i["fio"]), i["id"]), reverse=how == "za")
+            return named + [i for i in items if not cls._name_key(i["fio"])]   # без имени всегда в конце
+        if how == "pct":
+            return sorted(items, key=lambda i: (-(i["pct"] or 0), i["id"]))
+        if how == "stage":
+            return sorted(items, key=lambda i: (i["since"] or "9", i["id"]))
+        return sorted(items, key=lambda i: (i[date] or "", i["id"]), reverse=how == "new")
 
     HIRED_ON_BOARD_DAYS = 7   # принятые видны на доске неделю, потом остаются только в архиве
     SKIP_SECTIONS = ("ОЦЕНКА HARD SKILLS", "ОЦЕНКА SOFT SKILLS", "РИСКИ И ФЛАГИ")
@@ -355,7 +380,7 @@ class Dashboard:
                 continue
             i["decided"] = r["stage_ts"] or r["ts"]
             items.append(i)
-        items.sort(key=lambda i: i["decided"] or "", reverse=True)
+        items = self._sorted(items, q.get("sort"), date="decided")
         return self._json(200, {"kind": kind, "counts": counts, "items": items[:500], "count": len(items)})
 
     def _board(self, q):
@@ -376,6 +401,8 @@ class Dashboard:
             if i["status"] == "ishda" and i["days"] >= self.HIRED_ON_BOARD_DAYS:
                 continue   # давно принятые лежат в архиве
             cols.setdefault(i["status"], []).append(i)
+        for s in cols:
+            cols[s] = self._sorted(cols[s], q.get("sort"))
         return self._json(200, {"columns": [{"key": s, "label": STATUS_RU[s], "count": len(cols[s]), "items": cols[s][:150]} for s in notices.ORDER],
                                 "off": off})
 

@@ -340,18 +340,28 @@ function select(id, first, map, value) {
   Object.keys(map).forEach(function (k) { s.appendChild(new Option(map[k], k)); });
   s.value = value; return s;
 }
+// сортировка: выбор запоминается в этом браузере отдельно для каждой вкладки
+var SORTS = [["new", "Сначала новые"], ["old", "Сначала старые"], ["stage", "Дольше всего на этапе"], ["az", "По имени А → Я"], ["za", "По имени Я → А"], ["pct", "По баллу"]];
+function sortSelect(id, where, skip) {
+  var s = el("select"), v = "new"; s.id = id; s.title = "Сортировка"; s.setAttribute("aria-label", "Сортировка");
+  try { v = localStorage.getItem("hr_sort_" + where) || "new"; } catch (e) {}
+  SORTS.forEach(function (o) { if (o[0] !== skip) s.appendChild(new Option("↕ " + o[1], o[0])); });
+  s.value = v; if (s.value !== v) s.value = "new";
+  s.addEventListener("change", function () { try { localStorage.setItem("hr_sort_" + where, s.value); } catch (e) {} });
+  return s;
+}
 function candidates(main) {
   add(main, el("h1", null, "Кандидаты"), el("div", "sub", "Анкеты из Telegram Mini App и чата"));
   var f = el("div", "filters"), q = el("input"), holder = el("div"), count = el("div", "minor");
   q.id = "q"; q.placeholder = "Поиск: имя, телефон, район, филиал"; q.value = filters.q;
   var v = select("fv", "Все рекомендации", META.verdicts, filters.verdict), s = select("fs", "Все статусы", META.statuses, filters.status);
   var p = select("fp", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, filters.pos);
-  var o = select("fo", "Сначала высокий балл", {"new": "Сначала новые"}, filters.sort);
+  var o = sortSelect("fo", "candidates");
   var csv = el("a", "btn alt", "Скачать CSV"); csv.href = "/api/export.csv"; csv.style.textDecoration = "none";
   var br = storeSelect("fb", "Все магазины", filters.branch || ""); br.onchange = function () { load(); };
   add(f, q, v, s, p, br, o, csv); count.style.margin = "0 0 8px"; add(main, f, count, holder);
   function load() {
-    filters = {q: q.value, verdict: v.value, status: s.value, pos: p.value, branch: br.value, sort: o.value};
+    filters = {q: q.value, verdict: v.value, status: s.value, pos: p.value, branch: br.value, sort: o.value};   // sort: см. sortSelect
     var qs = Object.keys(filters).filter(function (k) { return filters[k]; }).map(function (k) { return k + "=" + encodeURIComponent(filters[k]); }).join("&");
     api("/api/candidates" + (qs ? "?" + qs : "")).then(function (d) {
       holder.textContent = ""; count.textContent = "Найдено: " + d.count; holder.appendChild(table(d.items));
@@ -400,10 +410,10 @@ function storeSelect(id, first, value) {   // список магазинов; �
 function board(main) {
   add(main, el("h1", null, "Воронка"), el("div", "sub", "Перетащите карточку на следующий этап. Перед отправкой сообщения кандидату вы увидите его текст. Каждый этап прокручивается отдельно. Принятые видны 7 дней, потом хранятся в «Архиве»."));
   var f = el("div", "filters"), q = el("input"), p = select("bp", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, ""), holder = el("div");
-  var bs = storeSelect("bstore", "Все магазины", "");
-  q.id = "bq"; q.placeholder = "Поиск: имя, телефон, филиал"; add(f, q, p, bs); add(main, f, holder); bs.onchange = function () { load(); };
+  var bs = storeSelect("bstore", "Все магазины", ""), so = sortSelect("bsort", "board");
+  q.id = "bq"; q.placeholder = "Поиск: имя, телефон, филиал"; add(f, q, p, bs, so); add(main, f, holder); bs.onchange = so.onchange = function () { load(); };
   function load() {
-    var qs = [q.value ? "q=" + encodeURIComponent(q.value) : "", p.value ? "pos=" + encodeURIComponent(p.value) : "", bs.value ? "branch=" + encodeURIComponent(bs.value) : ""].filter(Boolean).join("&");
+    var qs = [q.value ? "q=" + encodeURIComponent(q.value) : "", p.value ? "pos=" + encodeURIComponent(p.value) : "", bs.value ? "branch=" + encodeURIComponent(bs.value) : "", "sort=" + so.value].filter(Boolean).join("&");
     api("/api/board" + (qs ? "?" + qs : "")).then(function (d) {
       var all = {}, keep = {};
       Array.prototype.forEach.call(holder.querySelectorAll(".col"), function (c) { keep[c.getAttribute("data-stage")] = c.querySelector(".cards").scrollTop; });
@@ -500,16 +510,17 @@ function moveDialog(c, stage, done) {   // подтверждение: что у
 }
 
 // ---------- архив: принятые, резерв, отказы
-var arch = {kind: "ishda", q: "", pos: "", branch: ""};
+var arch = {kind: "ishda", q: "", pos: "", branch: "", sort: ""};
 function archive(main) {
   add(main, el("h1", null, "Архив"), el("div", "sub", "Кандидаты, по которым решение принято: приняты на работу, оставлены в резерве или получили отказ."));
   var seg = el("div", "segs"), f = el("div", "filters"), q = el("input"), holder = el("div"), count = el("div", "minor");
   var p = select("ap", "Все должности", {"Консультант": "Консультант", "Кассир": "Кассир"}, arch.pos), bs = storeSelect("astore", "Все магазины", arch.branch);
+  var so = sortSelect("asort", "archive", "stage");
   q.id = "aq"; q.placeholder = "Поиск: имя, телефон, филиал"; q.value = arch.q; count.style.margin = "0 0 8px";
-  add(f, q, p, bs); add(main, seg, f, count, holder);
+  add(f, q, p, bs, so); add(main, seg, f, count, holder);
   var KINDS = [["ishda", "Принятые", "Принят"], ["zaxira", "Резерв", "В резерве с"], ["rad", "Отказы", "Отказ"]];
   function load() {
-    arch.q = q.value; arch.pos = p.value; arch.branch = bs.value;
+    arch.q = q.value; arch.pos = p.value; arch.branch = bs.value; arch.sort = so.value;
     var qs = Object.keys(arch).filter(function (k) { return arch[k]; }).map(function (k) { return k + "=" + encodeURIComponent(arch[k]); }).join("&");
     api("/api/archive?" + qs).then(function (d) {
       seg.textContent = ""; holder.textContent = "";
@@ -534,7 +545,7 @@ function archive(main) {
       wrap.appendChild(t);
     }).catch(function (e) { if (e.message !== "auth") { holder.textContent = ""; holder.appendChild(el("div", "err", e.message)); } });
   }
-  q.oninput = function () { clearTimeout(timer); timer = setTimeout(load, 250); }; p.onchange = bs.onchange = load;
+  q.oninput = function () { clearTimeout(timer); timer = setTimeout(load, 250); }; p.onchange = bs.onchange = so.onchange = load;
   load();
 }
 
