@@ -205,6 +205,14 @@ def block_items(pos, block):
     return [i for i in items(pos) if i[1] == block]
 
 
+COMPANY = ("HR", "IT")   # эти пункты делает компания: отмечаются автоматически, сотруднику в боте не показываются
+
+
+def emp_items(pos, block):
+    """Пункты, которые отмечает сам сотрудник."""
+    return [i for i in block_items(pos, block) if i[2] not in COMPANY]
+
+
 # ------------------------------------------------------------------ база
 def now():
     return datetime.datetime.now(TZ)
@@ -346,7 +354,8 @@ def view(row, today=None):
         for iid, _b, owner, text in its:
             d = done.get(iid)
             rows.append({"id": iid, "text": text["ru"], "owner": OWNER_RU.get(owner, ""), "done": bool(d),
-                         "by": ("сотрудник в боте" if d and d["by"] == "employee" else (d["by"] if d else "")), "ts": d["ts"] if d else "",
+                         "by": ({"employee": "сотрудник в боте", "auto": "автоматически"}.get(d["by"], d["by"]) if d else ""), "ts": d["ts"] if d else "",
+                         "auto": owner in COMPANY,
                          "late": is_late and not d})
         k_done = sum(1 for r in rows if r["done"])
         total += len(rows)
@@ -371,7 +380,7 @@ def view(row, today=None):
 def message(row, block, remind=None):
     """Сообщение блока для сотрудника: (текст, кнопки [[(подпись, данные)]]). remind: None, "remind" (последний день) или "late" (срок прошёл)."""
     a, lang, pos = get(row["id"]), lang_of(row), pos_of(row)
-    its, done = block_items(pos, block), checks(row["id"])
+    its, done = emp_items(pos, block), checks(row["id"])
     lines = [tx("late" if remind == "late" else "remind", lang)] if remind else []
     lines += [tx("head", lang, title=BLOCK[block][1][lang]), tx("due", lang, date=due_date(a, block).strftime("%d.%m.%Y")), ""]
     for n, (iid, _b, owner, text) in enumerate(its, 1):
@@ -390,17 +399,46 @@ def open_blocks(row, today=None):
     if not a:
         return []
     day = day_of(a, today)
-    out = [b[0] for b in BLOCKS if block_items(pos_of(row), b[0]) and b[2] <= day <= b[3]]
-    if not out:   # между блоками: последний начавшийся, если в нём есть неотмеченное
-        started = [b[0] for b in BLOCKS if block_items(pos_of(row), b[0]) and b[2] <= day]
-        done = checks(row["id"])
-        out = [b for b in started[-1:] if any(i[0] not in done for i in block_items(pos_of(row), b))]
-    return out
+    pos, done = pos_of(row), checks(row["id"])
+    out = [b[0] for b in BLOCKS if emp_items(pos, b[0]) and b[2] <= day <= b[3]]
+    # плюс начавшиеся раньше этапы, где сотрудник ещё не всё отметил
+    old = [b[0] for b in BLOCKS if emp_items(pos, b[0]) and b[3] < day and any(i[0] not in done for i in emp_items(pos, b[0]))]
+    return old + out
 
 
 def undone(row, block):
     done = checks(row["id"])
-    return [i for i in block_items(pos_of(row), block) if i[0] not in done]
+    return [i for i in emp_items(pos_of(row), block) if i[0] not in done]
+
+
+def auto_fill(row, day):
+    """Пункты HR и IT отмечаются сами, когда начинается их этап (если рекрутер не снял отметку вручную)."""
+    cid, done, pos = row["id"], checks(row["id"]), pos_of(row)
+    for iid, block, owner, _t in items(pos):
+        if owner in COMPANY and BLOCK[block][2] <= day and iid not in done and not store._run(
+                "SELECT 1 FROM adapt_event WHERE cid=? AND kind='uncheck' AND text=? AND by!='auto' LIMIT 1", (cid, iid), "one"):
+            set_check(cid, iid, True, "auto")
+
+
+def count_today(cid, prefixes, today):
+    rows = store._run("SELECT kind FROM adapt_event WHERE cid=? AND ts LIKE ?", (cid, today.isoformat() + "%"), "all")
+    return sum(1 for r in rows if r["kind"].startswith(prefixes))
+
+
+RESET = "2026-11-19"   # перезапуск адаптации для всех (по просьбе владельца): отметки и рассылка с начала, даты и наставники сохраняются
+
+
+def reset_once():
+    store._run("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)")
+    if store._run("SELECT 1 FROM meta WHERE key=?", ("adapt_reset", ), "one") and \
+            store._run("SELECT value FROM meta WHERE key=?", ("adapt_reset",), "one")["value"] >= RESET:
+        return
+    for r in store._run("SELECT cid FROM adapt WHERE state='active'", (), "all"):
+        store._run("DELETE FROM adapt_check WHERE cid=?", (r["cid"],))
+        store._run("DELETE FROM adapt_event WHERE cid=? AND kind NOT IN ('start','mentor','q','hard','reply')", (r["cid"],))
+        store._run("UPDATE adapt SET rating=NULL, last_seen=NULL WHERE cid=?", (r["cid"],))
+        event(r["cid"], "restart", "", "system")
+    store._run("INSERT OR REPLACE INTO meta (key, value) VALUES (?,?)", ("adapt_reset", RESET))
 
 
 def find_by_tg(tg_id):
@@ -420,6 +458,7 @@ def plan(at=None):
     at = at or now()
     if not SEND_HOUR <= at.hour < QUIET_HOUR:
         return []
+    reset_once()
     ensure_all()
     out, today = [], at.date()
     rows = store._run("SELECT c.* FROM candidates c JOIN adapt a ON a.cid=c.id WHERE c.status='ishda' AND a.state='active'", (), "all")
@@ -432,16 +471,17 @@ def plan(at=None):
         if not has(cid, "intro") and day <= 30:
             emp(tx("intro", lang, name=(row["fio"] or "").strip() or "-"), "intro")
         pos = pos_of(row)
-        mine = [blk for blk in BLOCKS if block_items(pos, blk[0])]
+        auto_fill(row, day)
+        mine = [blk for blk in BLOCKS if emp_items(pos, blk[0])]
         first_contact = not any(has(cid, "sent:" + k) for k, *_r in mine)
-        open_now = [k for k, _t, sd, dd in mine if sd <= day <= dd]
-        started = [k for k, _t, sd, dd in mine if sd <= day]
+        late_emp = count_today(cid, ("late1:", "late3:"), today)   # о просрочке сотруднику не больше одного сообщения в день
+        late_rec = []
         for key, title, send_day, due_day in mine:
             sent, just = has(cid, "sent:" + key), False
             if not sent and not has(cid, "skip:" + key):
-                # идущий этап присылается сразу; если человек принят задним числом и сейчас между этапами,
-                # при первом контакте присылается последний начавшийся этап, более старые только видны в панели
-                if send_day <= day <= due_day or (first_contact and not open_now and started and key == started[-1]):
+                # идущий этап присылается сразу; при первом контакте (принят задним числом или перезапуск)
+                # приходят и прошедшие этапы, где сотруднику есть что отметить
+                if send_day <= day <= due_day or (first_contact and day > due_day and undone(row, key)):
                     text, kb = message(row, key)
                     emp(text, "sent:" + key, kb)
                     sent = just = True
@@ -455,15 +495,19 @@ def plan(at=None):
                 text, kb = message(row, key, remind="remind")
                 emp(text, "remind:" + key, kb)
             for n in LATE_DAYS:   # срок прошёл: напоминание сотруднику через 1 и 3 дня
-                if left and not fresh and day >= due_day + n and not has(cid, "late%d:%s" % (n, key)) and not has(cid, "late%d:%s" % (LATE_DAYS[-1], key)):
+                if left and not fresh and not late_emp and day >= due_day + n and not has(cid, "late%d:%s" % (n, key)) \
+                        and not has(cid, "late%d:%s" % (LATE_DAYS[-1], key)):
                     text, kb = message(row, key, remind="late")
                     emp(text, "late%d:%s" % (n, key), kb)
+                    late_emp += 1
                     break
             if left and not fresh and day > due_day and not has(cid, "late:" + key):
-                out.append({"to": "rec", "cid": cid, "key": "late:" + key,
-                            "text": "⚠️ Адаптация %s: в этапе «%s» (срок %s) не отмечено пунктов: %d.\n%s\nПодробно: /n_%d" % (
-                                who(row), title["ru"], due_date(a, key).strftime("%d.%m.%Y"), len(left),
-                                "\n".join("• " + i[3]["ru"] for i in left[:6]), cid)})
+                late_rec.append((key, title, left))
+        if late_rec:   # рекрутерам одно сообщение на сотрудника, по всем просроченным этапам
+            out.append({"to": "rec", "cid": cid, "key": "|".join("late:" + k for k, *_r in late_rec),
+                        "text": "⚠️ Адаптация %s: не отмечено в срок.\n%s\nПодробно: /n_%d" % (who(row), "\n".join(
+                            "«%s» (срок %s), пунктов: %d\n%s" % (t["ru"], due_date(a, k).strftime("%d.%m.%Y"), len(left),
+                                                               "\n".join("• " + i[3]["ru"] for i in left[:6])) for k, t, left in late_rec), cid)})
         if SURVEY_DAY <= day <= SURVEY_DAY + 7 and at.hour >= REMIND_HOUR and not has(cid, "survey"):
             emp(tx("survey", lang), "survey", [[(str(n), "ad:r:%d:%d" % (cid, n)) for n in range(1, 6)]])
         if day >= TOTAL_DAYS and not has(cid, "end"):
@@ -475,7 +519,8 @@ def plan(at=None):
 
 def mark(cid, key, ok=True):
     """Записывает, что действие выполнено (даже если сообщение не доставлено: повторно не шлём, в панели видно)."""
-    event(cid, key)
+    for k in key.split("|"):
+        event(cid, k)
     if not ok:
         event(cid, "fail", key)
 
