@@ -416,15 +416,18 @@ class Dashboard:
                 return self._json(400, {"error": "Выберите причину ухода"})
             if not adaptation.finish(cid, d.get("result"), reason, user):
                 return self._json(400, {"error": "Неизвестный итог"})
-        elif op == "send":
-            if adaptation.get(cid)["state"] != "active":
-                return self._json(400, {"error": "Адаптация завершена"})
-            blocks = adaptation.open_blocks(row)
-            if not blocks:
-                return self._json(400, {"error": "Сейчас нет открытого этапа: следующий придёт по расписанию"})
+        elif op == "send":   # адаптация заново с сегодняшнего дня: приветствие и первые этапы уходят сразу
             if not self.adapt_send:
                 return self._json(503, {"error": "Бот недоступен"})
-            ok = True
+            blocks = adaptation.restart(cid, user)
+            row = store.get(cid)
+            lang = adaptation.lang_of(row)
+            try:
+                ok = bool(self.adapt_send(row["tg_id"], adaptation.tx("intro", lang, name=(row["fio"] or "").strip() or "-"), None))
+            except Exception:
+                log.exception("Не удалось отправить приветствие")
+                ok = False
+            adaptation.mark(cid, "intro", ok)
             for b in blocks:
                 text, kb = adaptation.message(row, b)
                 try:

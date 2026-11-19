@@ -420,6 +420,19 @@ def auto_fill(row, day):
             set_check(cid, iid, True, "auto")
 
 
+def restart(cid, by):
+    """Кнопка «Отправить чек-лист»: адаптация начинается заново с сегодняшнего дня (день 1 = сегодня).
+    Отметки и рассылка сбрасываются, наставник, вопросы и ответы сохраняются. Возвращает этапы, которые нужно прислать сейчас."""
+    store._run("DELETE FROM adapt_check WHERE cid=?", (cid,))
+    store._run("DELETE FROM adapt_event WHERE cid=? AND kind NOT IN ('start','mentor','q','hard','reply','result')", (cid,))
+    store._run("UPDATE adapt SET start=?, state='active', reason='', closed=NULL, rating=NULL, last_seen=NULL WHERE cid=?",
+               (now().date().isoformat(), cid))
+    event(cid, "start", now().date().strftime("%d.%m.%Y") + " (отправлено рекрутером)", by)
+    row = store.get(cid)
+    auto_fill(row, 0)
+    return [b[0] for b in BLOCKS if emp_items(pos_of(row), b[0]) and b[2] == 0]
+
+
 def count_today(cid, prefixes, today):
     rows = store._run("SELECT kind FROM adapt_event WHERE cid=? AND ts LIKE ?", (cid, today.isoformat() + "%"), "all")
     return sum(1 for r in rows if r["kind"].startswith(prefixes))

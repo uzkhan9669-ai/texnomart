@@ -600,8 +600,18 @@ function adaptPane(body, c, done) {
 
   var act = el("div", "ad-act");
   if (a.state === "active") {
-    var snd = el("button", "btn alt", "📨 Отправить чек-лист сейчас"); snd.id = "adSend"; snd.title = "Пришлёт сотруднику в бот текущий этап с кнопками";
-    snd.onclick = function () { snd.disabled = true; post({op: "send"}).then(function (r) { if (r) toast(r.delivered ? "Чек-лист отправлен сотруднику" : "Не доставлено: сотрудник мог заблокировать бота"); }); };
+    var snd = el("button", "btn alt", "📨 Отправить чек-лист"); snd.id = "adSend"; snd.title = "Адаптация начнётся с сегодняшнего дня, бот сразу пришлёт сотруднику чек-лист";
+    snd.onclick = function () {
+      closeDlg(); var w = el("div", "dlg"), box = el("div", "box"), go = el("button", "btn", "Отправить"), no = el("button", "btn alt", "Отмена"), row = el("div", "rowf");
+      go.id = "adSendOk"; no.onclick = closeDlg;
+      go.onclick = function () { go.disabled = true; closeDlg(); post({op: "send"}).then(function (r) { if (r) toast(r.delivered ? "Чек-лист отправлен, адаптация идёт с сегодняшнего дня" : "Не доставлено: сотрудник мог заблокировать бота"); }); };
+      add(row, go, no);
+      add(box, el("h3", null, "Отправить чек-лист сотруднику?"),
+        el("div", null, "Адаптация начнётся с сегодняшнего дня: сегодня будет день 1, сроки этапов посчитаются от сегодня. Бот сразу пришлёт приветствие, этап стажировки и 1-й рабочий день."),
+        el("div", "minor", "Отметки сотрудника обнулятся, пункты HR и IT отметятся сами. Наставник и переписка сохранятся."), row);
+      box.children[1].style.margin = "10px 0 6px"; row.style.marginTop = "14px";
+      w.appendChild(box); w.onclick = function (e) { if (e.target === w) closeDlg(); }; document.body.appendChild(w);
+    };
     var ok = el("button", "btn", "✓ Адаптацию прошёл"); ok.id = "adDone"; ok.onclick = function () { post({op: "finish", result: "done"}, "Отмечено: адаптацию прошёл"); };
     var lf = el("button", "btn alt", "Ушёл"); lf.id = "adLeft"; lf.style.color = "var(--red)";
     lf.onclick = function () {
