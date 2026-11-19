@@ -733,9 +733,35 @@ async def on_error(update, context):
     log.error("Ошибка", exc_info=context.error)
 
 
+def idle_without_volume():
+    """Копия бота без постоянного диска (Railway Volume) не подключается к Telegram: иначе две копии с одним токеном
+    делят между собой нажатия, и у копии с пустой базой кнопки «не находят» сотрудника. Отвечает только на проверку адреса."""
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = ("Texnomart HR: эта копия бота выключена, потому что у неё нет постоянного диска (Volume /data). "
+                    "Рабочая копия: https://texnomart-production.up.railway.app").encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    log.error("Нет постоянного диска (Volume /data): бот НЕ подключается к Telegram, чтобы не мешать рабочей копии. "
+              "Для запуска без диска задайте ALLOW_NO_VOLUME=1.")
+    HTTPServer(("0.0.0.0", int(os.environ.get("PORT", "8080"))), Handler).serve_forever()
+
+
 def main():
     if not TOKEN:
         raise SystemExit("Не задан BOT_TOKEN.")
+    if not store.storage_info()["persistent"] and os.environ.get("ALLOW_NO_VOLUME") != "1":
+        idle_without_volume()
+        return
     if not RECRUITERS:
         log.warning("RECRUITER_IDS пуст: карточки кандидатов никому не будут отправлены!")
     store.init()
