@@ -629,10 +629,14 @@ async def adapt_button(update, context):
     row = store.get(cid)
     lang = adaptation.lang_of(row) if row else "uz"
     # номер в базе бывает записан текстом (старая схема таблицы), поэтому сравниваем как строки
-    mine = bool(row) and str(cq.from_user.id) == str(row["tg_id"])
+    chat = getattr(getattr(cq, "message", None), "chat", None)
+    chat_id = getattr(chat, "id", None)
+    # своё: нажал сам сотрудник или нажатие пришло из чата, куда бот прислал этот чек-лист
+    mine = bool(row) and (str(cq.from_user.id) == str(row["tg_id"]) or str(chat_id) == str(row["tg_id"]))
     if not row or (not mine and not is_rec(update)):
-        log.warning("Адаптация: чужое нажатие cid=%s from=%s owner=%r", cid, cq.from_user.id, row["tg_id"] if row else None)
-        await cq.answer(adaptation.tx("not_yours", lang), show_alert=True)
+        log.warning("Адаптация: чужое нажатие cid=%s from=%s chat=%s owner=%r", cid, cq.from_user.id, chat_id, row["tg_id"] if row else None)
+        await cq.answer("%s\n(#%s · %s · %s · %s)" % (adaptation.tx("not_yours", lang), cid, cq.from_user.id, chat_id,
+                                                      row["tg_id"] if row else "-"), show_alert=True)
         return
     who = "employee" if mine else "tg:%s" % cq.from_user.id
     if parts[1] == "t" and len(parts) == 4:
