@@ -641,9 +641,7 @@ async def adapt_button(update, context):
             lang = adaptation.lang_of(row)
     if not row or (not mine and not is_rec(update)):
         log.warning("Адаптация: чужое нажатие cid=%s from=%s chat=%s owner=%r", cid, cq.from_user.id, chat_id, row["tg_id"] if row else None)
-        n = store._run("SELECT COUNT(*) n FROM candidates", (), "one")["n"]
-        await cq.answer("%s\n(#%s · %s · %s · %s · p%s · n%s)" % (adaptation.tx("not_yours", lang), cid, cq.from_user.id, chat_id,
-                                                              row["tg_id"] if row else "-", os.getpid(), n), show_alert=True)
+        await cq.answer(adaptation.tx("not_yours", lang), show_alert=True)
         return
     who = "employee" if mine else "tg:%s" % cq.from_user.id
     if parts[1] == "t" and len(parts) == 4:
