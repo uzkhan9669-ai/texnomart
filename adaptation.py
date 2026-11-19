@@ -148,6 +148,7 @@ TEXT = {
     "head": _t("📋 {title}", "📋 {title}", "📋 {title}"),
     "due": _t("Срок: до {date}", "Muddat: {date} gacha", "Due: {date}"),
     "hint": _t("Нажмите номер пункта, когда он выполнен.", "Bajarilgan band raqamini bosing.", "Tap the number of an item when it is done."),
+    "block_done": _t("✅ {title}: всё выполнено, спасибо!", "✅ {title}: hammasi bajarildi, rahmat!", "✅ {title}: all done, thank you!"),
     "all_done": _t("🎉 Всё отмечено, спасибо!", "🎉 Hammasi belgilandi, rahmat!", "🎉 All done, thank you!"),
     "remind": _t("⏰ Напоминание: сегодня последний день этапа. Отметьте, что уже сделано.",
                  "⏰ Eslatma: bugun bosqichning oxirgi kuni. Bajarilganlarini belgilang.",
@@ -554,6 +555,40 @@ def overview(today=None):
                     "branch": r["branch"] or "", "photo": bool(r["photo_file_id"]), "status": r["status"],
                     "state": a["state"], "start": v["start_ru"], "day": v["day"], "current": v["current"], "done": v["done"],
                     "total": v["total"], "late": v["late"], "rating": v["rating"], "mentor": v["mentor"], "reason": v["reason"],
-                    "last_seen": v["last_seen"], "failed": v["failed"], "ts": a["start"],
+                    "last_seen": v["last_seen"], "failed": v["failed"], "ts": a["start"], "closed": a["closed"] or "",
                     "blocks": [[b["key"], b["done"], b["total"], any(i["late"] for i in b["items"])] for b in v["blocks"]]})
     return out
+
+
+LEFT_WHEN = (("1-я неделя", 7), ("1-й месяц", 30), ("2-й месяц", 60), ("3-й месяц", 10 ** 6))
+
+
+def stats(pos=None, d_from=None, d_to=None):
+    """Итоги адаптации для «Обзора» и Excel: сколько идут, прошли, ушли, когда и почему, просрочки и оценки.
+    pos: «Консультант» / «Кассир»; d_from, d_to: дата начала адаптации в этом периоде (включительно)."""
+    rows = [r for r in overview() if (not pos or r["pos"] == pos)
+            and (not d_from or r["ts"] >= d_from.isoformat()) and (not d_to or r["ts"] <= d_to.isoformat())]
+    act = [r for r in rows if r["state"] == "active"]
+    done = [r for r in rows if r["state"] == "done"]
+    left = [r for r in rows if r["state"] == "left"]
+    rated = [r["rating"] for r in rows if r["rating"]]
+    reasons, when = {}, {k: 0 for k, _n in LEFT_WHEN}
+    for r in left:
+        reasons[r["reason"] or "Причина не указана"] = reasons.get(r["reason"] or "Причина не указана", 0) + 1
+        try:
+            d = (datetime.date.fromisoformat(r["closed"][:10]) - datetime.date.fromisoformat(r["ts"])).days
+        except ValueError:
+            continue
+        when[next(k for k, n in LEFT_WHEN if d < n)] += 1
+    blocks = []
+    for key, title, send_day, _due in BLOCKS:   # насколько выполнен каждый этап у тех, у кого он уже начался
+        got = [b for r in act for b in r["blocks"] if b[0] == key and r["day"] - 1 >= send_day]
+        if got:
+            blocks.append([title["ru"], round(sum(b[1] for b in got) * 100 / max(1, sum(b[2] for b in got))), len(got)])
+    closed = len(done) + len(left)
+    return {"total": len(rows), "active": len(act), "done": len(done), "left": len(left),
+            "retention": round(len(done) * 100 / closed) if closed else None,
+            "late_people": sum(1 for r in act if r["late"]), "late_items": sum(r["late"] for r in act),
+            "progress": round(sum(r["done"] for r in act) * 100 / max(1, sum(r["total"] for r in act))) if act else None,
+            "rating": round(sum(rated) / len(rated), 1) if rated else None, "rated": len(rated), "low": sum(1 for x in rated if x <= 2),
+            "reasons": sorted(reasons.items(), key=lambda kv: -kv[1]), "when": list(when.items()), "blocks": blocks, "rows": rows}

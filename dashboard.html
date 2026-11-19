@@ -325,6 +325,29 @@ function overview(main) {
     if (!d.competencies.length) c2.appendChild(el("div", "minor", "Анкет пока нет"));
     bars(c2, d.competencies.map(function (x) { return [x[0], x[1], "анкет: " + x[2]]; }), 5, function (v) { return v.toFixed(1); });
     add(g, c1, c2); main.appendChild(g);
+    if (d.adapt && d.adapt.total) {   // адаптация принятых: 3 месяца после выхода на работу
+      var ad = d.adapt, ka = el("div", "kpis");
+      [["На адаптации", ad.active, ad.progress === null ? "" : "выполнено " + ad.progress + "% пунктов"],
+       ["Прошли адаптацию", ad.done, ad.retention === null ? "итогов пока нет" : "удержание " + ad.retention + "% от завершивших"],
+       ["Ушли", ad.left, ad.left ? "из них в 1-ю неделю: " + ad.when[0][1] : "никто не ушёл"],
+       ["С просрочками", ad.late_people, ad.late_items ? "неотмеченных пунктов: " + ad.late_items : "всё в срок"],
+       ["Оценка 1-й недели", ad.rating === null ? "—" : ad.rating + " из 5", ad.rated ? "ответили: " + ad.rated + (ad.low ? " · низких (1–2): " + ad.low : "") : "опрос на 7-й день"]].forEach(function (x) {
+        var c = el("div", "card kpi"); add(c, el("div", "l", x[0]), el("div", "v", String(x[1])), el("div", "n", x[2] || "")); ka.appendChild(c);
+      });
+      var hd = el("div", "sec", "Адаптация новых сотрудников"); hd.style.cursor = "pointer"; hd.title = "Открыть вкладку «Адаптация»";
+      hd.onclick = function () { page = "adaptation"; shell(); };
+      add(main, hd, ka);
+      var g2 = el("div", "grid2"), e1 = el("div", "card"), e2 = el("div", "card");
+      e1.appendChild(el("h3", null, "Выполнение этапов чек-листа (у тех, у кого этап начался)"));
+      if (!ad.blocks.length) e1.appendChild(el("div", "minor", "Пока нет начавшихся этапов"));
+      bars(e1, ad.blocks.map(function (b) { return [b[0], b[1], "сотрудников: " + b[2]]; }), 100, function (v) { return v + "%"; });
+      e2.appendChild(el("h3", null, "Когда уходят"));
+      bars(e2, ad.when.map(function (w) { return [w[0], w[1]]; }), Math.max(1, ad.left));
+      e2.appendChild(el("h3", "mt", "Почему уходят"));
+      if (!ad.reasons.length) e2.appendChild(el("div", "minor", "Уходов пока нет"));
+      bars(e2, ad.reasons.map(function (r) { return [r[0], r[1]]; }), Math.max(1, ad.left));
+      add(g2, e1, e2); main.appendChild(g2);
+    }
     var c4 = el("div", "card"); c4.style.marginBottom = "14px";
     c4.appendChild(el("h3", null, "Частые риски"));
     if (!d.top_risks.length) c4.appendChild(el("div", "minor", "Флагов пока нет"));

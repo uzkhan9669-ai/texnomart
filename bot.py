@@ -652,7 +652,12 @@ async def adapt_button(update, context):
             return
         adaptation.set_check(cid, item, item not in adaptation.checks(cid), who)
         await cq.answer("✅" if item in adaptation.checks(cid) else "☐")
-        text, kb = adaptation.message(store.get(cid), block)
+        row = store.get(cid)
+        if adaptation.undone(row, block):
+            text, kb = adaptation.message(row, block)
+        else:   # этап выполнен: чек-лист с кнопками исчезает, остаётся короткое «всё выполнено»
+            lang = adaptation.lang_of(row)
+            text, kb = adaptation.tx("block_done", lang, title=adaptation.BLOCK[block][1][lang]), None
         try:
             await cq.edit_message_text(text, reply_markup=adapt_markup(kb))
         except Exception:   # текст не изменился или сообщение слишком старое

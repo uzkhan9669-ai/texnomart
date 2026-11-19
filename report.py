@@ -9,6 +9,7 @@ import json
 
 import xlsxwriter
 
+import adaptation
 import store
 from scoring import VERDICT_RU, position_name
 
@@ -101,7 +102,7 @@ def make_xlsx(d_from=None, d_to=None, pos=None):
     note = F(font_color=MUTED, font_size=9, text_wrap=True, valign="top")
 
     # листы создаются сразу в том порядке, в котором их увидит читатель
-    ws, ws_f, ws_d, ws_c, ws_r, ws_b = [wb.add_worksheet(n) for n in ("Дашборд", "Воронка", "Динамика", "Кандидаты", "Отказы и риски", "Филиалы")]
+    ws, ws_f, ws_d, ws_c, ws_r, ws_b, ws_a = [wb.add_worksheet(n) for n in ("Дашборд", "Воронка", "Динамика", "Кандидаты", "Отказы и риски", "Филиалы", "Адаптация")]
 
     # ---------------------------------------------------------------- Воронка (данные для диаграмм)
     ws_f.hide_gridlines(2)
@@ -192,6 +193,70 @@ def make_xlsx(d_from=None, d_to=None, pos=None):
                                   sum(1 for i in lst if i["reach"] >= 4), sum(1 for i in lst if i["reach"] >= 5)], num)
         ws_b.write_number(3 + n, 6, round(sum(i["pct"] for i in lst) / len(lst)) if lst else 0, num)
     ws_b.autofilter(2, 0, 2 + max(1, len(branches)), 6)
+
+    # ---------------------------------------------------------------- Адаптация (3 месяца после выхода на работу)
+    st = adaptation.stats(pos if pos in POSITIONS else None, d_from, d_to)
+    ws_a.hide_gridlines(2)
+    ws_a.set_column("A:A", 32)
+    ws_a.set_column("B:B", 14)
+    ws_a.set_column("C:C", 16)
+    ws_a.set_column("D:N", 13)
+    ws_a.write("A1", "Адаптация новых сотрудников", title)
+    ws_a.write("A2", "Сотрудники, у которых адаптация началась с %s по %s%s. Итог (прошёл или ушёл) отмечает рекрутер в панели." % (
+        d_from.strftime("%d.%m.%Y"), d_to.strftime("%d.%m.%Y"), ", " + pos if pos in POSITIONS else ""), note)
+    ws_a.write_row("A4", ["Показатель", "Значение"], head)
+    kp = [("Всего начали адаптацию", st["total"]), ("Сейчас на адаптации", st["active"]), ("Прошли адаптацию", st["done"]), ("Ушли", st["left"])]
+    for n, (k, v) in enumerate(kp):
+        ws_a.write(4 + n, 0, k, cell)
+        ws_a.write_number(4 + n, 1, v, num)
+    ws_a.write(8, 0, "Удержание (прошли / завершили)", cell)
+    ws_a.write_formula(8, 1, "=IF(B7+B8=0,0,B7/(B7+B8))", prc, (st["done"] / (st["done"] + st["left"])) if st["done"] + st["left"] else 0)
+    ws_a.write(9, 0, "С просрочками сейчас", cell)
+    ws_a.write_number(9, 1, st["late_people"], num)
+    ws_a.write(10, 0, "Средняя оценка 1-й недели (1–5)", cell)
+    ws_a.write(10, 1, st["rating"] if st["rating"] is not None else "—", F(border=1, border_color=LINE, num_format="0.0"))
+    ws_a.write(11, 0, "Низких оценок (1–2)", cell)
+    ws_a.write_number(11, 1, st["low"], num)
+    r0 = 13
+    ws_a.write(r0, 0, "Когда уходят", F(bold=True))
+    ws_a.write_row(r0 + 1, 0, ["Период", "Ушли"], head)
+    for n, (k, v) in enumerate(st["when"]):
+        ws_a.write(r0 + 2 + n, 0, k, cell)
+        ws_a.write_number(r0 + 2 + n, 1, v, num)
+    r1 = r0 + 3 + len(st["when"])
+    ws_a.write(r1, 0, "Почему уходят", F(bold=True))
+    ws_a.write_row(r1 + 1, 0, ["Причина", "Ушли"], head)
+    for n, (k, v) in enumerate(st["reasons"] or [("Уходов нет", 0)]):
+        ws_a.write(r1 + 2 + n, 0, k, cell)
+        ws_a.write_number(r1 + 2 + n, 1, v, num)
+    r2 = r1 + 3 + max(1, len(st["reasons"]))
+    ws_a.write(r2, 0, "Выполнение этапов чек-листа (у тех, кто сейчас на адаптации)", F(bold=True))
+    ws_a.write_row(r2 + 1, 0, ["Этап", "Выполнено", "Сотрудников"], head)
+    for n, (k, v, c) in enumerate(st["blocks"] or [("Этапы ещё не начались", 0, 0)]):
+        ws_a.write(r2 + 2 + n, 0, k, cell)
+        ws_a.write_number(r2 + 2 + n, 1, v / 100, prc)
+        ws_a.write_number(r2 + 2 + n, 2, c, num)
+    r3 = r2 + 3 + max(1, len(st["blocks"]))
+    ws_a.write(r3, 0, "Сотрудники", F(bold=True))
+    acols = ["Ф.И.О.", "Должность", "Филиал", "Начало", "День из 91", "Сейчас", "Отмечено", "Всего пунктов", "Выполнено",
+             "Просрочено", "Оценка недели", "Наставник", "Итог", "Причина ухода"]
+    ws_a.write_row(r3 + 1, 0, acols, head)
+    for n, a in enumerate(sorted(st["rows"], key=lambda a: a["ts"])):
+        r = r3 + 2 + n
+        ws_a.write_row(r, 0, [a["fio"], a["pos"], a["branch"] or "-"], cell)
+        ws_a.write_datetime(r, 3, datetime.datetime.fromisoformat(a["ts"]), dat)
+        ws_a.write_number(r, 4, max(0, a["day"]), num)
+        ws_a.write(r, 5, a["current"] if a["state"] == "active" else "-", wrap)
+        ws_a.write_number(r, 6, a["done"], num)
+        ws_a.write_number(r, 7, a["total"], num)
+        ws_a.write_formula(r, 8, "=IF(H%d=0,0,G%d/H%d)" % (r + 1, r + 1, r + 1), prc, a["done"] / a["total"] if a["total"] else 0)
+        ws_a.write_number(r, 9, a["late"], num)
+        ws_a.write(r, 10, a["rating"] if a["rating"] else "—", num)
+        ws_a.write_row(r, 11, [a["mentor"] or "-", adaptation.RESULTS.get(a["state"], a["state"]), a["reason"] or "-"], cell)
+    if not st["rows"]:
+        ws_a.write(r3 + 2, 0, "В этом периоде адаптация ни у кого не начиналась", note)
+    else:
+        ws_a.autofilter(r3 + 1, 0, r3 + 1 + len(st["rows"]), len(acols) - 1)
 
     # ---------------------------------------------------------------- Кандидаты
     cols = [("№", 6), ("Дата анкеты", 13), ("Ф.И.О.", 30), ("Должность", 14), ("Балл, %", 9), ("Рекомендация", 15), ("Красных флагов", 10),

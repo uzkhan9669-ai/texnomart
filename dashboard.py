@@ -266,6 +266,7 @@ class Dashboard:
             "competencies": sorted(([k, round(sum(v) / len(v), 1), len(v)] for k, v in comp.items()), key=lambda x: x[1]),
             "pos_avg": {k: round(sum(v) / len(v)) for k, v in by_pos.items()},
             "storage": store.storage_info(),
+            "adapt": {k: v for k, v in adaptation.stats().items() if k != "rows"},
             "total": len(items), "avg": round(sum(i["pct"] for i in items) / len(items)) if items else 0,
             "verdicts": {k: sum(1 for i in items if i["verdict"] == k) for k in ("QABUL", "ZAXIRA", "RAD")},
             "statuses": {k: sum(1 for i in items if i["status"] == k) for k in store.STATUSES},
