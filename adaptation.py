@@ -195,17 +195,22 @@ def lang_of(row):
     return i18n.lang_ok(_answers(row).get("ui_lang"))
 
 
+COMPANY = ("HR", "IT")
+
+
 def items(pos):
-    """[(id, блок, владелец, тексты)] в порядке чек-листа."""
+    """[(id, блок, владелец, тексты)] в порядке чек-листа. Пункты HR и IT (их делает компания) в чек-лист не входят:
+    сотрудник отмечает только свои. Номера id считаются по полному списку из приложений, чтобы старые отметки не сдвинулись."""
     plan = CASHIER if pos == 1 else SELLER
-    return [("%s.%d" % (b, n + 1), b, owner, text) for b, *_ in BLOCKS for n, (owner, text) in enumerate(plan.get(b, []))]
+    return [("%s.%d" % (b, n + 1), b, owner, text) for b, *_ in BLOCKS for n, (owner, text) in enumerate(plan.get(b, []))
+            if owner not in COMPANY]
 
 
 def block_items(pos, block):
     return [i for i in items(pos) if i[1] == block]
 
 
-COMPANY = ("HR", "IT")   # эти пункты делает компания: отмечаются автоматически, сотруднику в боте не показываются
+# COMPANY: пункты HR и IT убраны из чек-листа по просьбе владельца (их делает компания, сотрудник не отмечает)
 
 
 def emp_items(pos, block):

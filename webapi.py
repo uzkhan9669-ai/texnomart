@@ -224,7 +224,7 @@ def make_handler(gate, dash=None):
             if dash and dash.match(self.path):
                 self._dash("GET")
             elif self.path.split("?")[0] in ("/", "/health"):
-                self._json(200, {"ok": True})
+                self._json(200, {"ok": True, "pid": os.getpid()})
             else:
                 self._json(404, {"ok": False})
 
